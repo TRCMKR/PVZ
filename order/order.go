@@ -6,8 +6,8 @@ import (
 )
 
 type Order struct {
-	OrderID     string
-	UserId      string
+	ID          int
+	UserID      int
 	Status      string
 	ArrivalDate string
 	ExpiryDate  string
@@ -18,20 +18,16 @@ const (
 	orderIDWidth = 15
 	userIDWidth  = 10
 	statusWidth  = 10
-	arrivalWidth = 22
+	dateWidth    = 22
 )
 
 func (o *Order) String() string {
 	sb := strings.Builder{}
-	rowFormat := fmt.Sprintf("%%%ds %%%ds %%%ds %%%ds", orderIDWidth, userIDWidth, statusWidth, arrivalWidth)
-	fmt.Fprintf(&sb, rowFormat, o.OrderID, o.UserId, o.Status, o.LastChange)
-	//sb.WriteString(o.OrderID)
-	//sb.WriteByte(' ')
-	//sb.WriteString(o.UserId)
-	//sb.WriteByte(' ')
-	//sb.WriteString(o.Status)
-	//sb.WriteByte(' ')
-	//sb.WriteString(o.LastChange)
+	rowFormat := fmt.Sprintf("OID%%%dd | UID%%%dd | STAT%%%ds | LCHAN%%%ds", orderIDWidth, userIDWidth, statusWidth, dateWidth)
+	_, err := fmt.Fprintf(&sb, rowFormat, o.ID, o.UserID, o.Status, o.LastChange)
+	if err != nil {
+		sb.WriteString(err.Error())
+	}
 
 	return sb.String()
 }

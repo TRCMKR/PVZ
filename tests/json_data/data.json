@@ -1,0 +1,154 @@
+{
+  "1": {
+    "ID": 1,
+    "UserID": 123,
+    "Status": "stored",
+    "ArrivalDate": "2025.02.10 14:00:00",
+    "ExpiryDate": "2025.02.20 14:00:00",
+    "LastChange": "2025.02.10 14:00:00"
+  },
+  "2": {
+    "ID": 2,
+    "UserID": 456,
+    "Status": "stored",
+    "ArrivalDate": "2025.02.05 10:30:00",
+    "ExpiryDate": "2025.02.17 10:30:00",
+    "LastChange": "2025.02.05 10:30:00"
+  },
+  "123": {
+    "ID": 123,
+    "UserID": 789,
+    "Status": "given",
+    "ArrivalDate": "2025.02.17 17:25:27",
+    "ExpiryDate": "2025.03.10 00:00:00",
+    "LastChange": "2025.02.17 21:23:13"
+  },
+  "1042": {
+    "ID": 1042,
+    "UserID": 789,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "1000": {
+    "ID": 1000,
+    "UserID": 789,
+    "Status": "stored",
+    "ArrivalDate": "2025.02.17 09:12:52",
+    "ExpiryDate": "2025.05.01 00:00:00",
+    "LastChange": "2025.02.17 19:46:51"
+  },
+  "111": {
+    "ID": 111,
+    "UserID": 789,
+    "Status": "given",
+    "ArrivalDate": "2025.02.17 09:12:52",
+    "ExpiryDate": "2025.05.01 00:00:00",
+    "LastChange": "2025.02.17 19:46:51"
+  },
+  "13": {
+    "ID": 13,
+    "UserID": 789,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "23020": {
+    "ID": 23020,
+    "UserID": 789,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "2222": {
+    "ID": 2222,
+    "UserID": 789,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "201": {
+    "ID": 201,
+    "UserID": 123,
+    "Status": "stored",
+    "ArrivalDate": "2025.02.10 14:00:00",
+    "ExpiryDate": "2025.02.20 14:00:00",
+    "LastChange": "2025.02.10 14:00:00"
+  },
+  "2131": {
+    "ID": 2131,
+    "UserID": 789,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "11114": {
+    "ID": 11114,
+    "UserID": 789,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "789": {
+    "ID": 789,
+    "UserID": 12223,
+    "Status": "given",
+    "ArrivalDate": "2025.02.20 08:10:58",
+    "ExpiryDate": "2027.01.01 00:00:00",
+    "LastChange": "2025.02.20 08:45:09"
+  },
+  "1230": {
+    "ID": 1230,
+    "UserID": 789,
+    "Status": "given",
+    "ArrivalDate": "2025.02.17 17:25:27",
+    "ExpiryDate": "2025.03.10 00:00:00",
+    "LastChange": "2025.02.20 09:02:18"
+  },
+  "4": {
+    "ID": 4,
+    "UserID": 789,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "1004": {
+    "ID": 1004,
+    "UserID": 789,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "112": {
+    "ID": 112,
+    "UserID": 39932,
+    "Status": "stored",
+    "ArrivalDate": "2025.02.18 23:14:39",
+    "ExpiryDate": "2025.12.12 00:00:00",
+    "LastChange": "2025.02.18 23:14:39"
+  },
+  "228": {
+    "ID": 228,
+    "UserID": 789,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "32": {
+    "ID": 32,
+    "UserID": 789,
+    "Status": "stored",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  }
+}

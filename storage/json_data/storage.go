@@ -2,7 +2,7 @@ package json_data
 
 import (
 	"errors"
-	"fmt"
+	"log"
 	"os"
 	"sort"
 	"strconv"
@@ -14,41 +14,41 @@ import (
 )
 
 var (
-	ErrorOrderAlreadyExists  = errors.New("such order exists")
-	ErrorOrderExpired        = errors.New("expired order")
-	ErrorWrongDateFormat     = errors.New("wrong date format")
-	ErrorDataNotMarshalled   = errors.New("data wasn't marshalled")
-	ErrorDataNotUnmarshalled = errors.New("data wasn't unmarshalled")
-	ErrorDataNotWritten      = errors.New("data wasn't written")
-	ErrorOrderNotFound       = errors.New("order not found")
-	ErrorWrongArgument       = errors.New("wrong argument")
-	ErrorFileNotOpened       = errors.New("file not opened")
+	ErrOrderAlreadyExists  = errors.New("such order exists")
+	ErrOrderExpired        = errors.New("expired order")
+	ErrOrderIsNotExpired   = errors.New("order is not expired")
+	ErrWrongDateFormat     = errors.New("wrong date format")
+	ErrDataNotMarshalled   = errors.New("data wasn't marshalled")
+	ErrDataNotUnmarshalled = errors.New("data wasn't unmarshalled")
+	ErrDataNotWritten      = errors.New("data wasn't written")
+	ErrOrderNotFound       = errors.New("order not found")
+	ErrWrongArgument       = errors.New("wrong argument")
+	ErrFileNotOpened       = errors.New("file not opened")
+	ErrOrderIsGiven        = errors.New("order is given")
 )
 
 const (
-	dateLayout       = "2006.01.02 15:04:05"
-	inputDateLayout1 = "2006.01.02-15:04:05"
-	inputDateLayout2 = "2006.01.02"
+	dateLayout             = "2006.01.02 15:04:05"
+	inputDateAndTimeLayout = "2006.01.02-15:04:05"
+	inputDateLayout        = "2006.01.02"
 )
 
 type Storage struct {
-	data []*order.Order
+	data map[string]order.Order
 	path string
 }
 
 func New(path string) (*Storage, error) {
 	jsonData, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Println("read json fail", err)
-		os.Exit(1)
+		log.Fatal("read json fail", err)
 	}
 
-	data := make([]*order.Order, 0)
+	data := make(map[string]order.Order)
 
 	err = sonic.Unmarshal(jsonData, &data)
 	if err != nil {
-		fmt.Println("unmarshal json fail", err)
-		os.Exit(1)
+		log.Fatal("unmarshal json fail", err)
 	}
 
 	return &Storage{
@@ -60,158 +60,164 @@ func New(path string) (*Storage, error) {
 func (s *Storage) Save() error {
 	jsonData, err := sonic.MarshalIndent(s.data, "", "  ")
 	if err != nil {
-		return ErrorDataNotMarshalled
+		return ErrDataNotMarshalled
 	}
-	err = os.WriteFile(s.path, jsonData, 0644)
+	err = os.WriteFile(s.path, jsonData, 0600)
 	if err != nil {
-		return ErrorDataNotWritten
+		return ErrDataNotWritten
 	}
 
 	return nil
 }
 
-func (s *Storage) AcceptOrder(orderID string, userID string, expiryDate string) error {
-	date, err := time.Parse(inputDateLayout1, expiryDate)
+func (s *Storage) AcceptOrder(orderID int, userID int, expiryDate string) error {
+	date, err := time.Parse(inputDateAndTimeLayout, expiryDate)
 	if err != nil {
-		date, err = time.Parse(inputDateLayout2, expiryDate)
+		date, err = time.Parse(inputDateLayout, expiryDate)
 		if err != nil {
-			return ErrorWrongDateFormat
+			return ErrWrongDateFormat
 		}
 	}
 	if date.Before(time.Now()) {
-		return ErrorOrderExpired
+		return ErrOrderExpired
 	}
 
-	for _, o := range s.data {
-		if o.OrderID == orderID {
-			return ErrorOrderAlreadyExists
+	for i := range s.data {
+		if _, ok := s.data[i]; ok {
+			return ErrOrderAlreadyExists
 		}
 	}
 
 	currentTime := time.Now().Format(dateLayout)
 
-	s.data = append(s.data, &order.Order{
-		OrderID:     orderID,
-		UserId:      userID,
+	s.data[strconv.Itoa(orderID)] = order.Order{
+		ID:          orderID,
+		UserID:      userID,
 		ArrivalDate: currentTime,
 		Status:      "stored",
 		ExpiryDate:  date.Format(dateLayout),
 		LastChange:  currentTime,
-	})
+	}
 
 	return nil
 }
 
-func (s *Storage) AcceptOrders(path string) (int, error) {
+func (s *Storage) AcceptOrders(path string) (int, int, error) {
 	jsonData, err := os.ReadFile(path)
 	if err != nil {
-		return 0, ErrorFileNotOpened
+		return 0, 0, ErrFileNotOpened
 	}
 
-	data := make([]*order.Order, 0)
+	data := make(map[string]order.Order)
 
 	err = sonic.Unmarshal(jsonData, &data)
 	if err != nil {
-		return 0, ErrorDataNotUnmarshalled
-	}
-
-	orderMap := make(map[string]*order.Order)
-	for _, o := range s.data {
-		orderMap[o.OrderID] = o
+		return 0, 0, ErrDataNotUnmarshalled
 	}
 
 	ordersFailed := 0
-	for _, o := range data {
-		if _, ok := orderMap[o.OrderID]; !ok {
-			s.data = append(s.data, o)
+	orderCount := 0
+	for key, value := range data {
+		orderCount++
+		if _, ok := s.data[key]; !ok {
+			s.data[key] = value
 			continue
 		}
 
 		ordersFailed++
 	}
 
-	return ordersFailed, nil
+	return ordersFailed, orderCount, nil
 }
 
-func (s *Storage) ReturnOrder(orderID string) error {
-	ind := -1
-	for i, v := range s.data {
-		if v.OrderID == orderID {
-			ind = i
-			break
-		}
+func (s *Storage) ReturnOrder(orderID int) error {
+	strOrderID := strconv.Itoa(orderID)
+	if _, ok := s.data[strOrderID]; !ok {
+		return ErrOrderNotFound
 	}
-	if ind == -1 {
-		return ErrorOrderNotFound
+	if s.data[strOrderID].Status == "given" {
+		return ErrOrderIsGiven
+	}
+	date, _ := time.Parse(dateLayout, s.data[strOrderID].ExpiryDate)
+	if !date.Before(time.Now()) {
+		return ErrOrderIsNotExpired
 	}
 
-	s.data[ind] = s.data[len(s.data)-1]
-	s.data = s.data[:len(s.data)-1]
+	delete(s.data, strOrderID)
 
 	return nil
 }
 
-func (s *Storage) ProcessOrders(userID string, orderIDs []string, action string) (int, error) {
-	if action != "give" && action != "return" {
-		return 0, ErrorWrongArgument
+func isBeforeDeadline(someOrder order.Order, action string) bool {
+	date := time.Now()
+	var deadline time.Time
+	switch action {
+	case "return":
+		deadline, _ = time.Parse(dateLayout, someOrder.LastChange)
+		return date.After(deadline)
+	case "give":
+		deadline, _ = time.Parse(dateLayout, someOrder.ExpiryDate)
+		return date.Before(deadline)
 	}
 
-	userOrders, _ := s.UserOrders(userID)
-	orderMap := make(map[string]*order.Order)
-	for _, o := range userOrders {
-		orderMap[o.OrderID] = o
+	return false
+}
+
+func isOrderEligible(order order.Order, action string) bool {
+	if !isBeforeDeadline(order, action) {
+		return false
+	}
+	if action == "return" {
+		return order.Status == "given"
+	}
+
+	return order.Status == "stored"
+}
+
+func (s *Storage) ProcessOrders(userID int, orderIDs []int, action string) (int, error) {
+	if action != "give" && action != "return" {
+		return 0, ErrWrongArgument
 	}
 
 	ordersFailed := 0
-	deadline := time.Now()
-	if action == "return" {
-		deadline = deadline.AddDate(0, 0, -2)
-	}
-	for _, o := range orderIDs {
-		if someOrder, ok := orderMap[o]; ok {
-			var date time.Time
-			if action == "return" {
-				date, _ = time.Parse(dateLayout, someOrder.LastChange)
-			} else {
-				date, _ = time.Parse(dateLayout, someOrder.ExpiryDate)
-			}
-
-			if action == "give" && someOrder.Status == "stored" && date.After(deadline) ||
-				action == "return" && someOrder.Status == "given" && date.After(deadline) {
-				if action == "give" {
-					someOrder.Status = "given"
-				} else {
-					someOrder.Status = "returned"
-				}
-				someOrder.LastChange = time.Now().Format(dateLayout)
-				continue
-			}
+	for i := range orderIDs {
+		strOrderID := strconv.Itoa(orderIDs[i])
+		someOrder, orderExists := s.data[strOrderID]
+		if !orderExists {
+			ordersFailed++
+			continue
+		}
+		if someOrder.UserID != userID || !isOrderEligible(someOrder, action) {
+			ordersFailed++
+			continue
 		}
 
-		ordersFailed++
+		switch action {
+		case "return":
+			someOrder.Status = "returned"
+		case "give":
+			someOrder.Status = "given"
+		}
+		someOrder.LastChange = time.Now().Format(dateLayout)
+
+		s.data[strOrderID] = someOrder
 	}
 
 	return ordersFailed, nil
 }
 
-func (s *Storage) UserOrders(args ...string) ([]*order.Order, error) {
-	userID := args[0]
-	var n int
-	var err error
-	if n, err = strconv.Atoi(args[len(args)-1]); len(args) == 2 && err != nil {
-		return nil, ErrorWrongArgument
-	}
-	userOrders := make([]*order.Order, 0)
+func (s *Storage) UserOrders(userID int, count int) ([]order.Order, error) {
+	userOrders := make([]order.Order, 0)
 
-	count := 0
+	currentCount := 0
 	orderHistory := s.OrderHistory()
-	for _, v := range orderHistory {
-		if userID != v.UserId {
+	for i := range orderHistory {
+		if userID != orderHistory[i].UserID {
 			continue
 		}
-		userOrders = append(userOrders, v)
-		count++
-		if count == n {
+		userOrders = append(userOrders, orderHistory[i])
+		currentCount++
+		if currentCount == count {
 			break
 		}
 	}
@@ -219,21 +225,24 @@ func (s *Storage) UserOrders(args ...string) ([]*order.Order, error) {
 	return userOrders, nil
 }
 
-func (s *Storage) Returns() []*order.Order {
-	returns := make([]*order.Order, 0)
+func (s *Storage) Returns() []order.Order {
+	returns := make([]order.Order, 0)
 
-	for _, v := range s.data {
-		if v.Status != "returned" {
+	for i := range s.data {
+		if s.data[i].Status != "returned" {
 			continue
 		}
-		returns = append(returns, v)
+		returns = append(returns, s.data[i])
 	}
 
 	return returns
 }
 
-func (s *Storage) OrderHistory() []*order.Order {
-	orderHistory := s.data[:]
+func (s *Storage) OrderHistory() []order.Order {
+	orderHistory := make([]order.Order, 0)
+	for i := range s.data {
+		orderHistory = append(orderHistory, s.data[i])
+	}
 	sort.Slice(orderHistory, func(i, j int) bool {
 		t1, _ := time.Parse(dateLayout, orderHistory[i].LastChange)
 		t2, _ := time.Parse(dateLayout, orderHistory[j].LastChange)
