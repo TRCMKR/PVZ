@@ -4,14 +4,13 @@ import (
 	"log"
 
 	"homework/cli"
-	"homework/storage/json_data"
+	"homework/storage/jsondata"
 )
 
 func main() {
-
 	path := "./tests/json_data/data.json"
 
-	orderStorage, err := json_data.New(path)
+	orderStorage, err := jsondata.New(path)
 	if err != nil {
 		log.Fatal("Error: couldn't read json storage", err)
 	}

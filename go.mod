@@ -3,7 +3,7 @@ module homework
 go 1.23
 
 require (
-	github.com/bytedance/sonic v1.12.8
+	github.com/bytedance/sonic v1.12.9
 	golang.org/x/term v0.29.0
 )
 

@@ -4,19 +4,21 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"homework/packaging"
 	"os"
 	"strings"
-	
+
 	"homework/order"
 )
 
 var (
-	ErrScanFailed     = errors.New("scan failed")
-	ErrInvalidCommand = errors.New("invalid command")
+	errScanFailed     = errors.New("scan failed")
+	errInvalidCommand = errors.New("invalid command")
 )
 
 type storage interface {
-	AcceptOrder(orderID int, userID int, expiryDate string) error
+	AcceptOrder(orderID int, userID int, weight float64, price float64, expiryDate string,
+		packagings []packaging.Packaging) error
 	AcceptOrders(path string) (int, int, error)
 	ReturnOrder(orderID int) error
 	ProcessOrders(userID int, orderIDs []int, action string) (int, error)
@@ -38,13 +40,22 @@ func NewApp(appStorage storage) *App {
 	}
 }
 
+func (app *App) executeCommand(commands map[string]command,
+	inputCommand string, args []string) ([]string, mode, error) {
+	if cliCommand, ok := commands[inputCommand]; ok {
+		return cliCommand(args)
+	}
+
+	return nil, raw, errInvalidCommand
+}
+
 func (app *App) Run() error {
 	scanner := bufio.NewScanner(os.Stdin)
 	var result []string
 	var md mode
 	var err error
 
-	var commands = map[string]command{
+	commands := map[string]command{
 		"help":          app.help,
 		"clear":         app.clearScr,
 		"acceptOrder":   app.acceptOrder,
@@ -61,7 +72,7 @@ func (app *App) Run() error {
 		fmt.Print("> ")
 
 		if !scanner.Scan() {
-			return ErrScanFailed
+			return errScanFailed
 		}
 
 		line := strings.TrimSpace(scanner.Text())
@@ -73,13 +84,10 @@ func (app *App) Run() error {
 			continue
 		}
 
-		if cliCommand, ok := commands[inputCommand]; ok {
-			result, md, err = cliCommand(args)
-		} else {
-			err = ErrInvalidCommand
-		}
+		result, md, err = app.executeCommand(commands, inputCommand, args)
 		if err != nil {
 			fmt.Println("Error:", err)
+
 			continue
 		}
 

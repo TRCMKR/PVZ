@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"homework/packaging"
 	"os"
 	"strconv"
 )
@@ -37,7 +38,8 @@ const (
 
 const (
 	serviceFuncArgCount      = 0
-	acceptOrderArgCount      = 3
+	acceptOrderMinArgCount   = 5
+	acceptOrderMaxArgCount   = 7
 	acceptOrdersArgCount     = 1
 	returnOrderArgCount      = 1
 	processOrdersMinArgCount = 3
@@ -48,17 +50,28 @@ const (
 )
 
 var (
-	ErrTooManyArgs   = errors.New("too many arguments")
-	ErrNotEnoughArgs = errors.New("not enough arguments")
-	ErrDataNotSaved  = errors.New("data wasn't saved")
-	ErrWrongArgument = errors.New("wrong argument")
+	errTooManyArgs   = errors.New("too many arguments")
+	errNotEnoughArgs = errors.New("not enough arguments")
+	errDataNotSaved  = errors.New("data wasn't saved")
+	errWrongArgument = errors.New("wrong argument")
 )
 
 func checkArgCount(args []string, count int) error {
 	if len(args) > count {
-		return ErrTooManyArgs
+		return errTooManyArgs
 	} else if len(args) < count {
-		return ErrNotEnoughArgs
+		return errNotEnoughArgs
+	}
+
+	return nil
+}
+
+func checkMinMaxArgCount(args []string, minargs int, maxargs int) error {
+	if len(args) < minargs {
+		return errTooManyArgs
+	}
+	if len(args) > maxargs {
+		return errNotEnoughArgs
 	}
 
 	return nil
@@ -90,35 +103,64 @@ func (app *App) exit(args []string) ([]string, mode, error) {
 
 	err = app.orderStorage.Save()
 	if err != nil {
-		return nil, raw, errors.Join(ErrDataNotSaved, err)
+		return nil, raw, errors.Join(errDataNotSaved, err)
 	}
 
 	fmt.Println("Exiting...")
 	os.Exit(0)
+
 	return nil, raw, nil
 }
 
+func stringsToFloats(strings []string) ([]float64, error) {
+	floats := make([]float64, len(strings))
+	for i, s := range strings {
+		f, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			return nil, err
+		}
+		floats[i] = f
+	}
+
+	return floats, nil
+}
+
 func (app *App) acceptOrder(args []string) ([]string, mode, error) {
-	err := checkArgCount(args, acceptOrderArgCount)
+	err := checkMinMaxArgCount(args, acceptOrderMinArgCount, acceptOrderMaxArgCount)
 	if err != nil {
 		return nil, raw, err
 	}
 
-	orderID, err := strconv.Atoi(args[0])
+	intArgs, err := stringsToInts(args[:2])
 	if err != nil {
-		return nil, raw, ErrWrongArgument
+		return nil, raw, errWrongArgument
 	}
-	userID, err := strconv.Atoi(args[1])
+	orderID, userID := intArgs[0], intArgs[1]
+
+	var floatArgs []float64
+	floatArgs, err = stringsToFloats(args[2:4])
 	if err != nil {
-		return nil, raw, ErrWrongArgument
+		return nil, raw, errWrongArgument
+	}
+	weight, price := floatArgs[0], floatArgs[1]
+
+	packagings := make([]packaging.Packaging, 0, 2)
+	var tmpPackaging packaging.Packaging
+	for _, arg := range args[5:] {
+		tmpPackaging, err = packaging.GetPackaging(arg)
+		if err != nil {
+			return nil, raw, err
+		}
+		packagings = append(packagings, tmpPackaging)
 	}
 
-	err = app.orderStorage.AcceptOrder(orderID, userID, args[2])
+	err = app.orderStorage.AcceptOrder(orderID, userID, weight, price, args[4], packagings)
 	if err != nil {
 		return nil, raw, err
 	}
 
 	result := "Success: order accepted!"
+
 	return []string{result}, raw, nil
 }
 
@@ -154,7 +196,7 @@ func (app *App) returnOrder(args []string) ([]string, mode, error) {
 	}
 	orderID, err := strconv.Atoi(args[0])
 	if err != nil {
-		return nil, raw, ErrWrongArgument
+		return nil, raw, errWrongArgument
 	}
 	err = app.orderStorage.ReturnOrder(orderID)
 	if err != nil {
@@ -162,6 +204,7 @@ func (app *App) returnOrder(args []string) ([]string, mode, error) {
 	}
 
 	result := "Success: order returned!"
+
 	return []string{result}, raw, nil
 }
 
@@ -178,25 +221,7 @@ func stringsToInts(strings []string) ([]int, error) {
 	return result, nil
 }
 
-func (app *App) processOrders(args []string) ([]string, mode, error) {
-	if len(args) < processOrdersMinArgCount {
-		return nil, raw, ErrNotEnoughArgs
-	}
-
-	userID, err := strconv.Atoi(args[0])
-	if err != nil {
-		return nil, raw, ErrWrongArgument
-	}
-	orderIDs, err := stringsToInts(args[1 : len(args)-1])
-	if err != nil {
-		return nil, raw, ErrWrongArgument
-	}
-
-	ordersFailed, err := app.orderStorage.ProcessOrders(userID, orderIDs, args[len(args)-1])
-	if err != nil {
-		return nil, raw, err
-	}
-
+func (app *App) formMessage(args []string, ordersFailed int) string {
 	if ordersFailed > 0 {
 		app.stringBuilder.WriteString("Orders failed: ")
 		app.stringBuilder.WriteString(strconv.Itoa(ordersFailed))
@@ -209,37 +234,68 @@ func (app *App) processOrders(args []string) ([]string, mode, error) {
 			app.stringBuilder.WriteString("given")
 		}
 	}
+
 	result := app.stringBuilder.String()
 	app.stringBuilder.Reset()
 
-	return []string{result}, raw, nil
+	return result
 }
 
-func (app *App) userOrders(args []string) ([]string, mode, error) {
-	if len(args) < userOrdersMinArgCount {
-		return nil, raw, ErrNotEnoughArgs
-	}
-	if len(args) > userOrdersMaxArgCount {
-		return nil, raw, ErrTooManyArgs
+func (app *App) processOrders(args []string) ([]string, mode, error) {
+	if len(args) < processOrdersMinArgCount {
+		return nil, raw, errNotEnoughArgs
 	}
 
 	userID, err := strconv.Atoi(args[0])
 	if err != nil {
-		return nil, raw, ErrWrongArgument
+		return nil, raw, errWrongArgument
 	}
-	args = args[1:]
-	count := 0
-	if len(args) > 0 {
-		count, err = strconv.Atoi(args[0])
-		if err != nil || count < 1 {
-			return nil, raw, ErrWrongArgument
-		}
+	orderIDs, err := stringsToInts(args[1 : len(args)-1])
+	if err != nil {
+		return nil, raw, errWrongArgument
 	}
 
-	orders, err := app.orderStorage.UserOrders(userID, count)
+	ordersFailed, err := app.orderStorage.ProcessOrders(userID, orderIDs, args[len(args)-1])
 	if err != nil {
 		return nil, raw, err
 	}
+
+	result := app.formMessage(args, ordersFailed)
+
+	return []string{result}, raw, nil
+}
+
+func (app *App) parseOptionalArg(args []string) (int, error) {
+	count := 0
+	var err error
+	if len(args) > 0 {
+		count, err = strconv.Atoi(args[0])
+		if err != nil || count < 1 {
+			return 0, errWrongArgument
+		}
+	}
+
+	return count, nil
+}
+
+func (app *App) userOrders(args []string) ([]string, mode, error) {
+	err := checkMinMaxArgCount(args, userOrdersMinArgCount, userOrdersMaxArgCount)
+	if err != nil {
+		return nil, raw, err
+	}
+
+	userID, err := strconv.Atoi(args[0])
+	if err != nil {
+		return nil, raw, errWrongArgument
+	}
+
+	var count int
+	count, err = app.parseOptionalArg(args[1:])
+	if err != nil {
+		return nil, raw, err
+	}
+
+	orders, _ := app.orderStorage.UserOrders(userID, count)
 
 	result := make([]string, 0, len(orders))
 	for _, order := range orders {
@@ -256,7 +312,7 @@ func (app *App) returns(args []string) ([]string, mode, error) {
 	}
 
 	orders := app.orderStorage.Returns()
-	var result []string
+	result := make([]string, 0, len(orders))
 	for _, order := range orders {
 		result = append(result, order.String())
 	}
@@ -270,8 +326,8 @@ func (app *App) orderHistory(args []string) ([]string, mode, error) {
 		return nil, raw, err
 	}
 
-	var result []string
 	orders := app.orderStorage.OrderHistory()
+	result := make([]string, 0, len(orders))
 	for _, order := range orders {
 		result = append(result, order.String())
 	}

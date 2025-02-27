@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ErrWrongKey = errors.New("wrong key")
+	errWrongKey = errors.New("wrong key")
 )
 
 type key byte
@@ -46,6 +46,7 @@ func (app *App) draw(strings []string, md mode) {
 func (app *App) rawDrawer(strings []string) {
 	if strings[0] == clearScreen {
 		fmt.Print(clearScreen)
+
 		return
 	}
 	for _, str := range strings {
@@ -65,9 +66,9 @@ func (app *App) clearNLinesUp(n int) {
 	fmt.Print("\033[G")
 }
 
-func (app *App) makePages(strings []string) []string {
+func (app *App) makePages(lines []string) []string {
 	var pages []string
-	for i, str := range strings {
+	for i, str := range lines {
 		app.stringBuilder.WriteString(str)
 		app.stringBuilder.WriteString("\r\n")
 		if (i+1)%pageSize == 0 {
@@ -75,13 +76,15 @@ func (app *App) makePages(strings []string) []string {
 			app.stringBuilder.Reset()
 		}
 	}
-	if len(strings)%pageSize != 0 {
-		for i := len(strings) % pageSize; i < pageSize; i++ {
-			app.stringBuilder.WriteString("--\r\n")
-		}
-		pages = append(pages, app.stringBuilder.String())
-		app.stringBuilder.Reset()
+	if len(lines)%pageSize == 0 {
+		return pages
 	}
+
+	for i := len(lines) % pageSize; i < pageSize; i++ {
+		app.stringBuilder.WriteString("--\r\n")
+	}
+	pages = append(pages, app.stringBuilder.String())
+	app.stringBuilder.Reset()
 
 	return pages
 }
@@ -97,6 +100,7 @@ func (app *App) input(handler keyHandler, exitChar byte) (key, error) {
 	_, err := os.Stdin.Read(buf)
 	if err != nil {
 		fmt.Printf("error reading input: %v\n", err)
+
 		return wrongKey, err
 	}
 
@@ -112,28 +116,74 @@ func (app *App) input(handler keyHandler, exitChar byte) (key, error) {
 	return pressedKey, nil
 }
 
+func getKeyByLastByte(last byte) key {
+	switch last {
+	case 'A':
+		return upArrow
+	case 'B':
+		return downArrow
+	case 'C':
+		return rightArrow
+	case 'D':
+		return leftArrow
+	default:
+		return wrongKey
+	}
+}
+
 func (app *App) getArrowKeys(buf []byte) (key, error) {
 	if buf[0] != '\x1b' {
-		return wrongKey, ErrWrongKey
+		return wrongKey, errWrongKey
 	}
 	seq := make([]byte, 2)
 	_, err := os.Stdin.Read(seq)
 	if err != nil || seq[0] != '[' {
-		return wrongKey, ErrWrongKey
+		return wrongKey, errWrongKey
 	}
 
-	switch seq[1] {
-	case 'A': // Arrow up
-		return upArrow, nil
-	case 'B': // Arrow down
-		return downArrow, nil
-	case 'C': // Arrow right
-		return rightArrow, nil
-	case 'D': // Arrow left
-		return leftArrow, nil
-	default:
-		return wrongKey, ErrWrongKey
+	keyPressed := getKeyByLastByte(seq[1])
+	if keyPressed == wrongKey {
+		return wrongKey, errWrongKey
 	}
+
+	return keyPressed, nil
+}
+
+func (app *App) setupTerminal(fd int) (*term.State, error) {
+	oldState, err := term.MakeRaw(fd)
+	if err != nil {
+		fmt.Printf("error opening terminal: %v\n", err)
+	}
+
+	return oldState, err
+}
+
+func (app *App) restoreTerminal(fd int, oldState *term.State) {
+	err := term.Restore(fd, oldState)
+	if err != nil {
+		fmt.Printf("error restoring terminal: %v\n", err)
+	}
+}
+
+func (app *App) changePage(pressedKey key, currentPage int, pageCount int) (int, bool) {
+	switch pressedKey {
+	case leftArrow:
+		if currentPage == 0 {
+			return currentPage, false
+		}
+
+		currentPage--
+	case rightArrow:
+		if currentPage == pageCount-1 {
+			return currentPage, false
+		}
+
+		currentPage++
+	default:
+		return currentPage, false
+	}
+
+	return currentPage, true
 }
 
 func (app *App) pagedDrawer(strings []string) {
@@ -143,14 +193,14 @@ func (app *App) pagedDrawer(strings []string) {
 	pages := app.makePages(strings)
 
 	fd := int(os.Stdin.Fd())
-	oldState, err := term.MakeRaw(fd)
+	oldState, err := app.setupTerminal(fd)
 	if err != nil {
-		fmt.Printf("error opening terminal: %v\n", err)
 		return
 	}
-	defer term.Restore(fd, oldState)
+	defer app.restoreTerminal(fd, oldState)
 
 	currentPage := 0
+	var hasChanged bool
 	pageCount := (len(strings) + pageSize - 1) / pageSize
 	fmt.Println("--Viewing return table. Press q to quit--\r")
 	app.printCurrentPage(pages, currentPage, pageCount)
@@ -165,20 +215,8 @@ func (app *App) pagedDrawer(strings []string) {
 			break
 		}
 
-		switch pressedKey {
-		case leftArrow:
-			if currentPage == 0 {
-				continue
-			}
-
-			currentPage--
-		case rightArrow:
-			if currentPage == pageCount-1 {
-				continue
-			}
-
-			currentPage++
-		default:
+		currentPage, hasChanged = app.changePage(pressedKey, currentPage, pageCount)
+		if !hasChanged {
 			continue
 		}
 
@@ -186,7 +224,7 @@ func (app *App) pagedDrawer(strings []string) {
 		app.printCurrentPage(pages, currentPage, pageCount)
 	}
 
-	app.clearNLinesUp(pageSize + 3)
+	app.clearNLinesUp(pageSize + 2)
 	fmt.Print("Success: table viewed\r\n")
 }
 
@@ -195,6 +233,7 @@ func (app *App) printWindow(strings []string, currentPosition int) {
 	for i := currentPosition; i < currentPosition+windowSize; i++ {
 		if i >= lastPosition {
 			app.stringBuilder.WriteString("--\r\n")
+
 			continue
 		}
 		app.stringBuilder.WriteString(strings[i])
@@ -206,21 +245,42 @@ func (app *App) printWindow(strings []string, currentPosition int) {
 	app.stringBuilder.Reset()
 }
 
+func (app *App) changeWindow(pressedKey key, currentPosition int, lastPosition int) (int, bool) {
+	switch pressedKey {
+	case upArrow:
+		if currentPosition == 0 {
+			return currentPosition, false
+		}
+
+		currentPosition--
+	case downArrow:
+		if currentPosition+windowSize-1 >= lastPosition {
+			return currentPosition, false
+		}
+
+		currentPosition++
+	default:
+		return currentPosition, false
+	}
+
+	return currentPosition, true
+}
+
 func (app *App) scrolledDrawer(strings []string) {
 	if len(strings) == 0 {
 		return
 	}
 
 	fd := int(os.Stdin.Fd())
-	oldState, err := term.MakeRaw(fd)
+	oldState, err := app.setupTerminal(fd)
 	if err != nil {
-		fmt.Printf("error opening terminal: %v\n", err)
 		return
 	}
-	defer term.Restore(fd, oldState)
+	defer app.restoreTerminal(fd, oldState)
 
 	currentPosition := 0
 	lastPosition := len(strings) - 1
+	var hasChanged bool
 	fmt.Println("--Viewing return table. Press q to quit--\r")
 	app.printWindow(strings, currentPosition)
 	var pressedKey key
@@ -234,20 +294,8 @@ func (app *App) scrolledDrawer(strings []string) {
 			break
 		}
 
-		switch pressedKey {
-		case upArrow:
-			if currentPosition == 0 {
-				continue
-			}
-
-			currentPosition--
-		case downArrow:
-			if currentPosition+windowSize-1 >= lastPosition {
-				continue
-			}
-
-			currentPosition++
-		default:
+		currentPosition, hasChanged = app.changeWindow(pressedKey, currentPosition, lastPosition)
+		if !hasChanged {
 			continue
 		}
 
@@ -255,6 +303,6 @@ func (app *App) scrolledDrawer(strings []string) {
 		app.printWindow(strings, currentPosition)
 	}
 
-	app.clearNLinesUp(windowSize + 4)
+	app.clearNLinesUp(windowSize + 3)
 	fmt.Print("Success: table viewed\r\n")
 }
