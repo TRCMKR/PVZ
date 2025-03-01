@@ -5,8 +5,8 @@ BUILD_FLAGS=-ldflags="-s -w"
 GOOS?=$(shell go env GOOS)
 GOARCH?=$(shell go env GOARCH)
 
-## builds app + clean + lint + fmt
-build: clean lint fmt
+## builds app + clean + fmt + lint
+build: clean fmt lint
 	go build $(BUILD_FLAGS) -o ./build/$(BINARY) ./cmd/app
 
 ## runs built app
@@ -49,6 +49,10 @@ update:
 tidy:
 	go mod tidy
 
+## runs go clean -modcache
+cache:
+	go clean -modcache
+
 ## builds app for win
 build-windows:
 	GOOS=windows GOARCH=amd64 go build $(BUILD_FLAGS) -o ./build/$(BINARY).exe
@@ -75,4 +79,4 @@ help:
 		}' $(MAKEFILE_LIST)
 	@echo ""
 
-.PHONY: build run clean fmt deps install-lint lint tidy build-windows help
+.PHONY: build run clean fmt deps install-lint lint tidy build-windows help cache

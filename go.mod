@@ -1,8 +1,11 @@
-module homework
+module gitlab.ozon.dev/alexplay1224/homework
 
-go 1.23
+go 1.23.0
+
+toolchain go1.23.6
 
 require (
+	github.com/Rhymond/go-money v1.0.14
 	github.com/bytedance/sonic v1.12.9
 	golang.org/x/term v0.29.0
 )

@@ -71,7 +71,6 @@ linters:
     - govet
     - grouper
     - importas
-    - inamedparam
     - ineffassign
     - interfacebloat
     - lll

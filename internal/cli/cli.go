@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"homework/packaging"
 	"os"
 	"strings"
 
-	"homework/order"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/order"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/service"
 )
 
 var (
@@ -17,30 +17,32 @@ var (
 )
 
 type storage interface {
-	AcceptOrder(orderID int, userID int, weight float64, price float64, expiryDate string,
-		packagings []packaging.Packaging) error
-	AcceptOrders(path string) (int, int, error)
-	ReturnOrder(orderID int) error
-	ProcessOrders(userID int, orderIDs []int, action string) (int, error)
-	UserOrders(userID int, count int) ([]order.Order, error)
-	Returns() []order.Order
+	AddOrder(order.Order)
+	RemoveOrder(int)
+	UpdateOrder(int, order.Order)
+	GetByID(int) order.Order
+	GetByUserID(int) []order.Order
+	GetReturns() []order.Order
 	OrderHistory() []order.Order
 	Save() error
+	Contains(int) bool
 }
 
 type App struct {
-	orderStorage  storage
+	orderService  service.OrderService
 	stringBuilder strings.Builder
 }
 
 func NewApp(appStorage storage) *App {
 	return &App{
-		orderStorage:  appStorage,
+		orderService: service.OrderService{
+			Storage: appStorage,
+		},
 		stringBuilder: strings.Builder{},
 	}
 }
 
-func (app *App) executeCommand(commands map[string]command,
+func (a *App) executeCommand(commands map[string]command,
 	inputCommand string, args []string) ([]string, mode, error) {
 	if cliCommand, ok := commands[inputCommand]; ok {
 		return cliCommand(args)
@@ -49,23 +51,23 @@ func (app *App) executeCommand(commands map[string]command,
 	return nil, raw, errInvalidCommand
 }
 
-func (app *App) Run() error {
+func (a *App) Run() error {
 	scanner := bufio.NewScanner(os.Stdin)
 	var result []string
 	var md mode
 	var err error
 
 	commands := map[string]command{
-		"help":          app.help,
-		"clear":         app.clearScr,
-		"acceptOrder":   app.acceptOrder,
-		"acceptOrders":  app.acceptOrders,
-		"returnOrder":   app.returnOrder,
-		"processOrders": app.processOrders,
-		"userOrders":    app.userOrders,
-		"returns":       app.returns,
-		"orderHistory":  app.orderHistory,
-		"exit":          app.exit,
+		"help":          a.help,
+		"clear":         a.clearScr,
+		"acceptOrder":   a.acceptOrder,
+		"acceptOrders":  a.acceptOrders,
+		"returnOrder":   a.returnOrder,
+		"processOrders": a.processOrders,
+		"userOrders":    a.userOrders,
+		"returns":       a.returns,
+		"orderHistory":  a.orderHistory,
+		"exit":          a.exit,
 	}
 
 	for {
@@ -84,13 +86,13 @@ func (app *App) Run() error {
 			continue
 		}
 
-		result, md, err = app.executeCommand(commands, inputCommand, args)
+		result, md, err = a.executeCommand(commands, inputCommand, args)
 		if err != nil {
 			fmt.Println("Error:", err)
 
 			continue
 		}
 
-		app.draw(result, md)
+		a.draw(result, md)
 	}
 }

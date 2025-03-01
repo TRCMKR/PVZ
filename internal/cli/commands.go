@@ -3,9 +3,14 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"homework/packaging"
 	"os"
 	"strconv"
+	"time"
+
+	"gitlab.ozon.dev/alexplay1224/homework/internal/order"
+
+	"github.com/Rhymond/go-money"
+	"github.com/bytedance/sonic"
 )
 
 const (
@@ -49,11 +54,20 @@ const (
 	orderHistoryArgCount     = 0
 )
 
+const (
+	inputDateAndTimeLayout = "2006.01.02-15:04:05"
+	inputDateLayout        = "2006.01.02"
+)
+
 var (
-	errTooManyArgs   = errors.New("too many arguments")
-	errNotEnoughArgs = errors.New("not enough arguments")
-	errDataNotSaved  = errors.New("data wasn't saved")
-	errWrongArgument = errors.New("wrong argument")
+	errTooManyArgs         = errors.New("too many arguments")
+	errNotEnoughArgs       = errors.New("not enough arguments")
+	errDataNotSaved        = errors.New("data wasn't saved")
+	errWrongArgument       = errors.New("wrong argument")
+	errWrongPackagingName  = errors.New("wrong packaging name")
+	errFileNotOpened       = errors.New("file not opened")
+	errDataNotUnmarshalled = errors.New("data not unmarshalled")
+	errWrongDateFormat     = errors.New("wrong date format")
 )
 
 func checkArgCount(args []string, count int) error {
@@ -68,16 +82,16 @@ func checkArgCount(args []string, count int) error {
 
 func checkMinMaxArgCount(args []string, minargs int, maxargs int) error {
 	if len(args) < minargs {
-		return errTooManyArgs
+		return errNotEnoughArgs
 	}
 	if len(args) > maxargs {
-		return errNotEnoughArgs
+		return errTooManyArgs
 	}
 
 	return nil
 }
 
-func (app *App) clearScr(args []string) ([]string, mode, error) {
+func (a *App) clearScr(args []string) ([]string, mode, error) {
 	err := checkArgCount(args, serviceFuncArgCount)
 	if err != nil {
 		return nil, raw, err
@@ -86,7 +100,7 @@ func (app *App) clearScr(args []string) ([]string, mode, error) {
 	return []string{clearScreen}, raw, nil
 }
 
-func (app *App) help(args []string) ([]string, mode, error) {
+func (a *App) help(args []string) ([]string, mode, error) {
 	err := checkArgCount(args, serviceFuncArgCount)
 	if err != nil {
 		return nil, raw, err
@@ -95,13 +109,13 @@ func (app *App) help(args []string) ([]string, mode, error) {
 	return []string{helpText}, raw, nil
 }
 
-func (app *App) exit(args []string) ([]string, mode, error) {
+func (a *App) exit(args []string) ([]string, mode, error) {
 	err := checkArgCount(args, serviceFuncArgCount)
 	if err != nil {
 		return nil, raw, err
 	}
 
-	err = app.orderStorage.Save()
+	err = a.orderService.Save()
 	if err != nil {
 		return nil, raw, errors.Join(errDataNotSaved, err)
 	}
@@ -125,7 +139,19 @@ func stringsToFloats(strings []string) ([]float64, error) {
 	return floats, nil
 }
 
-func (app *App) acceptOrder(args []string) ([]string, mode, error) {
+func parseInputDate(expiryDate string) (time.Time, error) {
+	date, err := time.Parse(inputDateAndTimeLayout, expiryDate)
+	if err != nil {
+		date, err = time.Parse(inputDateLayout, expiryDate)
+		if err != nil {
+			return time.Time{}, errWrongDateFormat
+		}
+	}
+
+	return date, nil
+}
+
+func (a *App) acceptOrder(args []string) ([]string, mode, error) {
 	err := checkMinMaxArgCount(args, acceptOrderMinArgCount, acceptOrderMaxArgCount)
 	if err != nil {
 		return nil, raw, err
@@ -142,19 +168,26 @@ func (app *App) acceptOrder(args []string) ([]string, mode, error) {
 	if err != nil {
 		return nil, raw, errWrongArgument
 	}
-	weight, price := floatArgs[0], floatArgs[1]
+	weight, priceFloat := floatArgs[0], floatArgs[1]
 
-	packagings := make([]packaging.Packaging, 0, 2)
-	var tmpPackaging packaging.Packaging
-	for _, arg := range args[5:] {
-		tmpPackaging, err = packaging.GetPackaging(arg)
-		if err != nil {
-			return nil, raw, err
+	price := *money.NewFromFloat(priceFloat, money.RUB)
+
+	date, err := parseInputDate(args[4])
+	if err != nil {
+		return nil, raw, err
+	}
+
+	args = args[5:]
+	packagings := make([]order.Packaging, 0, len(args))
+	for _, p := range args {
+		tmpPackaging := order.GetPackaging(p)
+		if tmpPackaging == nil {
+			return nil, raw, errWrongPackagingName
 		}
 		packagings = append(packagings, tmpPackaging)
 	}
 
-	err = app.orderStorage.AcceptOrder(orderID, userID, weight, price, args[4], packagings)
+	err = a.orderService.AcceptOrder(orderID, userID, weight, price, date, packagings)
 	if err != nil {
 		return nil, raw, err
 	}
@@ -164,24 +197,41 @@ func (app *App) acceptOrder(args []string) ([]string, mode, error) {
 	return []string{result}, raw, nil
 }
 
-func (app *App) acceptOrders(args []string) ([]string, mode, error) {
+func (a *App) getOrdersFromFile(path string) (map[string]order.Order, error) {
+	jsonData, err := os.ReadFile(path)
+	if err != nil {
+		return nil, errFileNotOpened
+	}
+
+	data := make(map[string]order.Order)
+
+	err = sonic.Unmarshal(jsonData, &data)
+	if err != nil {
+		return nil, errDataNotUnmarshalled
+	}
+
+	return data, nil
+}
+
+func (a *App) acceptOrders(args []string) ([]string, mode, error) {
 	err := checkArgCount(args, acceptOrdersArgCount)
 	if err != nil {
 		return nil, raw, err
 	}
 
-	var ordersFailed int
-	var orderCount int
-	ordersFailed, orderCount, err = app.orderStorage.AcceptOrders(args[0])
+	var orders map[string]order.Order
+	orders, err = a.getOrdersFromFile(args[0])
 	if err != nil {
 		return nil, raw, err
 	}
 
+	ordersFailed := a.orderService.AcceptOrders(orders)
+	orderCount := len(orders)
 	var result string
 	if ordersFailed > 0 {
-		app.stringBuilder.WriteString(fmt.Sprintf("Orders failed: %d/%d", ordersFailed, orderCount))
-		result = app.stringBuilder.String()
-		app.stringBuilder.Reset()
+		a.stringBuilder.WriteString(fmt.Sprintf("Orders failed: %d/%d", ordersFailed, orderCount))
+		result = a.stringBuilder.String()
+		a.stringBuilder.Reset()
 	} else {
 		result = "Success: all orders accepted!"
 	}
@@ -189,7 +239,7 @@ func (app *App) acceptOrders(args []string) ([]string, mode, error) {
 	return []string{result}, raw, nil
 }
 
-func (app *App) returnOrder(args []string) ([]string, mode, error) {
+func (a *App) returnOrder(args []string) ([]string, mode, error) {
 	err := checkArgCount(args, returnOrderArgCount)
 	if err != nil {
 		return nil, raw, err
@@ -198,7 +248,7 @@ func (app *App) returnOrder(args []string) ([]string, mode, error) {
 	if err != nil {
 		return nil, raw, errWrongArgument
 	}
-	err = app.orderStorage.ReturnOrder(orderID)
+	err = a.orderService.ReturnOrder(orderID)
 	if err != nil {
 		return nil, raw, err
 	}
@@ -221,27 +271,27 @@ func stringsToInts(strings []string) ([]int, error) {
 	return result, nil
 }
 
-func (app *App) formMessage(args []string, ordersFailed int) string {
+func (a *App) formMessage(args []string, ordersFailed int) string {
 	if ordersFailed > 0 {
-		app.stringBuilder.WriteString("Orders failed: ")
-		app.stringBuilder.WriteString(strconv.Itoa(ordersFailed))
+		a.stringBuilder.WriteString("Orders failed: ")
+		a.stringBuilder.WriteString(strconv.Itoa(ordersFailed))
 	} else {
-		app.stringBuilder.WriteString("All orders successfully ")
+		a.stringBuilder.WriteString("All orders successfully ")
 		switch args[len(args)-1] {
 		case "return":
-			app.stringBuilder.WriteString("returned")
+			a.stringBuilder.WriteString("returned")
 		case "give":
-			app.stringBuilder.WriteString("given")
+			a.stringBuilder.WriteString("given")
 		}
 	}
 
-	result := app.stringBuilder.String()
-	app.stringBuilder.Reset()
+	result := a.stringBuilder.String()
+	a.stringBuilder.Reset()
 
 	return result
 }
 
-func (app *App) processOrders(args []string) ([]string, mode, error) {
+func (a *App) processOrders(args []string) ([]string, mode, error) {
 	if len(args) < processOrdersMinArgCount {
 		return nil, raw, errNotEnoughArgs
 	}
@@ -255,17 +305,17 @@ func (app *App) processOrders(args []string) ([]string, mode, error) {
 		return nil, raw, errWrongArgument
 	}
 
-	ordersFailed, err := app.orderStorage.ProcessOrders(userID, orderIDs, args[len(args)-1])
+	ordersFailed, err := a.orderService.ProcessOrders(userID, orderIDs, args[len(args)-1])
 	if err != nil {
 		return nil, raw, err
 	}
 
-	result := app.formMessage(args, ordersFailed)
+	result := a.formMessage(args, ordersFailed)
 
 	return []string{result}, raw, nil
 }
 
-func (app *App) parseOptionalArg(args []string) (int, error) {
+func (a *App) parseOptionalArg(args []string) (int, error) {
 	count := 0
 	var err error
 	if len(args) > 0 {
@@ -278,7 +328,7 @@ func (app *App) parseOptionalArg(args []string) (int, error) {
 	return count, nil
 }
 
-func (app *App) userOrders(args []string) ([]string, mode, error) {
+func (a *App) userOrders(args []string) ([]string, mode, error) {
 	err := checkMinMaxArgCount(args, userOrdersMinArgCount, userOrdersMaxArgCount)
 	if err != nil {
 		return nil, raw, err
@@ -290,46 +340,46 @@ func (app *App) userOrders(args []string) ([]string, mode, error) {
 	}
 
 	var count int
-	count, err = app.parseOptionalArg(args[1:])
+	count, err = a.parseOptionalArg(args[1:])
 	if err != nil {
 		return nil, raw, err
 	}
 
-	orders, _ := app.orderStorage.UserOrders(userID, count)
+	orders := a.orderService.UserOrders(userID, count)
 
 	result := make([]string, 0, len(orders))
-	for _, order := range orders {
-		result = append(result, order.String())
+	for _, someOrder := range orders {
+		result = append(result, someOrder.String())
 	}
 
 	return result, scrolled, nil
 }
 
-func (app *App) returns(args []string) ([]string, mode, error) {
+func (a *App) returns(args []string) ([]string, mode, error) {
 	err := checkArgCount(args, returnsArgCount)
 	if err != nil {
 		return nil, raw, err
 	}
 
-	orders := app.orderStorage.Returns()
+	orders := a.orderService.Returns()
 	result := make([]string, 0, len(orders))
-	for _, order := range orders {
-		result = append(result, order.String())
+	for _, someOrder := range orders {
+		result = append(result, someOrder.String())
 	}
 
 	return result, paged, nil
 }
 
-func (app *App) orderHistory(args []string) ([]string, mode, error) {
+func (a *App) orderHistory(args []string) ([]string, mode, error) {
 	err := checkArgCount(args, orderHistoryArgCount)
 	if err != nil {
 		return nil, raw, err
 	}
 
-	orders := app.orderStorage.OrderHistory()
+	orders := a.orderService.OrderHistory()
 	result := make([]string, 0, len(orders))
-	for _, order := range orders {
-		result = append(result, order.String())
+	for _, someOrder := range orders {
+		result = append(result, someOrder.String())
 	}
 
 	return result, raw, nil
