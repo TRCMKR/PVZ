@@ -1,20 +1,19 @@
-package order
+package models
 
 import (
-	"errors"
 	"log"
 
 	"github.com/Rhymond/go-money"
 	"github.com/bytedance/sonic"
 )
 
-type packagingType uint
+type PackagingType uint
 
 const (
-	noPackaging packagingType = iota
-	bagPackaging
-	boxPackaging
-	wrapPackaging
+	NoPackaging PackagingType = iota
+	BagPackaging
+	BoxPackaging
+	WrapPackaging
 )
 
 var (
@@ -29,28 +28,26 @@ const (
 )
 
 const (
-	bagName  = "bag"
-	boxName  = "box"
-	wrapName = "wrap"
-)
-
-var (
-	errNotEnoughWeight = errors.New("not enough weight")
-	errWrongPackaging  = errors.New("wrong packaging")
+	BagName  = "bag"
+	BoxName  = "box"
+	WrapName = "wrap"
 )
 
 type Packaging interface {
 	String() string
-	Pack(*Order) error
+	GetType() PackagingType
+	GetCost() *money.Money
+	GetMinWeight() float64
+	GetCheckWeight() bool
 }
 
 func GetPackaging(packaging string) Packaging {
 	switch packaging {
-	case bagName:
+	case BagName:
 		return newBag()
-	case boxName:
+	case BoxName:
 		return newBox()
-	case wrapName:
+	case WrapName:
 		return newWrap()
 	default:
 		return nil
@@ -58,7 +55,7 @@ func GetPackaging(packaging string) Packaging {
 }
 
 type BasePackaging struct {
-	Type        packagingType
+	Type        PackagingType
 	Cost        money.Money
 	MinWeight   float64
 	CheckWeight bool
@@ -68,31 +65,20 @@ func (b *BasePackaging) String() string {
 	return getPackagingName(b.Type)
 }
 
-func (b *BasePackaging) Pack(order *Order) error {
-	if b.CheckWeight && order.Weight < b.MinWeight {
-		return errNotEnoughWeight
-	}
+func (b *BasePackaging) GetType() PackagingType {
+	return b.Type
+}
 
-	if order.Packaging == wrapPackaging || order.ExtraPackaging != noPackaging {
-		return errWrongPackaging
-	}
+func (b *BasePackaging) GetCost() *money.Money {
+	return &b.Cost
+}
 
-	if order.Packaging == noPackaging {
-		order.Packaging = b.Type
-	} else {
-		if b.Type != wrapPackaging {
-			return errWrongPackaging
-		}
-		order.ExtraPackaging = b.Type
-	}
+func (b *BasePackaging) GetMinWeight() float64 {
+	return b.MinWeight
+}
 
-	tmp, err := order.Price.Add(&b.Cost)
-	if err != nil {
-		return err
-	}
-	order.Price = *tmp
-
-	return nil
+func (b *BasePackaging) GetCheckWeight() bool {
+	return b.CheckWeight
 }
 
 func (b *BasePackaging) MarshalJSON() ([]byte, error) {
@@ -120,32 +106,17 @@ func (b *BasePackaging) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func getPackagingName(packaging packagingType) string {
+func getPackagingName(packaging PackagingType) string {
 	switch packaging {
-	case bagPackaging:
-		return bagName
-	case boxPackaging:
-		return boxName
-	case wrapPackaging:
-		return wrapName
+	case BagPackaging:
+		return BagName
+	case BoxPackaging:
+		return BoxName
+	case WrapPackaging:
+		return WrapName
 	default:
 		return ""
 	}
-}
-
-func formPackagingString(packaging packagingType, extraPackaging packagingType) string {
-	var result string
-	if packaging == noPackaging {
-		result = "none"
-	} else {
-		result = getPackagingName(packaging)
-	}
-
-	if extraPackaging != noPackaging {
-		result += " in " + getPackagingName(extraPackaging)
-	}
-
-	return result
 }
 
 type Bag struct {
@@ -155,7 +126,7 @@ type Bag struct {
 func newBag() Packaging {
 	return &Bag{
 		BasePackaging{
-			Type:        bagPackaging,
+			Type:        BagPackaging,
 			Cost:        *bagCost,
 			MinWeight:   bagMinWeight,
 			CheckWeight: true,
@@ -170,7 +141,7 @@ type Box struct {
 func newBox() Packaging {
 	return &Box{
 		BasePackaging{
-			Type:        boxPackaging,
+			Type:        BoxPackaging,
 			Cost:        *boxCost,
 			MinWeight:   boxMinWeight,
 			CheckWeight: true,
@@ -185,7 +156,7 @@ type Wrap struct {
 func newWrap() Packaging {
 	return &Wrap{
 		BasePackaging{
-			Type:        wrapPackaging,
+			Type:        WrapPackaging,
 			Cost:        *wrapCost,
 			MinWeight:   0,
 			CheckWeight: false,

@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"gitlab.ozon.dev/alexplay1224/homework/internal/order"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/service"
 )
 
@@ -17,13 +17,13 @@ var (
 )
 
 type storage interface {
-	AddOrder(order.Order)
+	AddOrder(models.Order)
 	RemoveOrder(int)
-	UpdateOrder(int, order.Order)
-	GetByID(int) order.Order
-	GetByUserID(int) []order.Order
-	GetReturns() []order.Order
-	OrderHistory() []order.Order
+	UpdateOrder(int, models.Order)
+	GetByID(int) models.Order
+	GetByUserID(int) []models.Order
+	GetReturns() []models.Order
+	OrderHistory() []models.Order
 	Save() error
 	Contains(int) bool
 }

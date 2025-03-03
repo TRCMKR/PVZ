@@ -1,214 +1,4 @@
 {
-  "1000": {
-    "ID": 1000,
-    "UserID": 789,
-    "Weight": 11,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "stored",
-    "ArrivalDate": "2025.02.17 09:12:52",
-    "ExpiryDate": "2025.05.01 00:00:00",
-    "LastChange": "2025.02.17 19:46:51"
-  },
-  "2222": {
-    "ID": 2222,
-    "UserID": 789,
-    "Weight": 11,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "returned",
-    "ArrivalDate": "2025.01.25 08:45:00",
-    "ExpiryDate": "2025.02.05 08:45:00",
-    "LastChange": "2025.02.05 08:45:00"
-  },
-  "2": {
-    "ID": 2,
-    "UserID": 456,
-    "Weight": 11,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "stored",
-    "ArrivalDate": "2025.02.05 10:30:00",
-    "ExpiryDate": "2025.02.17 10:30:00",
-    "LastChange": "2025.02.05 10:30:00"
-  },
-  "11114": {
-    "ID": 11114,
-    "UserID": 789,
-    "Weight": 11,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "returned",
-    "ArrivalDate": "2025.01.25 08:45:00",
-    "ExpiryDate": "2025.02.05 08:45:00",
-    "LastChange": "2025.02.05 08:45:00"
-  },
-  "2131": {
-    "ID": 2131,
-    "UserID": 789,
-    "Weight": 11,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "returned",
-    "ArrivalDate": "2025.01.25 08:45:00",
-    "ExpiryDate": "2025.02.05 08:45:00",
-    "LastChange": "2025.02.05 08:45:00"
-  },
-  "3249": {
-    "ID": 3249,
-    "UserID": 789,
-    "Weight": 33.33,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "stored",
-    "ArrivalDate": "2025.02.26 19:32:24",
-    "ExpiryDate": "2044.01.01 00:00:00",
-    "LastChange": "2025.02.26 19:32:24"
-  },
-  "112": {
-    "ID": 112,
-    "UserID": 39932,
-    "Weight": 11,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "stored",
-    "ArrivalDate": "2025.02.18 23:14:39",
-    "ExpiryDate": "2025.12.12 00:00:00",
-    "LastChange": "2025.02.18 23:14:39"
-  },
-  "1004": {
-    "ID": 1004,
-    "UserID": 789,
-    "Weight": 11,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "returned",
-    "ArrivalDate": "2025.01.25 08:45:00",
-    "ExpiryDate": "2025.02.05 08:45:00",
-    "LastChange": "2025.02.05 08:45:00"
-  },
-  "5555": {
-    "ID": 5555,
-    "UserID": 789,
-    "Weight": 303,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "stored",
-    "ArrivalDate": "2025.02.26 19:35:00",
-    "ExpiryDate": "2111.11.11 00:00:00",
-    "LastChange": "2025.02.26 19:35:00"
-  },
-  "32": {
-    "ID": 32,
-    "UserID": 789,
-    "Weight": 11,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "stored",
-    "ArrivalDate": "2025.01.25 08:45:00",
-    "ExpiryDate": "2025.02.05 08:45:00",
-    "LastChange": "2025.02.05 08:45:00"
-  },
-  "228": {
-    "ID": 228,
-    "UserID": 789,
-    "Weight": 11,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "returned",
-    "ArrivalDate": "2025.01.25 08:45:00",
-    "ExpiryDate": "2025.02.05 08:45:00",
-    "LastChange": "2025.02.05 08:45:00"
-  },
-  "789": {
-    "ID": 789,
-    "UserID": 12223,
-    "Weight": 11,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "given",
-    "ArrivalDate": "2025.02.20 08:10:58",
-    "ExpiryDate": "2027.01.01 00:00:00",
-    "LastChange": "2025.02.20 08:45:09"
-  },
-  "12312": {
-    "ID": 12312,
-    "UserID": 789,
-    "Weight": 7,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "stored",
-    "ArrivalDate": "2025.02.26 19:12:49",
-    "ExpiryDate": "2026.01.01 00:00:00",
-    "LastChange": "2025.02.26 19:12:49"
-  },
-  "1122321": {
-    "ID": 1122321,
-    "UserID": 789,
-    "Weight": 150,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "stored",
-    "ArrivalDate": "2025.02.26 19:07:48",
-    "ExpiryDate": "2025.11.11 00:00:00",
-    "LastChange": "2025.02.26 19:07:48"
-  },
   "123": {
     "ID": 123,
     "UserID": 789,
@@ -239,36 +29,6 @@
     "ExpiryDate": "2025.02.05 08:45:00",
     "LastChange": "2025.02.05 08:45:00"
   },
-  "13": {
-    "ID": 13,
-    "UserID": 789,
-    "Weight": 11,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "returned",
-    "ArrivalDate": "2025.01.25 08:45:00",
-    "ExpiryDate": "2025.02.05 08:45:00",
-    "LastChange": "2025.02.05 08:45:00"
-  },
-  "201": {
-    "ID": 201,
-    "UserID": 123,
-    "Weight": 11,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "stored",
-    "ArrivalDate": "2025.02.10 14:00:00",
-    "ExpiryDate": "2025.02.20 14:00:00",
-    "LastChange": "2025.02.10 14:00:00"
-  },
   "9321": {
     "ID": 9321,
     "UserID": 789,
@@ -283,21 +43,6 @@
     "ArrivalDate": "2025.02.26 19:31:06",
     "ExpiryDate": "2035.01.01 00:00:00",
     "LastChange": "2025.02.26 19:31:06"
-  },
-  "1123": {
-    "ID": 1123,
-    "UserID": 789,
-    "Weight": 15,
-    "Price": {
-      "amount": 4200,
-      "currency": "RUB"
-    },
-    "Packaging": 0,
-    "ExtraPackaging": 0,
-    "Status": "stored",
-    "ArrivalDate": "2025.02.26 19:11:57",
-    "ExpiryDate": "2026.01.01 00:00:00",
-    "LastChange": "2025.02.26 19:11:57"
   },
   "23020": {
     "ID": 23020,
@@ -329,10 +74,10 @@
     "ExpiryDate": "2025.02.05 08:45:00",
     "LastChange": "2025.02.05 08:45:00"
   },
-  "1": {
-    "ID": 1,
-    "UserID": 123,
-    "Weight": 11,
+  "122": {
+    "ID": 122,
+    "UserID": 789,
+    "Weight": 30.009,
     "Price": {
       "amount": 4200,
       "currency": "RUB"
@@ -340,24 +85,24 @@
     "Packaging": 0,
     "ExtraPackaging": 0,
     "Status": "stored",
-    "ArrivalDate": "2025.02.10 14:00:00",
-    "ExpiryDate": "2025.02.20 14:00:00",
-    "LastChange": "2025.02.10 14:00:00"
+    "ArrivalDate": "2025.02.26 19:34:02",
+    "ExpiryDate": "2077.01.01 00:00:00",
+    "LastChange": "2025.02.26 19:34:02"
   },
-  "111": {
-    "ID": 111,
+  "12312": {
+    "ID": 12312,
     "UserID": 789,
-    "Weight": 11,
+    "Weight": 7,
     "Price": {
       "amount": 4200,
       "currency": "RUB"
     },
     "Packaging": 0,
     "ExtraPackaging": 0,
-    "Status": "given",
-    "ArrivalDate": "2025.02.17 09:12:52",
-    "ExpiryDate": "2025.05.01 00:00:00",
-    "LastChange": "2025.02.17 19:46:51"
+    "Status": "stored",
+    "ArrivalDate": "2025.02.26 19:12:49",
+    "ExpiryDate": "2026.01.01 00:00:00",
+    "LastChange": "2025.02.26 19:12:49"
   },
   "1230": {
     "ID": 1230,
@@ -374,6 +119,246 @@
     "ExpiryDate": "2025.03.10 00:00:00",
     "LastChange": "2025.02.20 09:02:18"
   },
+  "5555": {
+    "ID": 5555,
+    "UserID": 789,
+    "Weight": 303,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "stored",
+    "ArrivalDate": "2025.02.26 19:35:00",
+    "ExpiryDate": "2111.11.11 00:00:00",
+    "LastChange": "2025.02.26 19:35:00"
+  },
+  "2131": {
+    "ID": 2131,
+    "UserID": 789,
+    "Weight": 11,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "1122321": {
+    "ID": 1122321,
+    "UserID": 789,
+    "Weight": 150,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "stored",
+    "ArrivalDate": "2025.02.26 19:07:48",
+    "ExpiryDate": "2025.11.11 00:00:00",
+    "LastChange": "2025.02.26 19:07:48"
+  },
+  "1": {
+    "ID": 1,
+    "UserID": 123,
+    "Weight": 11,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "stored",
+    "ArrivalDate": "2025.02.10 14:00:00",
+    "ExpiryDate": "2025.02.20 14:00:00",
+    "LastChange": "2025.02.10 14:00:00"
+  },
+  "32": {
+    "ID": 32,
+    "UserID": 789,
+    "Weight": 11,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "stored",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "789": {
+    "ID": 789,
+    "UserID": 12223,
+    "Weight": 11,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "given",
+    "ArrivalDate": "2025.02.20 08:10:58",
+    "ExpiryDate": "2027.01.01 00:00:00",
+    "LastChange": "2025.02.20 08:45:09"
+  },
+  "111": {
+    "ID": 111,
+    "UserID": 789,
+    "Weight": 11,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "given",
+    "ArrivalDate": "2025.02.17 09:12:52",
+    "ExpiryDate": "2025.05.01 00:00:00",
+    "LastChange": "2025.02.17 19:46:51"
+  },
+  "2": {
+    "ID": 2,
+    "UserID": 456,
+    "Weight": 11,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "stored",
+    "ArrivalDate": "2025.02.05 10:30:00",
+    "ExpiryDate": "2025.02.17 10:30:00",
+    "LastChange": "2025.02.05 10:30:00"
+  },
+  "201": {
+    "ID": 201,
+    "UserID": 123,
+    "Weight": 11,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "stored",
+    "ArrivalDate": "2025.02.10 14:00:00",
+    "ExpiryDate": "2025.02.20 14:00:00",
+    "LastChange": "2025.02.10 14:00:00"
+  },
+  "2222": {
+    "ID": 2222,
+    "UserID": 789,
+    "Weight": 11,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "3249": {
+    "ID": 3249,
+    "UserID": 789,
+    "Weight": 33.33,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "stored",
+    "ArrivalDate": "2025.02.26 19:32:24",
+    "ExpiryDate": "2044.01.01 00:00:00",
+    "LastChange": "2025.02.26 19:32:24"
+  },
+  "13": {
+    "ID": 13,
+    "UserID": 789,
+    "Weight": 11,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "1004": {
+    "ID": 1004,
+    "UserID": 789,
+    "Weight": 11,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "11114": {
+    "ID": 11114,
+    "UserID": 789,
+    "Weight": 11,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
+  "1123": {
+    "ID": 1123,
+    "UserID": 789,
+    "Weight": 15,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "stored",
+    "ArrivalDate": "2025.02.26 19:11:57",
+    "ExpiryDate": "2026.01.01 00:00:00",
+    "LastChange": "2025.02.26 19:11:57"
+  },
+  "228": {
+    "ID": 228,
+    "UserID": 789,
+    "Weight": 11,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "returned",
+    "ArrivalDate": "2025.01.25 08:45:00",
+    "ExpiryDate": "2025.02.05 08:45:00",
+    "LastChange": "2025.02.05 08:45:00"
+  },
   "1231239": {
     "ID": 1231239,
     "UserID": 789,
@@ -389,10 +374,10 @@
     "ExpiryDate": "2077.01.01 00:00:00",
     "LastChange": "2025.03.01 17:18:08"
   },
-  "122": {
-    "ID": 122,
-    "UserID": 789,
-    "Weight": 30.009,
+  "112": {
+    "ID": 112,
+    "UserID": 39932,
+    "Weight": 11,
     "Price": {
       "amount": 4200,
       "currency": "RUB"
@@ -400,8 +385,23 @@
     "Packaging": 0,
     "ExtraPackaging": 0,
     "Status": "stored",
-    "ArrivalDate": "2025.02.26 19:34:02",
-    "ExpiryDate": "2077.01.01 00:00:00",
-    "LastChange": "2025.02.26 19:34:02"
+    "ArrivalDate": "2025.02.18 23:14:39",
+    "ExpiryDate": "2025.12.12 00:00:00",
+    "LastChange": "2025.02.18 23:14:39"
+  },
+  "1000": {
+    "ID": 1000,
+    "UserID": 789,
+    "Weight": 11,
+    "Price": {
+      "amount": 4200,
+      "currency": "RUB"
+    },
+    "Packaging": 0,
+    "ExtraPackaging": 0,
+    "Status": "stored",
+    "ArrivalDate": "2025.02.17 09:12:52",
+    "ExpiryDate": "2025.05.01 00:00:00",
+    "LastChange": "2025.02.17 19:46:51"
   }
 }

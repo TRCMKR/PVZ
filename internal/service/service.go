@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"gitlab.ozon.dev/alexplay1224/homework/internal/order"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 
 	"github.com/Rhymond/go-money"
 )
@@ -34,16 +34,18 @@ var (
 	errWrongPrice         = errors.New("wrong price")
 	errOrderNotEligible   = errors.New("order not eligible")
 	errUndefinedAction    = errors.New("undefined action")
+	errNotEnoughWeight    = errors.New("not enough weight")
+	errWrongPackaging     = errors.New("wrong packaging")
 )
 
 type storage interface {
-	AddOrder(order.Order)
+	AddOrder(models.Order)
 	RemoveOrder(int)
-	UpdateOrder(int, order.Order)
-	GetByID(int) order.Order
-	GetByUserID(int) []order.Order
-	GetReturns() []order.Order
-	OrderHistory() []order.Order
+	UpdateOrder(int, models.Order)
+	GetByID(int) models.Order
+	GetByUserID(int) []models.Order
+	GetReturns() []models.Order
+	OrderHistory() []models.Order
 	Save() error
 	Contains(int) bool
 }
@@ -52,8 +54,35 @@ type OrderService struct {
 	Storage storage
 }
 
+func (s *OrderService) pack(order *models.Order, packaging models.Packaging) error {
+	if packaging.GetCheckWeight() && order.Weight < packaging.GetMinWeight() {
+		return errNotEnoughWeight
+	}
+
+	if order.Packaging == models.WrapPackaging || order.ExtraPackaging != models.WrapPackaging {
+		return errWrongPackaging
+	}
+
+	if order.Packaging == models.NoPackaging {
+		order.Packaging = packaging.GetType()
+	} else {
+		if packaging.GetType() != models.WrapPackaging {
+			return errWrongPackaging
+		}
+		order.ExtraPackaging = packaging.GetType()
+	}
+
+	tmp, err := order.Price.Add(packaging.GetCost())
+	if err != nil {
+		return err
+	}
+	order.Price = *tmp
+
+	return nil
+}
+
 func (s *OrderService) AcceptOrder(orderID int, userID int, weight float64, price money.Money, expiryDate time.Time,
-	packagings []order.Packaging) error {
+	packagings []models.Packaging) error {
 	if expiryDate.Before(time.Now()) {
 		return errOrderExpired
 	}
@@ -72,11 +101,11 @@ func (s *OrderService) AcceptOrder(orderID int, userID int, weight float64, pric
 
 	currentTime := time.Now().Format(dateLayout)
 
-	currentOrder := *order.NewOrder(orderID, userID, weight, price, orderStored,
+	currentOrder := *models.NewOrder(orderID, userID, weight, price, orderStored,
 		currentTime, expiryDate.Format(dateLayout), currentTime)
 
 	for _, somePackaging := range packagings {
-		err := somePackaging.Pack(&currentOrder)
+		err := s.pack(&currentOrder, somePackaging)
 		if err != nil {
 			return err
 		}
@@ -87,7 +116,7 @@ func (s *OrderService) AcceptOrder(orderID int, userID int, weight float64, pric
 	return nil
 }
 
-func (s *OrderService) AcceptOrders(orders map[string]order.Order) int {
+func (s *OrderService) AcceptOrders(orders map[string]models.Order) int {
 	ordersFailed := 0
 
 	for _, someOrder := range orders {
@@ -120,7 +149,7 @@ func (s *OrderService) ReturnOrder(orderID int) error {
 	return nil
 }
 
-func isBeforeDeadline(someOrder order.Order, action string) bool {
+func isBeforeDeadline(someOrder models.Order, action string) bool {
 	date := time.Now()
 	var deadline time.Time
 	switch action {
@@ -137,7 +166,7 @@ func isBeforeDeadline(someOrder order.Order, action string) bool {
 	return false
 }
 
-func isOrderEligible(order order.Order, userID int, action string) bool {
+func isOrderEligible(order models.Order, userID int, action string) bool {
 	if !isBeforeDeadline(order, action) || order.UserID != userID {
 		return false
 	}
@@ -187,7 +216,7 @@ func (s *OrderService) ProcessOrders(userID int, orderIDs []int, action string) 
 	return ordersFailed, nil
 }
 
-func (s *OrderService) UserOrders(userID int, count int) []order.Order {
+func (s *OrderService) UserOrders(userID int, count int) []models.Order {
 	orders := s.Storage.GetByUserID(userID)
 
 	if count == 0 {
@@ -197,11 +226,11 @@ func (s *OrderService) UserOrders(userID int, count int) []order.Order {
 	return orders[:count]
 }
 
-func (s *OrderService) Returns() []order.Order {
+func (s *OrderService) Returns() []models.Order {
 	return s.Storage.GetReturns()
 }
 
-func (s *OrderService) OrderHistory() []order.Order {
+func (s *OrderService) OrderHistory() []models.Order {
 	return s.Storage.OrderHistory()
 }
 

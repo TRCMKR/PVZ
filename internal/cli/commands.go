@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"gitlab.ozon.dev/alexplay1224/homework/internal/order"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 
 	"github.com/Rhymond/go-money"
 	"github.com/bytedance/sonic"
@@ -178,9 +178,9 @@ func (a *App) acceptOrder(args []string) ([]string, mode, error) {
 	}
 
 	args = args[5:]
-	packagings := make([]order.Packaging, 0, len(args))
+	packagings := make([]models.Packaging, 0, len(args))
 	for _, p := range args {
-		tmpPackaging := order.GetPackaging(p)
+		tmpPackaging := models.GetPackaging(p)
 		if tmpPackaging == nil {
 			return nil, raw, errWrongPackagingName
 		}
@@ -197,13 +197,13 @@ func (a *App) acceptOrder(args []string) ([]string, mode, error) {
 	return []string{result}, raw, nil
 }
 
-func (a *App) getOrdersFromFile(path string) (map[string]order.Order, error) {
+func (a *App) getOrdersFromFile(path string) (map[string]models.Order, error) {
 	jsonData, err := os.ReadFile(path)
 	if err != nil {
 		return nil, errFileNotOpened
 	}
 
-	data := make(map[string]order.Order)
+	data := make(map[string]models.Order)
 
 	err = sonic.Unmarshal(jsonData, &data)
 	if err != nil {
@@ -219,7 +219,7 @@ func (a *App) acceptOrders(args []string) ([]string, mode, error) {
 		return nil, raw, err
 	}
 
-	var orders map[string]order.Order
+	var orders map[string]models.Order
 	orders, err = a.getOrdersFromFile(args[0])
 	if err != nil {
 		return nil, raw, err

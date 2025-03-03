@@ -18,8 +18,7 @@ func main() {
 	}
 
 	app := cli.NewApp(orderStorage)
-	err = app.Run()
-	if err != nil {
+	if err = app.Run(); err != nil {
 		log.Fatal("Error: couldn't run app", err)
 	}
 }

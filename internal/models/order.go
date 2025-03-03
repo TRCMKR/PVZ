@@ -1,4 +1,4 @@
-package order
+package models
 
 import (
 	"fmt"
@@ -12,8 +12,8 @@ type Order struct {
 	UserID         int
 	Weight         float64
 	Price          money.Money
-	Packaging      packagingType
-	ExtraPackaging packagingType
+	Packaging      PackagingType
+	ExtraPackaging PackagingType
 	Status         string
 	ArrivalDate    string
 	ExpiryDate     string
@@ -37,8 +37,8 @@ func NewOrder(id int, userID int, weight float64, price money.Money, status stri
 		UserID:         userID,
 		Weight:         weight,
 		Price:          price,
-		Packaging:      noPackaging,
-		ExtraPackaging: noPackaging,
+		Packaging:      NoPackaging,
+		ExtraPackaging: NoPackaging,
 		ArrivalDate:    arrivalDate,
 		Status:         status,
 		ExpiryDate:     expiryDate,
@@ -51,13 +51,26 @@ func (o *Order) String() string {
 	rowFormat := fmt.Sprintf("OID%%%dd | UID%%%dd | WGHT%%%d.2f | PRC%%%ds | PKG%%%ds | STAT%%%ds | LCHAN%%%ds",
 		orderIDWidth, userIDWidth, weightWidth, priceWidth, packagingWidth, statusWidth, dateWidth)
 
-	packgingString := formPackagingString(o.Packaging, o.ExtraPackaging)
-
 	_, err := fmt.Fprintf(&sb, rowFormat, o.ID, o.UserID,
-		o.Weight, o.Price.Display(), packgingString, o.Status, o.LastChange)
+		o.Weight, o.Price.Display(), o.GetPackagingString(), o.Status, o.LastChange)
 	if err != nil {
 		sb.WriteString(err.Error())
 	}
 
 	return sb.String()
+}
+
+func (o *Order) GetPackagingString() string {
+	var result string
+	if o.Packaging == NoPackaging {
+		result = "none"
+	} else {
+		result = getPackagingName(o.Packaging)
+	}
+
+	if o.ExtraPackaging != NoPackaging {
+		result += " in " + getPackagingName(o.ExtraPackaging)
+	}
+
+	return result
 }

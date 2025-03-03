@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"gitlab.ozon.dev/alexplay1224/homework/internal/order"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 
 	"github.com/bytedance/sonic"
 )
@@ -23,13 +23,11 @@ const (
 )
 
 const (
-	orderGiven    = "given"
 	orderReturned = "returned"
-	orderStored   = "stored"
 )
 
 type Storage struct {
-	data map[string]order.Order
+	data map[string]models.Order
 	path string
 }
 
@@ -39,7 +37,7 @@ func New(path string) (*Storage, error) {
 		log.Fatal("read json fail", err)
 	}
 
-	data := make(map[string]order.Order)
+	data := make(map[string]models.Order)
 
 	err = sonic.Unmarshal(jsonData, &data)
 	if err != nil {
@@ -52,7 +50,7 @@ func New(path string) (*Storage, error) {
 	}, nil
 }
 
-func (s *Storage) AddOrder(order order.Order) {
+func (s *Storage) AddOrder(order models.Order) {
 	stringOrderID := strconv.Itoa(order.ID)
 
 	s.data[stringOrderID] = order
@@ -64,21 +62,21 @@ func (s *Storage) RemoveOrder(orderID int) {
 	delete(s.data, strOrderID)
 }
 
-func (s *Storage) UpdateOrder(orderID int, someOrder order.Order) {
+func (s *Storage) UpdateOrder(orderID int, someOrder models.Order) {
 	strOrderID := strconv.Itoa(orderID)
 
 	s.data[strOrderID] = someOrder
 }
 
-func (s *Storage) GetByID(orderID int) order.Order {
+func (s *Storage) GetByID(orderID int) models.Order {
 	strOrderID := strconv.Itoa(orderID)
 
 	return s.data[strOrderID]
 }
 
-func (s *Storage) GetByUserID(userID int) []order.Order {
+func (s *Storage) GetByUserID(userID int) []models.Order {
 	orderHistory := s.OrderHistory()
-	userOrders := make([]order.Order, 0, len(orderHistory))
+	userOrders := make([]models.Order, 0, len(orderHistory))
 	for i := range orderHistory {
 		if userID != orderHistory[i].UserID {
 			continue
@@ -89,8 +87,8 @@ func (s *Storage) GetByUserID(userID int) []order.Order {
 	return userOrders
 }
 
-func (s *Storage) GetReturns() []order.Order {
-	returns := make([]order.Order, 0, len(s.data))
+func (s *Storage) GetReturns() []models.Order {
+	returns := make([]models.Order, 0, len(s.data))
 
 	for i := range s.data {
 		if s.data[i].Status != orderReturned {
@@ -102,8 +100,8 @@ func (s *Storage) GetReturns() []order.Order {
 	return returns
 }
 
-func (s *Storage) OrderHistory() []order.Order {
-	orderHistory := make([]order.Order, 0, len(s.data))
+func (s *Storage) OrderHistory() []models.Order {
+	orderHistory := make([]models.Order, 0, len(s.data))
 	for i := range s.data {
 		orderHistory = append(orderHistory, s.data[i])
 	}
