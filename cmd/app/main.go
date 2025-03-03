@@ -3,22 +3,22 @@ package main
 import (
 	"log"
 
-	"homework/cli"
-	"homework/storage/json_data"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/cli"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/jsondata"
+)
+
+const (
+	path = "./tests/json_data/data.json"
 )
 
 func main() {
-
-	path := "./tests/json_data/data.json"
-
-	orderStorage, err := json_data.New(path)
+	orderStorage, err := jsondata.New(path)
 	if err != nil {
 		log.Fatal("Error: couldn't read json storage", err)
 	}
 
 	app := cli.NewApp(orderStorage)
-	err = app.Run()
-	if err != nil {
+	if err = app.Run(); err != nil {
 		log.Fatal("Error: couldn't run app", err)
 	}
 }
