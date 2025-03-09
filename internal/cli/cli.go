@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -17,15 +18,15 @@ var (
 )
 
 type storage interface {
-	AddOrder(models.Order)
-	RemoveOrder(int)
-	UpdateOrder(int, models.Order)
-	GetByID(int) models.Order
-	GetByUserID(int) []models.Order
-	GetReturns() []models.Order
-	OrderHistory() []models.Order
-	Save() error
-	Contains(int) bool
+	AddOrder(context.Context, models.Order)
+	RemoveOrder(context.Context, int)
+	UpdateOrder(context.Context, int, models.Order)
+	GetByID(context.Context, int) models.Order
+	GetByUserID(context.Context, int, int) []models.Order
+	GetReturns(context.Context) []models.Order
+	GetOrders(context.Context, map[string]string, int, int) []models.Order
+	Save(context.Context) error
+	Contains(context.Context, int) bool
 }
 
 type App struct {
@@ -33,10 +34,11 @@ type App struct {
 	stringBuilder strings.Builder
 }
 
-func NewApp(appStorage storage) *App {
+func NewApp(ctx context.Context, appStorage storage) *App {
 	return &App{
 		orderService: service.OrderService{
 			Storage: appStorage,
+			Ctx:     ctx,
 		},
 		stringBuilder: strings.Builder{},
 	}

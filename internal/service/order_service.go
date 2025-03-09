@@ -1,16 +1,13 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 
 	"github.com/Rhymond/go-money"
-)
-
-const (
-	dateLayout = "2006.01.02 15:04:05"
 )
 
 const (
@@ -38,20 +35,21 @@ var (
 	errWrongPackaging     = errors.New("wrong packaging")
 )
 
-type storage interface {
-	AddOrder(models.Order)
-	RemoveOrder(int)
-	UpdateOrder(int, models.Order)
-	GetByID(int) models.Order
-	GetByUserID(int) []models.Order
-	GetReturns() []models.Order
-	OrderHistory() []models.Order
-	Save() error
-	Contains(int) bool
+type orderStorage interface {
+	AddOrder(context.Context, models.Order)
+	RemoveOrder(context.Context, int)
+	UpdateOrder(context.Context, int, models.Order)
+	GetByID(context.Context, int) models.Order
+	GetByUserID(context.Context, int, int) []models.Order
+	GetReturns(context.Context) []models.Order
+	GetOrders(context.Context, map[string]string, int, int) []models.Order
+	Save(context.Context) error
+	Contains(context.Context, int) bool
 }
 
 type OrderService struct {
-	Storage storage
+	Storage orderStorage
+	Ctx     context.Context
 }
 
 func (s *OrderService) pack(order *models.Order, packaging models.Packaging) error {
@@ -59,7 +57,7 @@ func (s *OrderService) pack(order *models.Order, packaging models.Packaging) err
 		return errNotEnoughWeight
 	}
 
-	if order.Packaging == models.WrapPackaging || order.ExtraPackaging != models.WrapPackaging {
+	if order.Packaging == models.WrapPackaging || order.ExtraPackaging != models.NoPackaging {
 		return errWrongPackaging
 	}
 
@@ -87,7 +85,7 @@ func (s *OrderService) AcceptOrder(orderID int, userID int, weight float64, pric
 		return errOrderExpired
 	}
 
-	if s.Storage.Contains(orderID) {
+	if s.Storage.Contains(s.Ctx, orderID) {
 		return errOrderAlreadyExists
 	}
 
@@ -99,10 +97,10 @@ func (s *OrderService) AcceptOrder(orderID int, userID int, weight float64, pric
 		return errWrongPrice
 	}
 
-	currentTime := time.Now().Format(dateLayout)
+	currentTime := time.Now()
 
 	currentOrder := *models.NewOrder(orderID, userID, weight, price, orderStored,
-		currentTime, expiryDate.Format(dateLayout), currentTime)
+		currentTime, expiryDate, currentTime)
 
 	for _, somePackaging := range packagings {
 		err := s.pack(&currentOrder, somePackaging)
@@ -111,7 +109,7 @@ func (s *OrderService) AcceptOrder(orderID int, userID int, weight float64, pric
 		}
 	}
 
-	s.Storage.AddOrder(currentOrder)
+	s.Storage.AddOrder(s.Ctx, currentOrder)
 
 	return nil
 }
@@ -120,47 +118,41 @@ func (s *OrderService) AcceptOrders(orders map[string]models.Order) int {
 	ordersFailed := 0
 
 	for _, someOrder := range orders {
-		if s.Storage.Contains(someOrder.ID) {
+		if s.Storage.Contains(s.Ctx, someOrder.ID) {
 			ordersFailed++
 
 			continue
 		}
-		s.Storage.AddOrder(someOrder)
+		s.Storage.AddOrder(s.Ctx, someOrder)
 	}
 
 	return ordersFailed
 }
 
 func (s *OrderService) ReturnOrder(orderID int) error {
-	if !s.Storage.Contains(orderID) {
+	if !s.Storage.Contains(s.Ctx, orderID) {
 		return errOrderNotFound
 	}
-	someOrder := s.Storage.GetByID(orderID)
+	someOrder := s.Storage.GetByID(s.Ctx, orderID)
 	if someOrder.Status == orderGiven {
 		return errOrderIsGiven
 	}
-	date, _ := time.Parse(dateLayout, someOrder.ExpiryDate)
-	if !date.Before(time.Now()) {
+	if !someOrder.ExpiryDate.Before(time.Now()) {
 		return errOrderIsNotExpired
 	}
 
-	s.Storage.RemoveOrder(orderID)
+	s.Storage.RemoveOrder(s.Ctx, orderID)
 
 	return nil
 }
 
 func isBeforeDeadline(someOrder models.Order, action string) bool {
 	date := time.Now()
-	var deadline time.Time
 	switch action {
 	case returnOrder:
-		deadline, _ = time.Parse(dateLayout, someOrder.LastChange)
-
-		return date.After(deadline)
+		return date.After(someOrder.LastChange)
 	case giveOrder:
-		deadline, _ = time.Parse(dateLayout, someOrder.ExpiryDate)
-
-		return date.Before(deadline)
+		return date.Before(someOrder.ExpiryDate)
 	}
 
 	return false
@@ -178,10 +170,10 @@ func isOrderEligible(order models.Order, userID int, action string) bool {
 }
 
 func (s *OrderService) processOrder(userID int, orderID int, action string) error {
-	if !s.Storage.Contains(orderID) {
+	if !s.Storage.Contains(s.Ctx, orderID) {
 		return errOrderNotFound
 	}
-	someOrder := s.Storage.GetByID(orderID)
+	someOrder := s.Storage.GetByID(s.Ctx, orderID)
 	if !isOrderEligible(someOrder, userID, action) {
 		return errOrderNotEligible
 	}
@@ -194,8 +186,8 @@ func (s *OrderService) processOrder(userID int, orderID int, action string) erro
 	default:
 		return errUndefinedAction
 	}
-	someOrder.LastChange = time.Now().Format(dateLayout)
-	s.Storage.UpdateOrder(orderID, someOrder)
+	someOrder.LastChange = time.Now()
+	s.Storage.UpdateOrder(s.Ctx, orderID, someOrder)
 
 	return nil
 }
@@ -217,23 +209,19 @@ func (s *OrderService) ProcessOrders(userID int, orderIDs []int, action string) 
 }
 
 func (s *OrderService) UserOrders(userID int, count int) []models.Order {
-	orders := s.Storage.GetByUserID(userID)
+	orders := s.Storage.GetByUserID(s.Ctx, userID, count)
 
-	if count == 0 {
-		return orders
-	}
-
-	return orders[:count]
+	return orders
 }
 
 func (s *OrderService) Returns() []models.Order {
-	return s.Storage.GetReturns()
-}
-
-func (s *OrderService) OrderHistory() []models.Order {
-	return s.Storage.OrderHistory()
+	return s.Storage.GetReturns(s.Ctx)
 }
 
 func (s *OrderService) Save() error {
-	return s.Storage.Save()
+	return s.Storage.Save(s.Ctx)
+}
+
+func (s *OrderService) GetOrders(params map[string]string, count int, page int) []models.Order {
+	return s.Storage.GetOrders(s.Ctx, params, count, page)
 }

@@ -21,7 +21,7 @@ Available Commands:
   clear              clears screen
   acceptOrder        accepts arg1 order for arg2 user with arg3 expiration date
   acceptOrders       accepts orders from other json
-  returnOrder        returns to courier expired, not given arg1 order
+  returnOrder        returns to courier expired (not given) arg1 order
   processOrders      gives to (or makes returns from) arg1 user arg... orders
   userOrders         shows last arg2 (optional) orders by arg1 user
   returns            shows all returned orders
@@ -376,7 +376,7 @@ func (a *App) orderHistory(args []string) ([]string, mode, error) {
 		return nil, raw, err
 	}
 
-	orders := a.orderService.OrderHistory()
+	orders := a.orderService.GetOrders(nil, 0, 0)
 	result := make([]string, 0, len(orders))
 	for _, someOrder := range orders {
 		result = append(result, someOrder.String())

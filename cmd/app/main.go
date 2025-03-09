@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
 	"log"
 
-	"gitlab.ozon.dev/alexplay1224/homework/internal/cli"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/jsondata"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/web"
 )
 
 const (
@@ -12,13 +16,31 @@ const (
 )
 
 func main() {
-	orderStorage, err := jsondata.New(path)
+	config.InitEnv()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	db, err := postgres.NewDB(ctx)
 	if err != nil {
-		log.Fatal("Error: couldn't read json storage", err)
+		log.Panic(err)
 	}
 
-	app := cli.NewApp(orderStorage)
+	defer db.GetPool().Close()
+
+	ordersRepo := repository.NewOrderRepo(*db)
+	adminsRepo := repository.NewAdminRepo(*db)
+
+	orderStorage, err := jsondata.New(path)
+	if err != nil {
+		log.Panic("Error: couldn't read json storage", err)
+	}
+
+	_ = orderStorage
+	_ = ordersRepo
+	_ = adminsRepo
+
+	app := web.NewApp(ctx, ordersRepo, adminsRepo)
 	if err = app.Run(); err != nil {
-		log.Fatal("Error: couldn't run app", err)
+		log.Panic("Error: couldn't run app", err)
 	}
 }

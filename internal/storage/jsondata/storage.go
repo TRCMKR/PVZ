@@ -1,12 +1,12 @@
 package jsondata
 
 import (
+	"context"
 	"errors"
 	"log"
 	"os"
 	"sort"
 	"strconv"
-	"time"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 
@@ -16,10 +16,6 @@ import (
 var (
 	errDataNotMarshalled = errors.New("data wasn't marshalled")
 	errDataNotWritten    = errors.New("data wasn't written")
-)
-
-const (
-	dateLayout = "2006.01.02 15:04:05"
 )
 
 const (
@@ -50,44 +46,50 @@ func New(path string) (*Storage, error) {
 	}, nil
 }
 
-func (s *Storage) AddOrder(order models.Order) {
+func (s *Storage) AddOrder(_ context.Context, order models.Order) {
 	stringOrderID := strconv.Itoa(order.ID)
 
 	s.data[stringOrderID] = order
 }
 
-func (s *Storage) RemoveOrder(orderID int) {
+func (s *Storage) RemoveOrder(_ context.Context, orderID int) {
 	strOrderID := strconv.Itoa(orderID)
 
 	delete(s.data, strOrderID)
 }
 
-func (s *Storage) UpdateOrder(orderID int, someOrder models.Order) {
+func (s *Storage) UpdateOrder(_ context.Context, orderID int, someOrder models.Order) {
 	strOrderID := strconv.Itoa(orderID)
 
 	s.data[strOrderID] = someOrder
 }
 
-func (s *Storage) GetByID(orderID int) models.Order {
+func (s *Storage) GetByID(_ context.Context, orderID int) models.Order {
 	strOrderID := strconv.Itoa(orderID)
 
 	return s.data[strOrderID]
 }
 
-func (s *Storage) GetByUserID(userID int) []models.Order {
-	orderHistory := s.OrderHistory()
+func (s *Storage) GetByUserID(ctx context.Context, userID int, count int) []models.Order {
+	orderHistory := s.GetOrders(ctx, nil, 0, 0)
 	userOrders := make([]models.Order, 0, len(orderHistory))
+	currentCount := 0
 	for i := range orderHistory {
 		if userID != orderHistory[i].UserID {
 			continue
 		}
+
 		userOrders = append(userOrders, orderHistory[i])
+		currentCount++
+		if currentCount == count {
+			break
+		}
 	}
 
 	return userOrders
 }
 
-func (s *Storage) GetReturns() []models.Order {
+func (s *Storage) GetReturns(_ context.Context) []models.Order {
 	returns := make([]models.Order, 0, len(s.data))
 
 	for i := range s.data {
@@ -100,22 +102,19 @@ func (s *Storage) GetReturns() []models.Order {
 	return returns
 }
 
-func (s *Storage) OrderHistory() []models.Order {
+func (s *Storage) GetOrders(_ context.Context, _ map[string]string, _ int, _ int) []models.Order {
 	orderHistory := make([]models.Order, 0, len(s.data))
 	for i := range s.data {
 		orderHistory = append(orderHistory, s.data[i])
 	}
 	sort.Slice(orderHistory, func(i, j int) bool {
-		t1, _ := time.Parse(dateLayout, orderHistory[i].LastChange)
-		t2, _ := time.Parse(dateLayout, orderHistory[j].LastChange)
-
-		return t2.Before(t1)
+		return orderHistory[j].LastChange.Before(orderHistory[i].LastChange)
 	})
 
 	return orderHistory
 }
 
-func (s *Storage) Save() error {
+func (s *Storage) Save(_ context.Context) error {
 	jsonData, err := sonic.MarshalIndent(s.data, "", "  ")
 	if err != nil {
 		return errDataNotMarshalled
@@ -128,7 +127,7 @@ func (s *Storage) Save() error {
 	return nil
 }
 
-func (s *Storage) Contains(orderID int) bool {
+func (s *Storage) Contains(_ context.Context, orderID int) bool {
 	strOrderID := strconv.Itoa(orderID)
 	_, ok := s.data[strOrderID]
 

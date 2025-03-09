@@ -3,21 +3,22 @@ package models
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Rhymond/go-money"
 )
 
 type Order struct {
-	ID             int
-	UserID         int
-	Weight         float64
-	Price          money.Money
-	Packaging      PackagingType
-	ExtraPackaging PackagingType
-	Status         string
-	ArrivalDate    string
-	ExpiryDate     string
-	LastChange     string
+	ID             int           `db:"id"`
+	UserID         int           `db:"user_id"`
+	Weight         float64       `db:"weight"`
+	Price          money.Money   `db:"price"`
+	Packaging      PackagingType `db:"packaging"`
+	ExtraPackaging PackagingType `db:"extra_packaging"`
+	Status         string        `db:"status"`
+	ArrivalDate    time.Time     `db:"arrival_date"`
+	ExpiryDate     time.Time     `db:"expiry_date"`
+	LastChange     time.Time     `db:"last_change"`
 }
 
 const (
@@ -30,8 +31,12 @@ const (
 	dateWidth      = 22
 )
 
+const (
+	dateLayout = "2006.01.02 15:04:05"
+)
+
 func NewOrder(id int, userID int, weight float64, price money.Money, status string,
-	arrivalDate string, expiryDate string, lastChange string) *Order {
+	arrivalDate time.Time, expiryDate time.Time, lastChange time.Time) *Order {
 	return &Order{
 		ID:             id,
 		UserID:         userID,
@@ -39,8 +44,8 @@ func NewOrder(id int, userID int, weight float64, price money.Money, status stri
 		Price:          price,
 		Packaging:      NoPackaging,
 		ExtraPackaging: NoPackaging,
-		ArrivalDate:    arrivalDate,
 		Status:         status,
+		ArrivalDate:    arrivalDate,
 		ExpiryDate:     expiryDate,
 		LastChange:     lastChange,
 	}
@@ -52,7 +57,7 @@ func (o *Order) String() string {
 		orderIDWidth, userIDWidth, weightWidth, priceWidth, packagingWidth, statusWidth, dateWidth)
 
 	_, err := fmt.Fprintf(&sb, rowFormat, o.ID, o.UserID,
-		o.Weight, o.Price.Display(), o.GetPackagingString(), o.Status, o.LastChange)
+		o.Weight, o.Price.Display(), o.GetPackagingString(), o.Status, o.LastChange.Format(dateLayout))
 	if err != nil {
 		sb.WriteString(err.Error())
 	}

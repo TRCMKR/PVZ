@@ -10,9 +10,9 @@
     "Packaging": 3,
     "ExtraPackaging": 0,
     "Status": "stored",
-    "ArrivalDate": "2025.02.10 12:30:00",
-    "ExpiryDate": "2025.04.15 00:00:00",
-    "LastChange": "2025.02.10 12:30:00"
+    "ArrivalDate": "2025-02-26T19:32:24Z",
+    "ExpiryDate": "2044-01-01T00:00:00Z",
+    "LastChange": "2025-02-26T19:32:24Z"
   },
   "33336": {
     "ID": 33336,
@@ -25,9 +25,9 @@
     "Packaging": 1,
     "ExtraPackaging": 3,
     "Status": "stored",
-    "ArrivalDate": "2025.01.20 14:20:00",
-    "ExpiryDate": "2025.03.20 00:00:00",
-    "LastChange": "2025.02.01 10:00:00"
+    "ArrivalDate": "2025-02-26T19:32:24Z",
+    "ExpiryDate": "2044-01-01T00:00:00Z",
+    "LastChange": "2025-02-26T19:32:24Z"
   },
   "44447": {
     "ID": 44447,
@@ -40,8 +40,8 @@
     "Packaging": 2,
     "ExtraPackaging": 0,
     "Status": "given",
-    "ArrivalDate": "2025.01.05 09:10:00",
-    "ExpiryDate": "2025.03.01 00:00:00",
-    "LastChange": "2025.02.15 16:45:00"
+    "ArrivalDate": "2025-02-26T19:32:24Z",
+    "ExpiryDate": "2044-01-01T00:00:00Z",
+    "LastChange": "2025-02-26T19:32:24Z"
   }
 }
