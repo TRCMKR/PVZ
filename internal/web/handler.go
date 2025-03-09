@@ -357,6 +357,8 @@ func (s *server) UpdateAdmin(writer http.ResponseWriter, request *http.Request) 
 	}
 	if updateRequest.Password == "" || updateRequest.NewPassword == "" {
 		http.Error(writer, errFieldsMissing.Error(), http.StatusBadRequest)
+
+		return
 	}
 
 	admin := *models.NewAdmin(0, adminUsername, updateRequest.NewPassword)

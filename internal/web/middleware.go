@@ -60,7 +60,9 @@ func (a *AuthMiddleware) BasicAuthChecker(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		credsStr, err := a.parseHeader(request)
 		if err != nil {
-			log.Println("Error parsing auth header:", err)
+			http.Error(writer, err.Error(), http.StatusUnauthorized)
+
+			return
 		}
 
 		decoded, err := base64.StdEncoding.DecodeString(credsStr)
