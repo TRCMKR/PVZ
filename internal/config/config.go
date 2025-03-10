@@ -7,24 +7,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-//type Config struct {
-//	DBHost     string
-//	DBPort     string
-//	DBUsername string
-//	DBPassword string
-//	DBName     string
-//}
-//
-//func NewConfig() *Config {
-//	return &Config{
-//		DBHost:     os.Getenv("DB_HOST"),
-//		DBPort:     os.Getenv("DB_PORT"),
-//		DBUsername: os.Getenv("DB_USER"),
-//		DBPassword: os.Getenv("DB_PASSWORD"),
-//		DBName:     os.Getenv("DB_NAME"),
-//	}
-//}
-
 func InitEnv() {
 	err := godotenv.Load()
 	if err != nil {

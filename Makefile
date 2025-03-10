@@ -13,7 +13,7 @@ ifeq ($(POSTGRES_SETUP_TEST),)
 	POSTGRES_SETUP_TEST := user=$(DB_USERNAME) password=$(DB_PASSWORD) dbname=$(DB_NAME) host=$(DB_HOST) port=$(DB_PORT) sslmode=disable
 endif
 
-MIGRATION_FOLDER=$(CURDIR)/internal/storage/postgres/migrations
+MIGRATION_FOLDER=$(CURDIR)/migrations
 
 .PHONY: build
 ## builds app + clean + fmt + lint
@@ -98,6 +98,10 @@ migration-down:
 .PHONY: migration-status
 migration-status:
 	goose -dir "$(MIGRATION_FOLDER)" postgres "$(POSTGRES_SETUP_TEST)" status
+
+.PHONY: swag-init
+swag-init:
+	swag init -g "./internal/web/router.go" --parseInternal --pd
 
 .PHONY: help
 ## prints help about all targets

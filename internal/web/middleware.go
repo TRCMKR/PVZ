@@ -2,6 +2,7 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"errors"
 	"io"
@@ -21,20 +22,20 @@ var (
 )
 
 func FieldLogger(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if request.Method == http.MethodPost || request.Method == http.MethodPut || request.Method == http.MethodDelete {
-			body, err := io.ReadAll(request.Body)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodDelete {
+			body, err := io.ReadAll(r.Body)
 			if err != nil {
-				log.Println("Error reading request body:", err)
-				http.Error(writer, "can't read body", http.StatusInternalServerError)
+				log.Println("Error reading r body:", err)
+				http.Error(w, "can't read body", http.StatusInternalServerError)
 
 				return
 			}
-			log.Printf("%s, %s, %s\n", request.Method, request.URL.Path, body)
+			log.Printf("%s, %s, %s\n", r.Method, r.URL.Path, body)
 
-			request.Body = io.NopCloser(bytes.NewBuffer(body))
+			r.Body = io.NopCloser(bytes.NewBuffer(body))
 		}
-		handler.ServeHTTP(writer, request)
+		handler.ServeHTTP(w, r)
 	})
 }
 
@@ -56,44 +57,44 @@ func (a *AuthMiddleware) parseHeader(request *http.Request) (string, error) {
 	return parts[1], nil
 }
 
-func (a *AuthMiddleware) BasicAuthChecker(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		credsStr, err := a.parseHeader(request)
+func (a *AuthMiddleware) BasicAuthChecker(ctx context.Context, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		credsStr, err := a.parseHeader(r)
 		if err != nil {
-			http.Error(writer, err.Error(), http.StatusUnauthorized)
+			http.Error(w, err.Error(), http.StatusUnauthorized)
 
 			return
 		}
 
 		decoded, err := base64.StdEncoding.DecodeString(credsStr)
 		if err != nil {
-			http.Error(writer, errInvalidEncoding.Error(), http.StatusUnauthorized)
+			http.Error(w, errInvalidEncoding.Error(), http.StatusUnauthorized)
 
 			return
 		}
 
 		creds := strings.SplitN(string(decoded), ":", 2)
 		if len(creds) != 2 {
-			http.Error(writer, errInvalidFormat.Error(), http.StatusUnauthorized)
+			http.Error(w, errInvalidFormat.Error(), http.StatusUnauthorized)
 
 			return
 		}
 
 		username, password := creds[0], creds[1]
 
-		admin, err := a.adminService.GetAdminByUsername(username)
+		admin, err := a.adminService.GetAdminByUsername(ctx, username)
 		if err != nil {
-			http.Error(writer, errNoSuchUser.Error(), http.StatusUnauthorized)
+			http.Error(w, errNoSuchUser.Error(), http.StatusUnauthorized)
 
 			return
 		}
 
 		if !admin.CheckPassword(password) {
-			http.Error(writer, errWrongPassword.Error(), http.StatusUnauthorized)
+			http.Error(w, errWrongPassword.Error(), http.StatusUnauthorized)
 
 			return
 		}
 
-		handler.ServeHTTP(writer, request)
+		handler.ServeHTTP(w, r)
 	})
 }

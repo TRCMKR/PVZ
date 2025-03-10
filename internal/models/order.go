@@ -8,17 +8,48 @@ import (
 	"github.com/Rhymond/go-money"
 )
 
+// Order represents an order in the system
+// @Description Order structure represents an order in the system
 type Order struct {
-	ID             int           `db:"id"`
-	UserID         int           `db:"user_id"`
-	Weight         float64       `db:"weight"`
-	Price          money.Money   `db:"price"`
-	Packaging      PackagingType `db:"packaging"`
-	ExtraPackaging PackagingType `db:"extra_packaging"`
-	Status         string        `db:"status"`
-	ArrivalDate    time.Time     `db:"arrival_date"`
-	ExpiryDate     time.Time     `db:"expiry_date"`
-	LastChange     time.Time     `db:"last_change"`
+	// @Description Unique ID of the order
+	// @Example 123
+	ID int `db:"id" json:"id"`
+
+	// @Description ID of the user who created the order
+	// @Example 456
+	UserID int `db:"user_id" json:"user_id"`
+
+	// @Description Weight of the order in kilograms
+	// @Example 5.5
+	Weight float64 `db:"weight" json:"weight"`
+
+	// @Description Price of the order
+	// @Example {"amount": 100, "currency": "USD"}
+	Price money.Money `db:"price" json:"price"`
+
+	// @Description Type of packaging for the order
+	// @Example "box"
+	Packaging PackagingType `db:"packaging" json:"packaging"`
+
+	// @Description Extra packaging option for the order
+	// @Example "wrap"
+	ExtraPackaging PackagingType `db:"extra_packaging" json:"extra_packaging"`
+
+	// @Description Current status of the order (e.g., 'stored', 'given', etc.)
+	// @Example "stored"
+	Status string `db:"status" json:"status"`
+
+	// @Description Date when the order is expected to arrive
+	// @Example "2025-03-10T10:00:00Z"
+	ArrivalDate time.Time `db:"arrival_date" json:"arrival_date"`
+
+	// @Description Date when the order will expire
+	// @Example "2025-03-15T10:00:00Z"
+	ExpiryDate time.Time `db:"expiry_date" json:"expiry_date"`
+
+	// @Description The last date when the order was modified
+	// @Example "2025-03-09T10:00:00Z"
+	LastChange time.Time `db:"last_change" json:"last_change"`
 }
 
 const (

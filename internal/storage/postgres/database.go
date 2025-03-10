@@ -36,3 +36,7 @@ func (db Database) Exec(ctx context.Context, query string, args ...interface{}) 
 func (db Database) ExecQueryRow(ctx context.Context, query string, args ...interface{}) pgx.Row {
 	return db.cluster.QueryRow(ctx, query, args...)
 }
+
+func (db Database) Close() {
+	db.cluster.Close()
+}
