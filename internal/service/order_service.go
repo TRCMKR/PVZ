@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
 
 	"github.com/Rhymond/go-money"
 )
@@ -42,8 +43,8 @@ type orderStorage interface {
 	GetByID(context.Context, int) (models.Order, error)
 	GetByUserID(context.Context, int, int) ([]models.Order, error)
 	GetReturns(context.Context) ([]models.Order, error)
-	GetOrders(context.Context, map[string]string, int, int) ([]models.Order, error)
-	Contains(context.Context, int) bool
+	GetOrders(context.Context, []query.Cond, int, int) ([]models.Order, error)
+	Contains(context.Context, int) (bool, error)
 }
 
 type OrderService struct {
@@ -77,21 +78,26 @@ func (s *OrderService) pack(order *models.Order, packaging models.Packaging) err
 	return nil
 }
 
-func (s *OrderService) AcceptOrder(ctx context.Context, orderID int, userID int, weight float64, price money.Money, expiryDate time.Time,
-	packagings []models.Packaging) error {
+func (s *OrderService) AcceptOrder(ctx context.Context, orderID int, userID int, weight float64, price money.Money,
+	expiryDate time.Time, packagings []models.Packaging) error {
 	if expiryDate.Before(time.Now()) {
 		return errOrderExpired
 	}
 
-	if s.Storage.Contains(ctx, orderID) {
+	var ok bool
+	var err error
+	if ok, err = s.Storage.Contains(ctx, orderID); ok {
 		return errOrderAlreadyExists
+	}
+	if err != nil {
+		return err
 	}
 
 	if weight < 0 {
 		return errWrongWeight
 	}
 
-	if ok, _ := price.GreaterThan(money.New(0, money.RUB)); !ok {
+	if ok, err = price.GreaterThan(money.New(0, money.RUB)); err != nil || !ok {
 		return errWrongPrice
 	}
 
@@ -101,13 +107,13 @@ func (s *OrderService) AcceptOrder(ctx context.Context, orderID int, userID int,
 		currentTime, expiryDate, currentTime)
 
 	for _, somePackaging := range packagings {
-		err := s.pack(&currentOrder, somePackaging)
+		err = s.pack(&currentOrder, somePackaging)
 		if err != nil {
 			return err
 		}
 	}
 
-	err := s.Storage.AddOrder(ctx, currentOrder)
+	err = s.Storage.AddOrder(ctx, currentOrder)
 	if err != nil {
 		return err
 	}
@@ -119,7 +125,7 @@ func (s *OrderService) AcceptOrders(ctx context.Context, orders map[string]model
 	ordersFailed := 0
 
 	for _, someOrder := range orders {
-		if s.Storage.Contains(ctx, someOrder.ID) {
+		if ok, err := s.Storage.Contains(ctx, someOrder.ID); err != nil || !ok {
 			ordersFailed++
 
 			continue
@@ -134,7 +140,7 @@ func (s *OrderService) AcceptOrders(ctx context.Context, orders map[string]model
 }
 
 func (s *OrderService) ReturnOrder(ctx context.Context, orderID int) error {
-	if !s.Storage.Contains(ctx, orderID) {
+	if ok, err := s.Storage.Contains(ctx, orderID); err != nil || !ok {
 		return errOrderNotFound
 	}
 	someOrder, err := s.Storage.GetByID(ctx, orderID)
@@ -180,7 +186,7 @@ func isOrderEligible(order models.Order, userID int, action string) bool {
 }
 
 func (s *OrderService) processOrder(ctx context.Context, userID int, orderID int, action string) error {
-	if !s.Storage.Contains(ctx, orderID) {
+	if ok, err := s.Storage.Contains(ctx, orderID); err != nil || !ok {
 		return errOrderNotFound
 	}
 	someOrder, err := s.Storage.GetByID(ctx, orderID)
@@ -232,6 +238,7 @@ func (s *OrderService) Returns(ctx context.Context) ([]models.Order, error) {
 	return s.Storage.GetReturns(ctx)
 }
 
-func (s *OrderService) GetOrders(ctx context.Context, params map[string]string, count int, page int) ([]models.Order, error) {
-	return s.Storage.GetOrders(ctx, params, count, page)
+func (s *OrderService) GetOrders(ctx context.Context, conds []query.Cond, count int,
+	page int) ([]models.Order, error) {
+	return s.Storage.GetOrders(ctx, conds, count, page)
 }

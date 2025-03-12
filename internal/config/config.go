@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -14,22 +15,35 @@ func InitEnv() {
 	}
 }
 
-func GetDBHost() string {
-	return os.Getenv("DB_HOST")
+type Config struct {
+	host     string
+	port     string
+	username string
+	password string
+	dbname   string
 }
 
-func GetDBPort() string {
-	return os.Getenv("DB_PORT")
+func NewConfig() *Config {
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	username := os.Getenv("DB_USERNAME")
+	password := os.Getenv("DB_PASSWORD")
+	dbname := os.Getenv("DB_NAME")
+
+	if host == "" || port == "" || username == "" || password == "" || dbname == "" {
+		log.Fatal("Database configuration missing: one or more required fields are empty.")
+	}
+
+	return &Config{
+		host:     host,
+		port:     port,
+		username: username,
+		password: password,
+		dbname:   dbname,
+	}
 }
 
-func GetDBUsername() string {
-	return os.Getenv("DB_USERNAME")
-}
-
-func GetDBPassword() string {
-	return os.Getenv("DB_PASSWORD")
-}
-
-func GetDBName() string {
-	return os.Getenv("DB_NAME")
+func (c *Config) String() string {
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		c.host, c.port, c.username, c.password, c.dbname)
 }

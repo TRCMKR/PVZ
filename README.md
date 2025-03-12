@@ -10,7 +10,7 @@ curl -u lol:12345678 --request GET \
 ```bash
 curl -u lol:12345678 --header "Content-Type: application/json" \
 --request POST \
---data '{"id": 1009,"user_id":52,"weight":100,"price":{"amount":1000000,"currency":"RUB"},"packaging":"box","extra_packaging":"wrap","expiry_date":"2025-03-10T00:00:00Z"}' \
+--data '{"id": 1009,"user_id":52,"weight":100,"price":{"amount":1000000,"currency":"RUB"},"packaging":2,"extra_packaging":3,"expiry_date":"2025-03-10T00:00:00Z"}' \
 "http://localhost:9000/orders"
 ```
 - `/orders/{id} [delete]` – удаляет заказ

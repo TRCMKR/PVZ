@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/service"
 
 	"github.com/gorilla/mux"
@@ -21,8 +22,8 @@ type orderStorage interface {
 	GetByID(context.Context, int) (models.Order, error)
 	GetByUserID(context.Context, int, int) ([]models.Order, error)
 	GetReturns(context.Context) ([]models.Order, error)
-	GetOrders(context.Context, map[string]string, int, int) ([]models.Order, error)
-	Contains(context.Context, int) bool
+	GetOrders(context.Context, []query.Cond, int, int) ([]models.Order, error)
+	Contains(context.Context, int) (bool, error)
 }
 
 type adminStorage interface {
@@ -30,8 +31,8 @@ type adminStorage interface {
 	GetAdminByUsername(context.Context, string) (models.Admin, error)
 	UpdateAdmin(context.Context, int, models.Admin) error
 	DeleteAdmin(context.Context, string) error
-	ContainsUsername(context.Context, string) bool
-	ContainsID(context.Context, int) bool
+	ContainsUsername(context.Context, string) (bool, error)
+	ContainsID(context.Context, int) (bool, error)
 }
 
 type App struct {
@@ -58,8 +59,10 @@ const (
 	weightParam          = "weight"
 	priceParam           = "price"
 	statusParam          = "status"
+	arrivalDateParam     = "arrival_date"
 	arrivalDateFromParam = "arrival_date_from"
 	arrivalDateToParam   = "arrival_date_to"
+	expiryDateParam      = "expiry_date"
 	expiryDateFromParam  = "expiry_date_from"
 	expiryDateToParam    = "expiry_date_to"
 	weightFromParam      = "weight_from"
@@ -72,7 +75,8 @@ const (
 	adminUsernameParam = "admin_username"
 )
 
-func (a *App) wrapHandler(ctx context.Context, handler func(context.Context, http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func (a *App) wrapHandler(ctx context.Context, handler func(context.Context, http.ResponseWriter,
+	*http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		handler(ctx, w, r)
 	}
@@ -130,7 +134,8 @@ func (a *App) Run(ctx context.Context) error {
 	//	@Success		200		{string}	string			"Orders processed successfully"
 	//	@Failure		400		{object}	models.ErrorResponse
 	//	@Router			/orders/process [post]
-	router.HandleFunc("/orders/process", authMiddleware.BasicAuthChecker(ctx, a.wrapHandler(ctx, impl.UpdateOrders)).ServeHTTP).
+	router.HandleFunc("/orders/process", authMiddleware.BasicAuthChecker(ctx,
+		a.wrapHandler(ctx, impl.UpdateOrders)).ServeHTTP).
 		Methods(http.MethodPost)
 
 	//	@Summary		Create Admin
@@ -142,7 +147,7 @@ func (a *App) Run(ctx context.Context) error {
 	//	@Success		200		{object}	models.Admin
 	//	@Failure		400		{object}	models.ErrorResponse
 	//	@Router			/admins [post]
-	router.HandleFunc("/admins", authMiddleware.BasicAuthChecker(ctx, a.wrapHandler(ctx, impl.CreateOrder)).ServeHTTP).
+	router.HandleFunc("/admins", a.wrapHandler(ctx, impl.CreateAdmin)).
 		Methods(http.MethodPost)
 
 	//	@Summary		Update Admin

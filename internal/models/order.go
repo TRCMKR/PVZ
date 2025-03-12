@@ -101,11 +101,11 @@ func (o *Order) GetPackagingString() string {
 	if o.Packaging == NoPackaging {
 		result = "none"
 	} else {
-		result = getPackagingName(o.Packaging)
+		result = GetPackagingName(o.Packaging)
 	}
 
 	if o.ExtraPackaging != NoPackaging {
-		result += " in " + getPackagingName(o.ExtraPackaging)
+		result += " in " + GetPackagingName(o.ExtraPackaging)
 	}
 
 	return result

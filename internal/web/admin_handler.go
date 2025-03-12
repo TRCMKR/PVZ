@@ -11,13 +11,11 @@ import (
 )
 
 func (s *server) CreateAdmin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	type createAdminRequest struct {
+	var createRequest = struct {
 		ID       int    `json:"id"`
 		Username string `json:"username"`
 		Password string `json:"password"`
-	}
-
-	var createRequest createAdminRequest
+	}{}
 	err := json.NewDecoder(r.Body).Decode(&createRequest)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -41,11 +39,6 @@ func (s *server) CreateAdmin(ctx context.Context, w http.ResponseWriter, r *http
 }
 
 func (s *server) UpdateAdmin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	type updateAdminRequest struct {
-		Password    string `json:"password"`
-		NewPassword string `json:"new_password"`
-	}
-
 	adminUsername, ok := mux.Vars(r)[adminUsernameParam]
 	if !ok {
 		http.Error(w, errInvalidUsername.Error(), http.StatusBadRequest)
@@ -53,7 +46,10 @@ func (s *server) UpdateAdmin(ctx context.Context, w http.ResponseWriter, r *http
 		return
 	}
 
-	var updateRequest updateAdminRequest
+	var updateRequest = struct {
+		Password    string `json:"password"`
+		NewPassword string `json:"new_password"`
+	}{}
 	err := json.NewDecoder(r.Body).Decode(&updateRequest)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -79,17 +75,15 @@ func (s *server) UpdateAdmin(ctx context.Context, w http.ResponseWriter, r *http
 }
 
 func (s *server) DeleteAdmin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	type deleteAdminRequest struct {
-		Password string `json:"password"`
-	}
-
 	adminUsername, ok := mux.Vars(r)[adminUsernameParam]
 	if !ok {
 		http.Error(w, errInvalidUsername.Error(), http.StatusBadRequest)
 
 		return
 	}
-	var deleteRequest deleteAdminRequest
+	var deleteRequest = struct {
+		Password string `json:"password"`
+	}{}
 	err := json.NewDecoder(r.Body).Decode(&deleteRequest)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

@@ -1,16 +1,17 @@
 -- +goose Up
 -- +goose StatementBegin
-create table orders(
-    id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL,
-    weight DOUBLE PRECISION not null,
-    price BIGINT not null ,
-    packaging int not null,
-    extra_packaging int not null,
-    status VARCHAR(255),
-    arrival_date TIMESTAMP not null,
-    expiry_date TIMESTAMP not null,
-    last_change TIMESTAMP not null
+CREATE TABLE orders
+(
+    id              SERIAL PRIMARY KEY,
+    user_id         INT              NOT NULL,
+    weight          DOUBLE PRECISION NOT NULL,
+    price           BIGINT           NOT NULL,
+    packaging       int              NOT NULL,
+    extra_packaging int              NOT NULL,
+    status          VARCHAR(255),
+    arrival_date    TIMESTAMP        NOT NULL,
+    expiry_date     TIMESTAMP        NOT NULL,
+    last_change     TIMESTAMP        NOT NULL
 );
 -- +goose StatementEnd
 
