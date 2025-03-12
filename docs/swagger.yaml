@@ -1,0 +1,105 @@
+basePath: /
+definitions:
+  gitlab_ozon_dev_alexplay1224_homework_internal_models.Order:
+    description: Order structure represents an order in the system
+    properties:
+      arrival_date:
+        description: |-
+          @Description Date when the order is expected to arrive
+          @Example "2025-03-10T10:00:00Z"
+        type: string
+      expiry_date:
+        description: |-
+          @Description Date when the order will expire
+          @Example "2025-03-15T10:00:00Z"
+        type: string
+      extra_packaging:
+        allOf:
+        - $ref: '#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.PackagingType'
+        description: |-
+          @Description Extra packaging option for the order
+          @Example "wrap"
+      id:
+        description: |-
+          @Description Unique ID of the order
+          @Example 123
+        type: integer
+      last_change:
+        description: |-
+          @Description The last date when the order was modified
+          @Example "2025-03-09T10:00:00Z"
+        type: string
+      packaging:
+        allOf:
+        - $ref: '#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.PackagingType'
+        description: |-
+          @Description Type of packaging for the order
+          @Example "box"
+      price:
+        allOf:
+        - $ref: '#/definitions/money.Money'
+        description: |-
+          @Description Price of the order
+          @Example {"amount": 100, "currency": "USD"}
+      status:
+        description: |-
+          @Description Current status of the order (e.g., 'stored', 'given', etc.)
+          @Example "stored"
+        type: string
+      user_id:
+        description: |-
+          @Description ID of the user who created the order
+          @Example 456
+        type: integer
+      weight:
+        description: |-
+          @Description Weight of the order in kilograms
+          @Example 5.5
+        type: number
+    type: object
+  gitlab_ozon_dev_alexplay1224_homework_internal_models.PackagingType:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-varnames:
+    - NoPackaging
+    - BagPackaging
+    - BoxPackaging
+    - WrapPackaging
+  money.Money:
+    type: object
+host: localhost:9000
+info:
+  contact: {}
+  description: This is a sample server for Swagger in Go.
+  title: PVZ API Documentation
+  version: "1.0"
+paths:
+  /orders:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new order.
+      parameters:
+      - description: Order
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.Order'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.Order'
+        "400":
+          description: Bad Request
+      summary: Create an Order
+      tags:
+      - orders
+swagger: "2.0"

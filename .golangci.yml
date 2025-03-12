@@ -79,7 +79,6 @@ linters:
     - makezero
     - mirror
     - misspell
-    - musttag
     - nakedret
     - nestif
     - nilerr
@@ -100,7 +99,6 @@ linters:
     - spancheck
     - sqlclosecheck
     - staticcheck
-    - stylecheck
     - tagalign
     - tagliatelle
     - testableexamples

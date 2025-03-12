@@ -1,16 +1,14 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
 
 	"github.com/Rhymond/go-money"
-)
-
-const (
-	dateLayout = "2006.01.02 15:04:05"
 )
 
 const (
@@ -38,20 +36,19 @@ var (
 	errWrongPackaging     = errors.New("wrong packaging")
 )
 
-type storage interface {
-	AddOrder(models.Order)
-	RemoveOrder(int)
-	UpdateOrder(int, models.Order)
-	GetByID(int) models.Order
-	GetByUserID(int) []models.Order
-	GetReturns() []models.Order
-	OrderHistory() []models.Order
-	Save() error
-	Contains(int) bool
+type orderStorage interface {
+	AddOrder(context.Context, models.Order) error
+	RemoveOrder(context.Context, int) error
+	UpdateOrder(context.Context, int, models.Order) error
+	GetByID(context.Context, int) (models.Order, error)
+	GetByUserID(context.Context, int, int) ([]models.Order, error)
+	GetReturns(context.Context) ([]models.Order, error)
+	GetOrders(context.Context, []query.Cond, int, int) ([]models.Order, error)
+	Contains(context.Context, int) (bool, error)
 }
 
 type OrderService struct {
-	Storage storage
+	Storage orderStorage
 }
 
 func (s *OrderService) pack(order *models.Order, packaging models.Packaging) error {
@@ -59,7 +56,7 @@ func (s *OrderService) pack(order *models.Order, packaging models.Packaging) err
 		return errNotEnoughWeight
 	}
 
-	if order.Packaging == models.WrapPackaging || order.ExtraPackaging != models.WrapPackaging {
+	if order.Packaging == models.WrapPackaging || order.ExtraPackaging != models.NoPackaging {
 		return errWrongPackaging
 	}
 
@@ -81,86 +78,97 @@ func (s *OrderService) pack(order *models.Order, packaging models.Packaging) err
 	return nil
 }
 
-func (s *OrderService) AcceptOrder(orderID int, userID int, weight float64, price money.Money, expiryDate time.Time,
-	packagings []models.Packaging) error {
+func (s *OrderService) AcceptOrder(ctx context.Context, orderID int, userID int, weight float64, price money.Money,
+	expiryDate time.Time, packagings []models.Packaging) error {
 	if expiryDate.Before(time.Now()) {
 		return errOrderExpired
 	}
 
-	if s.Storage.Contains(orderID) {
+	var ok bool
+	var err error
+	if ok, err = s.Storage.Contains(ctx, orderID); ok {
 		return errOrderAlreadyExists
+	}
+	if err != nil {
+		return err
 	}
 
 	if weight < 0 {
 		return errWrongWeight
 	}
 
-	if ok, _ := price.GreaterThan(money.New(0, money.RUB)); !ok {
+	if ok, err = price.GreaterThan(money.New(0, money.RUB)); err != nil || !ok {
 		return errWrongPrice
 	}
 
-	currentTime := time.Now().Format(dateLayout)
+	currentTime := time.Now()
 
 	currentOrder := *models.NewOrder(orderID, userID, weight, price, orderStored,
-		currentTime, expiryDate.Format(dateLayout), currentTime)
+		currentTime, expiryDate, currentTime)
 
 	for _, somePackaging := range packagings {
-		err := s.pack(&currentOrder, somePackaging)
+		err = s.pack(&currentOrder, somePackaging)
 		if err != nil {
 			return err
 		}
 	}
 
-	s.Storage.AddOrder(currentOrder)
+	err = s.Storage.AddOrder(ctx, currentOrder)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (s *OrderService) AcceptOrders(orders map[string]models.Order) int {
+func (s *OrderService) AcceptOrders(ctx context.Context, orders map[string]models.Order) (int, error) {
 	ordersFailed := 0
 
 	for _, someOrder := range orders {
-		if s.Storage.Contains(someOrder.ID) {
+		if ok, err := s.Storage.Contains(ctx, someOrder.ID); err != nil || !ok {
 			ordersFailed++
 
 			continue
 		}
-		s.Storage.AddOrder(someOrder)
+		err := s.Storage.AddOrder(ctx, someOrder)
+		if err != nil {
+			return ordersFailed, err
+		}
 	}
 
-	return ordersFailed
+	return ordersFailed, nil
 }
 
-func (s *OrderService) ReturnOrder(orderID int) error {
-	if !s.Storage.Contains(orderID) {
+func (s *OrderService) ReturnOrder(ctx context.Context, orderID int) error {
+	if ok, err := s.Storage.Contains(ctx, orderID); err != nil || !ok {
 		return errOrderNotFound
 	}
-	someOrder := s.Storage.GetByID(orderID)
+	someOrder, err := s.Storage.GetByID(ctx, orderID)
+	if err != nil {
+		return err
+	}
 	if someOrder.Status == orderGiven {
 		return errOrderIsGiven
 	}
-	date, _ := time.Parse(dateLayout, someOrder.ExpiryDate)
-	if !date.Before(time.Now()) {
+	if !someOrder.ExpiryDate.Before(time.Now()) {
 		return errOrderIsNotExpired
 	}
 
-	s.Storage.RemoveOrder(orderID)
+	err = s.Storage.RemoveOrder(ctx, orderID)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func isBeforeDeadline(someOrder models.Order, action string) bool {
 	date := time.Now()
-	var deadline time.Time
 	switch action {
 	case returnOrder:
-		deadline, _ = time.Parse(dateLayout, someOrder.LastChange)
-
-		return date.After(deadline)
+		return date.After(someOrder.LastChange)
 	case giveOrder:
-		deadline, _ = time.Parse(dateLayout, someOrder.ExpiryDate)
-
-		return date.Before(deadline)
+		return date.Before(someOrder.ExpiryDate)
 	}
 
 	return false
@@ -177,11 +185,14 @@ func isOrderEligible(order models.Order, userID int, action string) bool {
 	return order.Status == orderStored
 }
 
-func (s *OrderService) processOrder(userID int, orderID int, action string) error {
-	if !s.Storage.Contains(orderID) {
+func (s *OrderService) processOrder(ctx context.Context, userID int, orderID int, action string) error {
+	if ok, err := s.Storage.Contains(ctx, orderID); err != nil || !ok {
 		return errOrderNotFound
 	}
-	someOrder := s.Storage.GetByID(orderID)
+	someOrder, err := s.Storage.GetByID(ctx, orderID)
+	if err != nil {
+		return err
+	}
 	if !isOrderEligible(someOrder, userID, action) {
 		return errOrderNotEligible
 	}
@@ -194,17 +205,20 @@ func (s *OrderService) processOrder(userID int, orderID int, action string) erro
 	default:
 		return errUndefinedAction
 	}
-	someOrder.LastChange = time.Now().Format(dateLayout)
-	s.Storage.UpdateOrder(orderID, someOrder)
+	someOrder.LastChange = time.Now()
+	err = s.Storage.UpdateOrder(ctx, orderID, someOrder)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (s *OrderService) ProcessOrders(userID int, orderIDs []int, action string) (int, error) {
+func (s *OrderService) ProcessOrders(ctx context.Context, userID int, orderIDs []int, action string) (int, error) {
 	ordersFailed := 0
 
 	for _, orderID := range orderIDs {
-		err := s.processOrder(userID, orderID, action)
+		err := s.processOrder(ctx, userID, orderID, action)
 		if err != nil {
 			if errors.Is(err, errUndefinedAction) {
 				return 0, errUndefinedAction
@@ -216,24 +230,15 @@ func (s *OrderService) ProcessOrders(userID int, orderIDs []int, action string) 
 	return ordersFailed, nil
 }
 
-func (s *OrderService) UserOrders(userID int, count int) []models.Order {
-	orders := s.Storage.GetByUserID(userID)
-
-	if count == 0 {
-		return orders
-	}
-
-	return orders[:count]
+func (s *OrderService) UserOrders(ctx context.Context, userID int, count int) ([]models.Order, error) {
+	return s.Storage.GetByUserID(ctx, userID, count)
 }
 
-func (s *OrderService) Returns() []models.Order {
-	return s.Storage.GetReturns()
+func (s *OrderService) Returns(ctx context.Context) ([]models.Order, error) {
+	return s.Storage.GetReturns(ctx)
 }
 
-func (s *OrderService) OrderHistory() []models.Order {
-	return s.Storage.OrderHistory()
-}
-
-func (s *OrderService) Save() error {
-	return s.Storage.Save()
+func (s *OrderService) GetOrders(ctx context.Context, conds []query.Cond, count int,
+	page int) ([]models.Order, error) {
+	return s.Storage.GetOrders(ctx, conds, count, page)
 }
