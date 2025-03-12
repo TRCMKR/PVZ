@@ -62,7 +62,7 @@ type BasePackaging struct {
 }
 
 func (b *BasePackaging) String() string {
-	return getPackagingName(b.Type)
+	return GetPackagingName(b.Type)
 }
 
 func (b *BasePackaging) GetType() PackagingType {
@@ -106,7 +106,7 @@ func (b *BasePackaging) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func getPackagingName(packaging PackagingType) string {
+func GetPackagingName(packaging PackagingType) string {
 	switch packaging {
 	case BagPackaging:
 		return BagName

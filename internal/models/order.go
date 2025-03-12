@@ -3,21 +3,53 @@ package models
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Rhymond/go-money"
 )
 
+// Order represents an order in the system
+// @Description Order structure represents an order in the system
 type Order struct {
-	ID             int
-	UserID         int
-	Weight         float64
-	Price          money.Money
-	Packaging      PackagingType
-	ExtraPackaging PackagingType
-	Status         string
-	ArrivalDate    string
-	ExpiryDate     string
-	LastChange     string
+	// @Description Unique ID of the order
+	// @Example 123
+	ID int `db:"id" json:"id"`
+
+	// @Description ID of the user who created the order
+	// @Example 456
+	UserID int `db:"user_id" json:"user_id"`
+
+	// @Description Weight of the order in kilograms
+	// @Example 5.5
+	Weight float64 `db:"weight" json:"weight"`
+
+	// @Description Price of the order
+	// @Example {"amount": 100, "currency": "USD"}
+	Price money.Money `db:"price" json:"price"`
+
+	// @Description Type of packaging for the order
+	// @Example "box"
+	Packaging PackagingType `db:"packaging" json:"packaging"`
+
+	// @Description Extra packaging option for the order
+	// @Example "wrap"
+	ExtraPackaging PackagingType `db:"extra_packaging" json:"extra_packaging"`
+
+	// @Description Current status of the order (e.g., 'stored', 'given', etc.)
+	// @Example "stored"
+	Status string `db:"status" json:"status"`
+
+	// @Description Date when the order is expected to arrive
+	// @Example "2025-03-10T10:00:00Z"
+	ArrivalDate time.Time `db:"arrival_date" json:"arrival_date"`
+
+	// @Description Date when the order will expire
+	// @Example "2025-03-15T10:00:00Z"
+	ExpiryDate time.Time `db:"expiry_date" json:"expiry_date"`
+
+	// @Description The last date when the order was modified
+	// @Example "2025-03-09T10:00:00Z"
+	LastChange time.Time `db:"last_change" json:"last_change"`
 }
 
 const (
@@ -30,8 +62,12 @@ const (
 	dateWidth      = 22
 )
 
+const (
+	dateLayout = "2006.01.02 15:04:05"
+)
+
 func NewOrder(id int, userID int, weight float64, price money.Money, status string,
-	arrivalDate string, expiryDate string, lastChange string) *Order {
+	arrivalDate time.Time, expiryDate time.Time, lastChange time.Time) *Order {
 	return &Order{
 		ID:             id,
 		UserID:         userID,
@@ -39,8 +75,8 @@ func NewOrder(id int, userID int, weight float64, price money.Money, status stri
 		Price:          price,
 		Packaging:      NoPackaging,
 		ExtraPackaging: NoPackaging,
-		ArrivalDate:    arrivalDate,
 		Status:         status,
+		ArrivalDate:    arrivalDate,
 		ExpiryDate:     expiryDate,
 		LastChange:     lastChange,
 	}
@@ -52,7 +88,7 @@ func (o *Order) String() string {
 		orderIDWidth, userIDWidth, weightWidth, priceWidth, packagingWidth, statusWidth, dateWidth)
 
 	_, err := fmt.Fprintf(&sb, rowFormat, o.ID, o.UserID,
-		o.Weight, o.Price.Display(), o.GetPackagingString(), o.Status, o.LastChange)
+		o.Weight, o.Price.Display(), o.GetPackagingString(), o.Status, o.LastChange.Format(dateLayout))
 	if err != nil {
 		sb.WriteString(err.Error())
 	}
@@ -65,11 +101,11 @@ func (o *Order) GetPackagingString() string {
 	if o.Packaging == NoPackaging {
 		result = "none"
 	} else {
-		result = getPackagingName(o.Packaging)
+		result = GetPackagingName(o.Packaging)
 	}
 
 	if o.ExtraPackaging != NoPackaging {
-		result += " in " + getPackagingName(o.ExtraPackaging)
+		result += " in " + GetPackagingName(o.ExtraPackaging)
 	}
 
 	return result

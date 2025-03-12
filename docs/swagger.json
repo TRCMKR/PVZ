@@ -1,0 +1,128 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a sample server for Swagger in Go.",
+        "title": "PVZ API Documentation",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:9000",
+    "basePath": "/",
+    "paths": {
+        "/orders": {
+            "post": {
+                "description": "Creates a new order.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Create an Order",
+                "parameters": [
+                    {
+                        "description": "Order",
+                        "name": "order",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.Order"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.Order"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "gitlab_ozon_dev_alexplay1224_homework_internal_models.Order": {
+            "description": "Order structure represents an order in the system",
+            "type": "object",
+            "properties": {
+                "arrival_date": {
+                    "description": "@Description Date when the order is expected to arrive\n@Example \"2025-03-10T10:00:00Z\"",
+                    "type": "string"
+                },
+                "expiry_date": {
+                    "description": "@Description Date when the order will expire\n@Example \"2025-03-15T10:00:00Z\"",
+                    "type": "string"
+                },
+                "extra_packaging": {
+                    "description": "@Description Extra packaging option for the order\n@Example \"wrap\"",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.PackagingType"
+                        }
+                    ]
+                },
+                "id": {
+                    "description": "@Description Unique ID of the order\n@Example 123",
+                    "type": "integer"
+                },
+                "last_change": {
+                    "description": "@Description The last date when the order was modified\n@Example \"2025-03-09T10:00:00Z\"",
+                    "type": "string"
+                },
+                "packaging": {
+                    "description": "@Description Type of packaging for the order\n@Example \"box\"",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.PackagingType"
+                        }
+                    ]
+                },
+                "price": {
+                    "description": "@Description Price of the order\n@Example {\"amount\": 100, \"currency\": \"USD\"}",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/money.Money"
+                        }
+                    ]
+                },
+                "status": {
+                    "description": "@Description Current status of the order (e.g., 'stored', 'given', etc.)\n@Example \"stored\"",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "@Description ID of the user who created the order\n@Example 456",
+                    "type": "integer"
+                },
+                "weight": {
+                    "description": "@Description Weight of the order in kilograms\n@Example 5.5",
+                    "type": "number"
+                }
+            }
+        },
+        "gitlab_ozon_dev_alexplay1224_homework_internal_models.PackagingType": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "x-enum-varnames": [
+                "NoPackaging",
+                "BagPackaging",
+                "BoxPackaging",
+                "WrapPackaging"
+            ]
+        },
+        "money.Money": {
+            "type": "object"
+        }
+    }
+}

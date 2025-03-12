@@ -11,6 +11,9 @@
 *.dylib
 *.test
 
+# ENV files
+.env
+
 # IDE and editor settings
 .vscode/
 .idea/
