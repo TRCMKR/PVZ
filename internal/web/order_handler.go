@@ -1,3 +1,4 @@
+//go:generate mockgen -source=order_handler.go -destination=../mocks/service/mock_order_service.go -package=service
 package web
 
 import (
@@ -12,15 +13,23 @@ import (
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	myquery "gitlab.ozon.dev/alexplay1224/homework/internal/query"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/service"
 
 	"github.com/Rhymond/go-money"
 	"github.com/gorilla/mux"
 )
 
-type server struct {
-	orderService service.OrderService
-	adminService service.AdminService
+type OrderHandler struct {
+	OrderService orderService
+}
+
+type orderService interface {
+	AcceptOrder(context.Context, int, int, float64, money.Money, time.Time, []models.Packaging) error
+	AcceptOrders(context.Context, map[string]models.Order) (int, error)
+	ReturnOrder(context.Context, int) error
+	ProcessOrders(context.Context, int, []int, string) (int, error)
+	UserOrders(context.Context, int, int) ([]models.Order, error)
+	Returns(context.Context) ([]models.Order, error)
+	GetOrders(context.Context, []myquery.Cond, int, int) ([]models.Order, error)
 }
 
 var (
@@ -31,6 +40,7 @@ var (
 	errWrongStatusFormat = errors.New("wrong status format")
 	errFieldsMissing     = errors.New("missing fields")
 	errInvalidUsername   = errors.New("invalid username")
+	errWrongJsonFormat   = errors.New("wrong json format")
 )
 
 type inputType uint
@@ -46,7 +56,7 @@ const (
 	inputDateLayout        = "2006.01.02"
 )
 
-func (s *server) getPackaging(packagingStr string) (models.Packaging, error) {
+func getPackaging(packagingStr string) (models.Packaging, error) {
 	var packaging models.Packaging
 	if packagingStr != "" {
 		packaging = models.GetPackaging(packagingStr)
@@ -58,6 +68,17 @@ func (s *server) getPackaging(packagingStr string) (models.Packaging, error) {
 	return packaging, nil
 }
 
+type createOrderRequest struct {
+	ID             int         `json:"id"`
+	UserID         int         `json:"user_id"`
+	Weight         float64     `json:"weight"`
+	Price          money.Money `json:"price"`
+	Packaging      int         `json:"packaging"`
+	ExtraPackaging int         `json:"extra_packaging"`
+	Status         int         `json:"status"`
+	ExpiryDate     time.Time   `json:"expiry_date"`
+}
+
 // @Summary		Create an Order
 // @Description	Creates a new order.
 // @Tags			orders
@@ -67,21 +88,12 @@ func (s *server) getPackaging(packagingStr string) (models.Packaging, error) {
 // @Success		200		{object}	models.Order
 // @Failure		400
 // @Router			/orders [post]
-func (s *server) CreateOrder(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	var order = struct {
-		ID             int         `json:"id"`
-		UserID         int         `json:"user_id"`
-		Weight         float64     `json:"weight"`
-		Price          money.Money `json:"price"`
-		Packaging      int         `json:"packaging"`
-		ExtraPackaging int         `json:"extra_packaging"`
-		Status         int         `json:"status"`
-		ExpiryDate     time.Time   `json:"expiry_date"`
-	}{}
+func (h *OrderHandler) CreateOrder(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	var order = createOrderRequest{}
 
 	err := json.NewDecoder(r.Body).Decode(&order)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, errWrongJsonFormat.Error(), http.StatusBadRequest)
 
 		return
 	}
@@ -94,20 +106,22 @@ func (s *server) CreateOrder(ctx context.Context, w http.ResponseWriter, r *http
 
 	packagings := make([]models.Packaging, 0, 2)
 	var tmp models.Packaging
-	tmp, err = s.getPackaging(models.GetPackagingName(models.PackagingType(order.Packaging)))
+	tmp, err = getPackaging(models.GetPackagingName(models.PackagingType(order.Packaging)))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		return
 	}
 	packagings = append(packagings, tmp)
-	tmp, err = s.getPackaging(models.GetPackagingName(models.PackagingType(order.ExtraPackaging)))
+	tmp, err = getPackaging(models.GetPackagingName(models.PackagingType(order.ExtraPackaging)))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		return
 	}
 	packagings = append(packagings, tmp)
 
-	err = s.orderService.AcceptOrder(ctx, order.ID, order.UserID, order.Weight, order.Price, order.ExpiryDate, packagings)
+	err = h.OrderService.AcceptOrder(ctx, order.ID, order.UserID, order.Weight, order.Price, order.ExpiryDate, packagings)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
@@ -117,7 +131,7 @@ func (s *server) CreateOrder(ctx context.Context, w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *server) DeleteOrder(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (h *OrderHandler) DeleteOrder(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	orderID, err := strconv.Atoi(mux.Vars(r)[orderIDParam])
 	if err != nil {
 		http.Error(w, errInvalidOrderID.Error(), http.StatusBadRequest)
@@ -125,7 +139,7 @@ func (s *server) DeleteOrder(ctx context.Context, w http.ResponseWriter, r *http
 		return
 	}
 
-	err = s.orderService.ReturnOrder(ctx, orderID)
+	err = h.OrderService.ReturnOrder(ctx, orderID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
@@ -135,7 +149,7 @@ func (s *server) DeleteOrder(ctx context.Context, w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *server) parseInt(param string) (int, error) {
+func (h *OrderHandler) parseInt(param string) (int, error) {
 	res := 0
 	var err error
 	if param != "" {
@@ -148,7 +162,7 @@ func (s *server) parseInt(param string) (int, error) {
 	return res, nil
 }
 
-func (s *server) validateNumberParam(param string) (string, error) {
+func (h *OrderHandler) validateNumberParam(param string) (string, error) {
 	if param != "" {
 		_, err := strconv.Atoi(param)
 		if err != nil {
@@ -159,7 +173,7 @@ func (s *server) validateNumberParam(param string) (string, error) {
 	return param, nil
 }
 
-func (s *server) validateWordParam(status string) (string, error) {
+func (h *OrderHandler) validateWordParam(status string) (string, error) {
 	if status == "" {
 		return "", nil
 	}
@@ -173,7 +187,7 @@ func (s *server) validateWordParam(status string) (string, error) {
 	return "", errWrongStatusFormat
 }
 
-func (s *server) validateDateParam(param string) (string, error) {
+func (h *OrderHandler) validateDateParam(param string) (string, error) {
 	if param == "" {
 		return "", nil
 	}
@@ -189,8 +203,9 @@ func (s *server) validateDateParam(param string) (string, error) {
 	return date.Format(time.RFC3339), nil
 }
 
-func (s *server) getFilters() map[string]inputType {
+func (h *OrderHandler) getFilters() map[string]inputType {
 	return map[string]inputType{
+		orderIDParam:         numberType,
 		userIDParam:          numberType,
 		weightParam:          numberType,
 		weightFromParam:      numberType,
@@ -206,8 +221,9 @@ func (s *server) getFilters() map[string]inputType {
 	}
 }
 
-func (s *server) getCondMap() map[string]myquery.CondType {
+func (h *OrderHandler) getCondMap() map[string]myquery.CondType {
 	return map[string]myquery.CondType{
+		orderIDParam:         myquery.Equals,
 		userIDParam:          myquery.Equals,
 		weightParam:          myquery.Equals,
 		weightFromParam:      myquery.GreaterEqualThan,
@@ -223,8 +239,9 @@ func (s *server) getCondMap() map[string]myquery.CondType {
 	}
 }
 
-func (s *server) getColumnMap() map[string]string {
+func (h *OrderHandler) getColumnMap() map[string]string {
 	return map[string]string{
+		orderIDParam:         orderIDParam,
 		userIDParam:          userIDParam,
 		weightParam:          weightParam,
 		weightFromParam:      weightParam,
@@ -240,27 +257,27 @@ func (s *server) getColumnMap() map[string]string {
 	}
 }
 
-func (s *server) getFilterParams(r *http.Request) ([]myquery.Cond, int, int, error) {
+func (h *OrderHandler) getFilterParams(r *http.Request) ([]myquery.Cond, int, int, error) {
 	query := r.URL.Query()
 
-	filters := s.getFilters()
-	condMap := s.getCondMap()
-	columnMap := s.getColumnMap()
+	filters := h.getFilters()
+	condMap := h.getCondMap()
+	columnMap := h.getColumnMap()
 
 	params := make(map[string]string, len(filters))
 	var err error
 	for k, v := range filters {
-		params[k], err = s.validateParam(query.Get(k), v)
+		params[k], err = h.validateParam(query.Get(k), v)
 		if err != nil {
 			return nil, 0, 0, err
 		}
 	}
 
-	count, err := s.parseInt(query.Get(countParam))
+	count, err := h.parseInt(query.Get(countParam))
 	if err != nil {
 		return nil, 0, 0, errWrongNumberFormat
 	}
-	page, err := s.parseInt(query.Get(pageParam))
+	page, err := h.parseInt(query.Get(pageParam))
 	if err != nil {
 		return nil, 0, 0, errWrongNumberFormat
 	}
@@ -280,28 +297,28 @@ func (s *server) getFilterParams(r *http.Request) ([]myquery.Cond, int, int, err
 	return conds, count, page, nil
 }
 
-func (s *server) validateParam(value string, inputType inputType) (string, error) {
+func (h *OrderHandler) validateParam(value string, inputType inputType) (string, error) {
 	switch inputType {
 	case numberType:
-		return s.validateNumberParam(value)
+		return h.validateNumberParam(value)
 	case wordType:
-		return s.validateWordParam(value)
+		return h.validateWordParam(value)
 	case dateType:
-		return s.validateDateParam(value)
+		return h.validateDateParam(value)
 	default:
 		return "", fmt.Errorf("unknown input type: %v", inputType)
 	}
 }
 
-func (s *server) GetOrders(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	conds, count, page, err := s.getFilterParams(r)
+func (h *OrderHandler) GetOrders(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	conds, count, page, err := h.getFilterParams(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		return
 	}
 
-	orders, err := s.orderService.GetOrders(ctx, conds, count, page)
+	orders, err := h.OrderService.GetOrders(ctx, conds, count, page)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -326,12 +343,14 @@ func (s *server) GetOrders(ctx context.Context, w http.ResponseWriter, r *http.R
 	_, _ = w.Write(data)
 }
 
-func (s *server) UpdateOrders(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	var processRequest = struct {
-		UserID   int    `json:"user_id"`
-		OrderIDs []int  `json:"order_ids"`
-		Action   string `json:"action"`
-	}{}
+type processOrderRequest struct {
+	UserID   int    `json:"user_id"`
+	OrderIDs []int  `json:"order_ids"`
+	Action   string `json:"action"`
+}
+
+func (h *OrderHandler) UpdateOrders(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	var processRequest processOrderRequest
 
 	err := json.NewDecoder(r.Body).Decode(&processRequest)
 	if err != nil {
@@ -349,7 +368,7 @@ func (s *server) UpdateOrders(ctx context.Context, w http.ResponseWriter, r *htt
 	var response = struct {
 		Failed int `json:"failed"`
 	}{}
-	response.Failed, err = s.orderService.ProcessOrders(ctx, processRequest.UserID,
+	response.Failed, err = h.OrderService.ProcessOrders(ctx, processRequest.UserID,
 		processRequest.OrderIDs, processRequest.Action)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

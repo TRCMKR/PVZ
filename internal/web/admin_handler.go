@@ -1,3 +1,4 @@
+//go:generate mockgen -source=admin_handler.go -destination=../mocks/service/mock_admin_service.go -package=service
 package web
 
 import (
@@ -10,7 +11,20 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (s *server) CreateAdmin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+type AdminHandler struct {
+	adminService adminService
+}
+
+type adminService interface {
+	CreateAdmin(context.Context, models.Admin) error
+	GetAdminByUsername(context.Context, string) (models.Admin, error)
+	UpdateAdmin(context.Context, string, string, models.Admin) error
+	DeleteAdmin(context.Context, string, string) error
+	ContainsUsername(context.Context, string) (bool, error)
+	ContainsID(context.Context, int) (bool, error)
+}
+
+func (h *AdminHandler) CreateAdmin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	var createRequest = struct {
 		ID       int    `json:"id"`
 		Username string `json:"username"`
@@ -28,7 +42,7 @@ func (s *server) CreateAdmin(ctx context.Context, w http.ResponseWriter, r *http
 
 	admin := *models.NewAdmin(createRequest.ID, createRequest.Username, createRequest.Password)
 
-	err = s.adminService.CreateAdmin(ctx, admin)
+	err = h.adminService.CreateAdmin(ctx, admin)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
@@ -38,7 +52,7 @@ func (s *server) CreateAdmin(ctx context.Context, w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *server) UpdateAdmin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (h *AdminHandler) UpdateAdmin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	adminUsername, ok := mux.Vars(r)[adminUsernameParam]
 	if !ok {
 		http.Error(w, errInvalidUsername.Error(), http.StatusBadRequest)
@@ -64,7 +78,7 @@ func (s *server) UpdateAdmin(ctx context.Context, w http.ResponseWriter, r *http
 
 	admin := *models.NewAdmin(0, adminUsername, updateRequest.NewPassword)
 
-	err = s.adminService.UpdateAdmin(ctx, adminUsername, updateRequest.Password, admin)
+	err = h.adminService.UpdateAdmin(ctx, adminUsername, updateRequest.Password, admin)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
@@ -74,7 +88,7 @@ func (s *server) UpdateAdmin(ctx context.Context, w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *server) DeleteAdmin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (h *AdminHandler) DeleteAdmin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	adminUsername, ok := mux.Vars(r)[adminUsernameParam]
 	if !ok {
 		http.Error(w, errInvalidUsername.Error(), http.StatusBadRequest)
@@ -94,7 +108,7 @@ func (s *server) DeleteAdmin(ctx context.Context, w http.ResponseWriter, r *http
 		http.Error(w, errFieldsMissing.Error(), http.StatusBadRequest)
 	}
 
-	err = s.adminService.DeleteAdmin(ctx, deleteRequest.Password, adminUsername)
+	err = h.adminService.DeleteAdmin(ctx, deleteRequest.Password, adminUsername)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 

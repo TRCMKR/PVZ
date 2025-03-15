@@ -36,17 +36,17 @@ type adminStorage interface {
 }
 
 type App struct {
-	orderService service.OrderService
-	adminService service.AdminService
+	orderService orderService
+	adminService adminService
 	router       *mux.Router
 }
 
 func NewApp(orders orderStorage, admins adminStorage) *App {
 	return &App{
-		orderService: service.OrderService{
+		orderService: &service.OrderService{
 			Storage: orders,
 		},
-		adminService: service.AdminService{
+		adminService: &service.AdminService{
 			Storage: admins,
 		},
 		router: mux.NewRouter(),
@@ -82,6 +82,11 @@ func (a *App) wrapHandler(ctx context.Context, handler func(context.Context, htt
 	}
 }
 
+type server struct {
+	orders OrderHandler
+	admins AdminHandler
+}
+
 // @title			PVZ API Documentation
 // @version		1.0
 // @description	This is a sample server for Swagger in Go.
@@ -89,8 +94,12 @@ func (a *App) wrapHandler(ctx context.Context, handler func(context.Context, htt
 // @BasePath		/
 func (a *App) Run(ctx context.Context) error {
 	impl := server{
-		orderService: a.orderService,
-		adminService: a.adminService,
+		orders: OrderHandler{
+			OrderService: a.orderService,
+		},
+		admins: AdminHandler{
+			adminService: a.adminService,
+		},
 	}
 	router := mux.NewRouter()
 	router.Use(FieldLogger)
@@ -99,7 +108,8 @@ func (a *App) Run(ctx context.Context) error {
 		adminService: a.adminService,
 	}
 
-	router.HandleFunc("/orders", authMiddleware.BasicAuthChecker(ctx, a.wrapHandler(ctx, impl.CreateOrder)).ServeHTTP).
+	router.HandleFunc("/orders", authMiddleware.BasicAuthChecker(ctx,
+		a.wrapHandler(ctx, impl.orders.CreateOrder)).ServeHTTP).
 		Methods(http.MethodPost)
 	//	@Summary		Get Orders
 	//	@Description	Fetches all orders.
@@ -109,7 +119,8 @@ func (a *App) Run(ctx context.Context) error {
 	//	@Success		200	{array}		models.Order
 	//	@Failure		400	{object}	models.ErrorResponse
 	//	@Router			/orders [get]
-	router.HandleFunc("/orders", authMiddleware.BasicAuthChecker(ctx, a.wrapHandler(ctx, impl.GetOrders)).ServeHTTP).
+	router.HandleFunc("/orders", authMiddleware.BasicAuthChecker(ctx,
+		a.wrapHandler(ctx, impl.orders.GetOrders)).ServeHTTP).
 		Methods(http.MethodGet)
 
 	//	@Summary		Delete an Order
@@ -122,7 +133,7 @@ func (a *App) Run(ctx context.Context) error {
 	//	@Failure		404	{object}	models.ErrorResponse
 	//	@Router			/orders/{id} [delete]
 	router.HandleFunc(fmt.Sprintf("/orders/{%s:[0-9]+}", orderIDParam),
-		authMiddleware.BasicAuthChecker(ctx, a.wrapHandler(ctx, impl.DeleteOrder)).ServeHTTP).
+		authMiddleware.BasicAuthChecker(ctx, a.wrapHandler(ctx, impl.orders.DeleteOrder)).ServeHTTP).
 		Methods(http.MethodDelete)
 
 	//	@Summary		Process Orders
@@ -135,7 +146,7 @@ func (a *App) Run(ctx context.Context) error {
 	//	@Failure		400		{object}	models.ErrorResponse
 	//	@Router			/orders/process [post]
 	router.HandleFunc("/orders/process", authMiddleware.BasicAuthChecker(ctx,
-		a.wrapHandler(ctx, impl.UpdateOrders)).ServeHTTP).
+		a.wrapHandler(ctx, impl.orders.UpdateOrders)).ServeHTTP).
 		Methods(http.MethodPost)
 
 	//	@Summary		Create Admin
@@ -147,7 +158,7 @@ func (a *App) Run(ctx context.Context) error {
 	//	@Success		200		{object}	models.Admin
 	//	@Failure		400		{object}	models.ErrorResponse
 	//	@Router			/admins [post]
-	router.HandleFunc("/admins", a.wrapHandler(ctx, impl.CreateAdmin)).
+	router.HandleFunc("/admins", a.wrapHandler(ctx, impl.admins.CreateAdmin)).
 		Methods(http.MethodPost)
 
 	//	@Summary		Update Admin
@@ -160,7 +171,8 @@ func (a *App) Run(ctx context.Context) error {
 	//	@Success		200				{object}	models.Admin
 	//	@Failure		400				{object}	models.ErrorResponse
 	//	@Router			/admins/{admin_username} [post]
-	router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}", adminUsernameParam), a.wrapHandler(ctx, impl.UpdateAdmin)).
+	router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}",
+		adminUsernameParam), a.wrapHandler(ctx, impl.admins.UpdateAdmin)).
 		Methods(http.MethodPost)
 
 	//	@Summary		Delete Admin
@@ -172,7 +184,8 @@ func (a *App) Run(ctx context.Context) error {
 	//	@Success		200				{string}	string	"Admin deleted successfully"
 	//	@Failure		404				{object}	models.ErrorResponse
 	//	@Router			/admins/{admin_username} [delete]
-	router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}", adminUsernameParam), a.wrapHandler(ctx, impl.DeleteAdmin)).
+	router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}",
+		adminUsernameParam), a.wrapHandler(ctx, impl.admins.DeleteAdmin)).
 		Methods(http.MethodDelete)
 
 	// Путь для отображения Swagger UI

@@ -15,7 +15,7 @@ type order struct {
 	Price          int64                `db:"price"`
 	Packaging      models.PackagingType `db:"packaging"`
 	ExtraPackaging models.PackagingType `db:"extra_packaging"`
-	Status         sql.NullString       `db:"status"`
+	Status         models.StatusType    `db:"status"`
 	ArrivalDate    sql.NullTime         `db:"arrival_date"`
 	ExpiryDate     sql.NullTime         `db:"expiry_date"`
 	LastChange     sql.NullTime         `db:"last_change"`
@@ -29,7 +29,7 @@ func convertToRepo(someOrder *models.Order) *order {
 		Price:          someOrder.Price.Amount(),
 		Packaging:      someOrder.Packaging,
 		ExtraPackaging: someOrder.ExtraPackaging,
-		Status:         sql.NullString{String: someOrder.Status, Valid: true},
+		Status:         someOrder.Status,
 		ArrivalDate:    sql.NullTime{Time: someOrder.ArrivalDate, Valid: true},
 		ExpiryDate:     sql.NullTime{Time: someOrder.ExpiryDate, Valid: true},
 		LastChange:     sql.NullTime{Time: someOrder.LastChange, Valid: true},
@@ -46,9 +46,7 @@ func convertToModel(someOrder *order) *models.Order {
 		Price:          *money.New(someOrder.Price, money.RUB),
 		Packaging:      someOrder.Packaging,
 		ExtraPackaging: someOrder.ExtraPackaging,
-	}
-	if someOrder.Status.Valid {
-		orderModel.Status = someOrder.Status.String
+		Status:         someOrder.Status,
 	}
 	if someOrder.ArrivalDate.Valid {
 		orderModel.ArrivalDate = someOrder.ArrivalDate.Time

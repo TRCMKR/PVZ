@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $DB_USERNAME -d $DB_NAME" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+  app:
+    container_name: "test_app"
+    build: .
+    environment:
+      APP_ENV: ${APP_ENV}
+    ports:
+      - "9000:9000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata: {}

@@ -16,12 +16,6 @@ const (
 	returnOrder = "return"
 )
 
-const (
-	orderGiven    = "given"
-	orderReturned = "returned"
-	orderStored   = "stored"
-)
-
 var (
 	errOrderAlreadyExists = errors.New("such order exists")
 	errOrderExpired       = errors.New("expired order")
@@ -103,7 +97,7 @@ func (s *OrderService) AcceptOrder(ctx context.Context, orderID int, userID int,
 
 	currentTime := time.Now()
 
-	currentOrder := *models.NewOrder(orderID, userID, weight, price, orderStored,
+	currentOrder := *models.NewOrder(orderID, userID, weight, price, models.StoredOrder,
 		currentTime, expiryDate, currentTime)
 
 	for _, somePackaging := range packagings {
@@ -147,7 +141,7 @@ func (s *OrderService) ReturnOrder(ctx context.Context, orderID int) error {
 	if err != nil {
 		return err
 	}
-	if someOrder.Status == orderGiven {
+	if someOrder.Status == models.StoredOrder {
 		return errOrderIsGiven
 	}
 	if !someOrder.ExpiryDate.Before(time.Now()) {
@@ -179,10 +173,10 @@ func isOrderEligible(order models.Order, userID int, action string) bool {
 		return false
 	}
 	if action == returnOrder {
-		return order.Status == orderGiven
+		return order.Status == models.GivenOrder
 	}
 
-	return order.Status == orderStored
+	return order.Status == models.StoredOrder
 }
 
 func (s *OrderService) processOrder(ctx context.Context, userID int, orderID int, action string) error {
@@ -199,9 +193,9 @@ func (s *OrderService) processOrder(ctx context.Context, userID int, orderID int
 
 	switch action {
 	case giveOrder:
-		someOrder.Status = orderGiven
+		someOrder.Status = models.GivenOrder
 	case returnOrder:
-		someOrder.Status = orderReturned
+		someOrder.Status = models.ReturnedOrder
 	default:
 		return errUndefinedAction
 	}

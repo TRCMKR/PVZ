@@ -8,6 +8,15 @@ import (
 	"github.com/Rhymond/go-money"
 )
 
+type StatusType uint
+
+const (
+	StoredOrder StatusType = iota + 1
+	GivenOrder
+	ReturnedOrder
+	DeletedOrder
+)
+
 // Order represents an order in the system
 // @Description Order structure represents an order in the system
 type Order struct {
@@ -37,7 +46,7 @@ type Order struct {
 
 	// @Description Current status of the order (e.g., 'stored', 'given', etc.)
 	// @Example "stored"
-	Status string `db:"status" json:"status"`
+	Status StatusType `db:"status" json:"status"`
 
 	// @Description Date when the order is expected to arrive
 	// @Example "2025-03-10T10:00:00Z"
@@ -66,7 +75,7 @@ const (
 	dateLayout = "2006.01.02 15:04:05"
 )
 
-func NewOrder(id int, userID int, weight float64, price money.Money, status string,
+func NewOrder(id int, userID int, weight float64, price money.Money, status StatusType,
 	arrivalDate time.Time, expiryDate time.Time, lastChange time.Time) *Order {
 	return &Order{
 		ID:             id,

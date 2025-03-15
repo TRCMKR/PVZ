@@ -1,4 +1,6 @@
 BINARY=app
+DOCKER_COMPOSE=docker compose
+TEST_CONTAINER_NAME=test_app
 
 BUILD_FLAGS=-ldflags="-s -w"
 
@@ -17,7 +19,7 @@ MIGRATION_FOLDER=$(CURDIR)/migrations
 
 .PHONY: build
 ## builds app + clean + fmt + lint
-build: fmt lint clean
+build: fmt clean
 	go build $(BUILD_FLAGS) -o ./build/$(BINARY) ./cmd/app
 
 .PHONY: run
@@ -48,11 +50,6 @@ lint: vet
 ## runs go vet
 vet:
 	go vet ./...
-
-.PHONY: install-lint
-## installs linter
-install-lint:
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 .PHONY: deps
 ## installs dependencies
@@ -100,8 +97,39 @@ migration-status:
 	goose -dir "$(MIGRATION_FOLDER)" postgres "$(POSTGRES_SETUP_TEST)" status
 
 .PHONY: swag-init
+## makes swagger pages
 swag-init:
 	swag init -g "./internal/web/router.go" --parseInternal --pd
+
+.PHONY: mock-gen
+## generates mocks
+mock-gen:
+	go generate ./...
+
+.PHONY: test
+## tests
+test: lint start-test-env run-unit-tests run-int-tests stop-test-env
+
+.PHONY: test-cover
+## shows test coverage
+test-cover:
+	go test -cover ./...
+
+start-test-env:
+	$(DOCKER_COMPOSE) --env-file ./.env.test up -d --build app
+
+run-unit-tests:
+	docker exec $(TEST_CONTAINER_NAME) go test ./... -tags=unit
+
+run-int-tests:
+	docker exec $(TEST_CONTAINER_NAME) go test ./... -tags=integration
+
+clean-db:
+	docker exec $(TEST_CONTAINER_NAME) psql -U $(DB_USER) $(DB_NAME) -c "DROP DATABASE IF EXISTS testdb;"
+	docker exec $(TEST_CONTAINER_NAME) psql -U $(DB_USER) $(DB_NAME) -c "CREATE DATABASE testdb;"
+
+stop-test-env:
+	$(DOCKER_COMPOSE) down -v
 
 .PHONY: help
 ## prints help about all targets

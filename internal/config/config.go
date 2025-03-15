@@ -8,10 +8,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func InitEnv() {
-	err := godotenv.Load()
+func InitEnv(envFile string) {
+	//envFile := ".env"
+	//if os.Getenv("APP_ENV") == "test" {
+	//	envFile = ".env.test"
+	//}
+	err := godotenv.Overload(envFile)
 	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		log.Fatalf("Error loading %s file", envFile)
 	}
 }
 

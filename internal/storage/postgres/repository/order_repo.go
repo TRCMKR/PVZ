@@ -64,7 +64,7 @@ func (r *OrderRepo) RemoveOrder(ctx context.Context, id int) error {
 		return err
 	}
 
-	if someOrder.Status == "deleted" {
+	if someOrder.Status == models.DeletedOrder {
 		return errNoSuchOrder
 	}
 
