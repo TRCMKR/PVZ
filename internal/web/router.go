@@ -54,23 +54,23 @@ func NewApp(orders orderStorage, admins adminStorage) *App {
 }
 
 const (
-	orderIDParam         = "id"
-	userIDParam          = "user_id"
-	weightParam          = "weight"
-	priceParam           = "price"
-	statusParam          = "status"
-	arrivalDateParam     = "arrival_date"
-	arrivalDateFromParam = "arrival_date_from"
-	arrivalDateToParam   = "arrival_date_to"
-	expiryDateParam      = "expiry_date"
-	expiryDateFromParam  = "expiry_date_from"
-	expiryDateToParam    = "expiry_date_to"
-	weightFromParam      = "weight_from"
-	weightToParam        = "weight_to"
-	priceFromParam       = "price_from"
-	priceToParam         = "price_to"
-	countParam           = "count"
-	pageParam            = "page"
+	OrderIDParam         = "id"
+	UserIDParam          = "user_id"
+	WeightParam          = "weight"
+	PriceParam           = "price"
+	StatusParam          = "status"
+	ArrivalDateParam     = "arrival_date"
+	ArrivalDateFromParam = "arrival_date_from"
+	ArrivalDateToParam   = "arrival_date_to"
+	ExpiryDateParam      = "expiry_date"
+	ExpiryDateFromParam  = "expiry_date_from"
+	ExpiryDateToParam    = "expiry_date_to"
+	WeightFromParam      = "weight_from"
+	WeightToParam        = "weight_to"
+	PriceFromParam       = "price_from"
+	PriceToParam         = "price_to"
+	CountParam           = "count"
+	PageParam            = "page"
 
 	adminUsernameParam = "admin_username"
 )
@@ -132,7 +132,7 @@ func (a *App) Run(ctx context.Context) error {
 	//	@Success		200	{string}	string	"Order deleted successfully"
 	//	@Failure		404	{object}	models.ErrorResponse
 	//	@Router			/orders/{id} [delete]
-	router.HandleFunc(fmt.Sprintf("/orders/{%s:[0-9]+}", orderIDParam),
+	router.HandleFunc(fmt.Sprintf("/orders/{%s:[0-9]+}", OrderIDParam),
 		authMiddleware.BasicAuthChecker(ctx, a.wrapHandler(ctx, impl.orders.DeleteOrder)).ServeHTTP).
 		Methods(http.MethodDelete)
 

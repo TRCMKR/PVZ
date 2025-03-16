@@ -28,6 +28,7 @@ var (
 	errUndefinedAction    = errors.New("undefined action")
 	errNotEnoughWeight    = errors.New("not enough weight")
 	errWrongPackaging     = errors.New("wrong packaging")
+	errUndefinedPackaging = errors.New("undefined packaging")
 )
 
 type orderStorage interface {
@@ -101,6 +102,9 @@ func (s *OrderService) AcceptOrder(ctx context.Context, orderID int, userID int,
 		currentTime, expiryDate, currentTime)
 
 	for _, somePackaging := range packagings {
+		if somePackaging == nil {
+			return errUndefinedPackaging
+		}
 		err = s.pack(&currentOrder, somePackaging)
 		if err != nil {
 			return err
@@ -141,7 +145,7 @@ func (s *OrderService) ReturnOrder(ctx context.Context, orderID int) error {
 	if err != nil {
 		return err
 	}
-	if someOrder.Status == models.StoredOrder {
+	if someOrder.Status == models.GivenOrder {
 		return errOrderIsGiven
 	}
 	if !someOrder.ExpiryDate.Before(time.Now()) {

@@ -51,3 +51,23 @@ func (c *Config) String() string {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		c.host, c.port, c.username, c.password, c.dbname)
 }
+
+func (c *Config) Host() string {
+	return c.host
+}
+
+func (c *Config) Port() string {
+	return c.port
+}
+
+func (c *Config) Username() string {
+	return c.username
+}
+
+func (c *Config) Password() string {
+	return c.password
+}
+
+func (c *Config) DBName() string {
+	return c.dbname
+}

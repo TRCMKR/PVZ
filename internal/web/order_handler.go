@@ -132,7 +132,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, w http.ResponseWriter, r
 }
 
 func (h *OrderHandler) DeleteOrder(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	orderID, err := strconv.Atoi(mux.Vars(r)[orderIDParam])
+	orderID, err := strconv.Atoi(mux.Vars(r)[OrderIDParam])
 	if err != nil {
 		http.Error(w, errInvalidOrderID.Error(), http.StatusBadRequest)
 
@@ -205,55 +205,55 @@ func (h *OrderHandler) validateDateParam(param string) (string, error) {
 
 func (h *OrderHandler) getFilters() map[string]inputType {
 	return map[string]inputType{
-		orderIDParam:         numberType,
-		userIDParam:          numberType,
-		weightParam:          numberType,
-		weightFromParam:      numberType,
-		weightToParam:        numberType,
-		priceParam:           numberType,
-		priceFromParam:       numberType,
-		priceToParam:         numberType,
-		statusParam:          numberType,
-		expiryDateFromParam:  dateType,
-		expiryDateToParam:    dateType,
-		arrivalDateFromParam: dateType,
-		arrivalDateToParam:   dateType,
+		OrderIDParam:         numberType,
+		UserIDParam:          numberType,
+		WeightParam:          numberType,
+		WeightFromParam:      numberType,
+		WeightToParam:        numberType,
+		PriceParam:           numberType,
+		PriceFromParam:       numberType,
+		PriceToParam:         numberType,
+		StatusParam:          numberType,
+		ExpiryDateFromParam:  dateType,
+		ExpiryDateToParam:    dateType,
+		ArrivalDateFromParam: dateType,
+		ArrivalDateToParam:   dateType,
 	}
 }
 
 func (h *OrderHandler) getCondMap() map[string]myquery.CondType {
 	return map[string]myquery.CondType{
-		orderIDParam:         myquery.Equals,
-		userIDParam:          myquery.Equals,
-		weightParam:          myquery.Equals,
-		weightFromParam:      myquery.GreaterEqualThan,
-		weightToParam:        myquery.LessEqualThan,
-		priceParam:           myquery.Equals,
-		priceFromParam:       myquery.GreaterEqualThan,
-		priceToParam:         myquery.LessEqualThan,
-		statusParam:          myquery.Equals,
-		expiryDateFromParam:  myquery.GreaterEqualThan,
-		expiryDateToParam:    myquery.LessEqualThan,
-		arrivalDateFromParam: myquery.GreaterEqualThan,
-		arrivalDateToParam:   myquery.LessEqualThan,
+		OrderIDParam:         myquery.Equals,
+		UserIDParam:          myquery.Equals,
+		WeightParam:          myquery.Equals,
+		WeightFromParam:      myquery.GreaterEqualThan,
+		WeightToParam:        myquery.LessEqualThan,
+		PriceParam:           myquery.Equals,
+		PriceFromParam:       myquery.GreaterEqualThan,
+		PriceToParam:         myquery.LessEqualThan,
+		StatusParam:          myquery.Equals,
+		ExpiryDateFromParam:  myquery.GreaterEqualThan,
+		ExpiryDateToParam:    myquery.LessEqualThan,
+		ArrivalDateFromParam: myquery.GreaterEqualThan,
+		ArrivalDateToParam:   myquery.LessEqualThan,
 	}
 }
 
 func (h *OrderHandler) getColumnMap() map[string]string {
 	return map[string]string{
-		orderIDParam:         orderIDParam,
-		userIDParam:          userIDParam,
-		weightParam:          weightParam,
-		weightFromParam:      weightParam,
-		weightToParam:        weightParam,
-		priceParam:           priceParam,
-		priceFromParam:       priceParam,
-		priceToParam:         priceParam,
-		statusParam:          statusParam,
-		expiryDateFromParam:  expiryDateParam,
-		expiryDateToParam:    expiryDateParam,
-		arrivalDateFromParam: arrivalDateParam,
-		arrivalDateToParam:   arrivalDateParam,
+		OrderIDParam:         OrderIDParam,
+		UserIDParam:          UserIDParam,
+		WeightParam:          WeightParam,
+		WeightFromParam:      WeightParam,
+		WeightToParam:        WeightParam,
+		PriceParam:           PriceParam,
+		PriceFromParam:       PriceParam,
+		PriceToParam:         PriceParam,
+		StatusParam:          StatusParam,
+		ExpiryDateFromParam:  ExpiryDateParam,
+		ExpiryDateToParam:    ExpiryDateParam,
+		ArrivalDateFromParam: ArrivalDateParam,
+		ArrivalDateToParam:   ArrivalDateParam,
 	}
 }
 
@@ -273,11 +273,11 @@ func (h *OrderHandler) getFilterParams(r *http.Request) ([]myquery.Cond, int, in
 		}
 	}
 
-	count, err := h.parseInt(query.Get(countParam))
+	count, err := h.parseInt(query.Get(CountParam))
 	if err != nil {
 		return nil, 0, 0, errWrongNumberFormat
 	}
-	page, err := h.parseInt(query.Get(pageParam))
+	page, err := h.parseInt(query.Get(PageParam))
 	if err != nil {
 		return nil, 0, 0, errWrongNumberFormat
 	}

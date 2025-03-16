@@ -19,7 +19,7 @@ MIGRATION_FOLDER=$(CURDIR)/migrations
 
 .PHONY: build
 ## builds app + clean + fmt + lint
-build: fmt clean
+build: fmt lint clean
 	go build $(BUILD_FLAGS) -o ./build/$(BINARY) ./cmd/app
 
 .PHONY: run
@@ -108,28 +108,18 @@ mock-gen:
 
 .PHONY: test
 ## tests
-test: lint start-test-env run-unit-tests run-int-tests stop-test-env
+test: run-unit-tests run-int-tests
 
 .PHONY: test-cover
-## shows test coverage
+## shows test coverage without cache
 test-cover:
-	go test -cover ./...
-
-start-test-env:
-	$(DOCKER_COMPOSE) --env-file ./.env.test up -d --build app
+	go test -cover -covermode=count gitlab.ozon.dev/alexplay1224/homework/internal/... -tags=unit
 
 run-unit-tests:
-	docker exec $(TEST_CONTAINER_NAME) go test ./... -tags=unit
+	go test -count=1 ./... -tags=unit
 
 run-int-tests:
-	docker exec $(TEST_CONTAINER_NAME) go test ./... -tags=integration
-
-clean-db:
-	docker exec $(TEST_CONTAINER_NAME) psql -U $(DB_USER) $(DB_NAME) -c "DROP DATABASE IF EXISTS testdb;"
-	docker exec $(TEST_CONTAINER_NAME) psql -U $(DB_USER) $(DB_NAME) -c "CREATE DATABASE testdb;"
-
-stop-test-env:
-	$(DOCKER_COMPOSE) down -v
+	go test -count=1 ./... -tags=integration
 
 .PHONY: help
 ## prints help about all targets

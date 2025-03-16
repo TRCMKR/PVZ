@@ -7,12 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/mux"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 
 	"github.com/Rhymond/go-money"
 	"github.com/golang/mock/gomock"
@@ -151,13 +152,13 @@ func TestOrderHandler_GetOrders(t *testing.T) {
 				"user_id": "123",
 				"weight":  "10",
 				"count":   "10",
-				"page":    "1",
+				"page":    "0",
 			},
 			mockSetup: func(orderService *service.MockorderService) {
 				orders := []models.Order{
 					{ID: 1, UserID: 123, Weight: 10, Price: *money.New(1000, money.RUB)},
 				}
-				orderService.EXPECT().GetOrders(gomock.Any(), gomock.Any(), 10, 1).Return(orders, nil).Times(1)
+				orderService.EXPECT().GetOrders(gomock.Any(), gomock.Any(), 10, 0).Return(orders, nil).Times(1)
 			},
 			expectedStatus: http.StatusOK,
 			expectedCount:  1,
@@ -308,7 +309,7 @@ func TestOrderHandler_DeleteOrder(t *testing.T) {
 			req := httptest.NewRequest(http.MethodDelete, "/orders/"+tt.orderIDParam, nil)
 			res := httptest.NewRecorder()
 			req = mux.SetURLVars(req, map[string]string{
-				orderIDParam: tt.orderIDParam,
+				OrderIDParam: tt.orderIDParam,
 			})
 
 			handler := &OrderHandler{
