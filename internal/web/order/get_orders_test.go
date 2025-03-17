@@ -1,5 +1,3 @@
-//go:build unit
-
 package order
 
 import (
@@ -9,12 +7,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"gitlab.ozon.dev/alexplay1224/homework/internal/mocks/service"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 
 	"github.com/Rhymond/go-money"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestHandler_GetOrders(t *testing.T) {
@@ -22,7 +20,7 @@ func TestHandler_GetOrders(t *testing.T) {
 	tests := []struct {
 		name           string
 		queryParams    map[string]string
-		mockSetup      func(orderService *service.MockorderService)
+		mockSetup      func(orderService *MockorderService)
 		expectedStatus int
 		expectedCount  int
 		expectedOrders []models.Order
@@ -35,7 +33,7 @@ func TestHandler_GetOrders(t *testing.T) {
 				"count":   "10",
 				"page":    "0",
 			},
-			mockSetup: func(orderService *service.MockorderService) {
+			mockSetup: func(orderService *MockorderService) {
 				orders := []models.Order{
 					{ID: 1, UserID: 123, Weight: 10, Price: *money.New(1000, money.RUB)},
 				}
@@ -53,7 +51,7 @@ func TestHandler_GetOrders(t *testing.T) {
 				"user_id": "123",
 				"count":   "invalid",
 			},
-			mockSetup:      func(orderService *service.MockorderService) {},
+			mockSetup:      func(orderService *MockorderService) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedCount:  0,
 			expectedOrders: nil,
@@ -63,7 +61,7 @@ func TestHandler_GetOrders(t *testing.T) {
 			queryParams: map[string]string{
 				"weight": "not-a-number",
 			},
-			mockSetup:      func(orderService *service.MockorderService) {},
+			mockSetup:      func(orderService *MockorderService) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedCount:  0,
 			expectedOrders: nil,
@@ -74,7 +72,7 @@ func TestHandler_GetOrders(t *testing.T) {
 				"count": "5",
 				"page":  "2",
 			},
-			mockSetup: func(orderService *service.MockorderService) {
+			mockSetup: func(orderService *MockorderService) {
 				orders := []models.Order{
 					{ID: 1, UserID: 123, Weight: 10, Price: *money.New(1000, money.RUB)},
 					{ID: 2, UserID: 124, Weight: 20, Price: *money.New(2000, money.RUB)},
@@ -95,7 +93,7 @@ func TestHandler_GetOrders(t *testing.T) {
 				"count":   "5",
 				"page":    "1",
 			},
-			mockSetup: func(orderService *service.MockorderService) {
+			mockSetup: func(orderService *MockorderService) {
 				orderService.EXPECT().GetOrders(gomock.Any(), gomock.Any(), 5, 1).Return(nil, errors.New("internal error")).Times(1)
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -110,7 +108,7 @@ func TestHandler_GetOrders(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockOrderService := service.NewMockorderService(ctrl)
+			mockOrderService := NewMockorderService(ctrl)
 			tt.mockSetup(mockOrderService)
 
 			req := httptest.NewRequest(http.MethodGet, "/orders", nil)
@@ -134,9 +132,7 @@ func TestHandler_GetOrders(t *testing.T) {
 					Orders []models.Order `json:"orders"`
 				}
 				err := json.NewDecoder(res.Body).Decode(&response)
-				if err != nil {
-					t.Fatalf("Error decoding response: %v", err)
-				}
+				require.NoError(t, err)
 				assert.Equal(t, tt.expectedCount, response.Count)
 				assert.Equal(t, tt.expectedOrders, response.Orders)
 			}

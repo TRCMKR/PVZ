@@ -1,20 +1,18 @@
-//go:build unit
-
 package admin
 
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"gitlab.ozon.dev/alexplay1224/homework/internal/mocks/service"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
 
-	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 type updareAdminRequest struct {
@@ -25,11 +23,11 @@ type updareAdminRequest struct {
 func TestUpdateAdmin(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name      string
-		username  string
-		args      updareAdminRequest
-		mockSetup func(service *service.MockadminService)
-		want      int
+		name         string
+		username     string
+		args         updareAdminRequest
+		mockSetup    func(service *MockadminService)
+		expectedCode int
 	}{
 		{
 			name:     "Missing fields",
@@ -37,8 +35,8 @@ func TestUpdateAdmin(t *testing.T) {
 			args: updareAdminRequest{
 				Password: "123123",
 			},
-			mockSetup: func(service *service.MockadminService) {},
-			want:      http.StatusBadRequest,
+			mockSetup:    func(service *MockadminService) {},
+			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name:     "User not found",
@@ -47,11 +45,11 @@ func TestUpdateAdmin(t *testing.T) {
 				Password:    "password",
 				NewPassword: "new_password",
 			},
-			mockSetup: func(adminService *service.MockadminService) {
+			mockSetup: func(adminService *MockadminService) {
 				adminService.EXPECT().UpdateAdmin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(admin.ErrAdminDoesntExist).Times(1)
 			},
-			want: http.StatusInternalServerError,
+			expectedCode: http.StatusInternalServerError,
 		},
 		{
 			name:     "Correct request",
@@ -60,11 +58,11 @@ func TestUpdateAdmin(t *testing.T) {
 				Password:    "password",
 				NewPassword: "new_password",
 			},
-			mockSetup: func(adminService *service.MockadminService) {
+			mockSetup: func(adminService *MockadminService) {
 				adminService.EXPECT().UpdateAdmin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil).Times(1)
 			},
-			want: http.StatusOK,
+			expectedCode: http.StatusOK,
 		},
 		{
 			name:     "Incorrect password",
@@ -73,11 +71,11 @@ func TestUpdateAdmin(t *testing.T) {
 				Password:    "password",
 				NewPassword: "new_password",
 			},
-			mockSetup: func(adminService *service.MockadminService) {
+			mockSetup: func(adminService *MockadminService) {
 				adminService.EXPECT().UpdateAdmin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(admin.ErrIDUsed).Times(1)
 			},
-			want: http.StatusInternalServerError,
+			expectedCode: http.StatusInternalServerError,
 		},
 	}
 
@@ -87,13 +85,11 @@ func TestUpdateAdmin(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			mockService := service.NewMockadminService(ctrl)
+			mockService := NewMockadminService(ctrl)
 			tt.mockSetup(mockService)
 
 			reqBody, err := json.Marshal(tt.args)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			req := httptest.NewRequest(http.MethodPost, "/admin/"+tt.username, bytes.NewBuffer(reqBody))
 			req = mux.SetURLVars(req, map[string]string{
@@ -104,7 +100,7 @@ func TestUpdateAdmin(t *testing.T) {
 			handler := NewHandler(mockService)
 			handler.UpdateAdmin(t.Context(), res, req)
 
-			assert.Equal(t, tt.want, res.Code)
+			assert.Equal(t, tt.expectedCode, res.Code)
 		})
 	}
 }

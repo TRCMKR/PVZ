@@ -65,9 +65,6 @@ func (s *Service) AcceptOrder(ctx context.Context, orderID int, userID int, weig
 		currentTime, expiryDate, currentTime)
 
 	for _, somePackaging := range packagings {
-		if somePackaging == nil {
-			return ErrUndefinedPackaging
-		}
 		err = s.pack(&currentOrder, somePackaging)
 		if err != nil {
 			return err

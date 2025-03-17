@@ -37,21 +37,15 @@ func (h *Handler) CreateOrder(ctx context.Context, w http.ResponseWriter, r *htt
 	}
 
 	packagings := make([]models.Packaging, 0, 2)
-	var tmp models.Packaging
-	tmp, err = getPackaging(models.GetPackagingName(models.PackagingType(order.Packaging)))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	packaging, err := getPackaging(models.GetPackagingName(models.PackagingType(order.Packaging)))
+	extraPackaging, errExtra := getPackaging(models.GetPackagingName(models.PackagingType(order.ExtraPackaging)))
+	if err != nil || errExtra != nil {
+		http.Error(w, errNoSuchPackaging.Error(), http.StatusBadRequest)
 
 		return
 	}
-	packagings = append(packagings, tmp)
-	tmp, err = getPackaging(models.GetPackagingName(models.PackagingType(order.ExtraPackaging)))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-
-		return
-	}
-	packagings = append(packagings, tmp)
+	packagings = append(packagings, packaging)
+	packagings = append(packagings, extraPackaging)
 
 	err = h.OrderService.AcceptOrder(ctx, order.ID, order.UserID, order.Weight, order.Price, order.ExpiryDate, packagings)
 	if err != nil {
@@ -61,6 +55,7 @@ func (h *Handler) CreateOrder(ctx context.Context, w http.ResponseWriter, r *htt
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("success"))
 }
 
 func getPackaging(packagingStr string) (models.Packaging, error) {
@@ -70,6 +65,8 @@ func getPackaging(packagingStr string) (models.Packaging, error) {
 		if packaging == nil {
 			return nil, errNoSuchPackaging
 		}
+	} else {
+		return nil, errNoSuchPackaging
 	}
 
 	return packaging, nil

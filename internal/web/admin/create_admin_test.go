@@ -1,5 +1,3 @@
-//go:build unit
-
 package admin
 
 import (
@@ -9,11 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"gitlab.ozon.dev/alexplay1224/homework/internal/mocks/service"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 type createAdminRequest struct {
@@ -25,10 +23,10 @@ type createAdminRequest struct {
 func TestHandler_CreateAdmin(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name      string
-		args      createAdminRequest
-		mockSetup func(service *service.MockadminService)
-		want      int
+		name         string
+		args         createAdminRequest
+		mockSetup    func(service *MockadminService)
+		expectedCode int
 	}{
 		{
 			name: "Missing fields",
@@ -36,8 +34,8 @@ func TestHandler_CreateAdmin(t *testing.T) {
 				ID:       1,
 				Username: "admin",
 			},
-			mockSetup: func(service *service.MockadminService) {},
-			want:      http.StatusBadRequest,
+			mockSetup:    func(service *MockadminService) {},
+			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name: "Correct request",
@@ -46,10 +44,10 @@ func TestHandler_CreateAdmin(t *testing.T) {
 				Username: "admin",
 				Password: "password",
 			},
-			mockSetup: func(adminService *service.MockadminService) {
+			mockSetup: func(adminService *MockadminService) {
 				adminService.EXPECT().CreateAdmin(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 			},
-			want: http.StatusOK,
+			expectedCode: http.StatusOK,
 		},
 		{
 			name: "Such id exists",
@@ -58,10 +56,10 @@ func TestHandler_CreateAdmin(t *testing.T) {
 				Username: "dasdasd",
 				Password: "password",
 			},
-			mockSetup: func(adminService *service.MockadminService) {
+			mockSetup: func(adminService *MockadminService) {
 				adminService.EXPECT().CreateAdmin(gomock.Any(), gomock.Any()).Return(admin.ErrIDUsed).Times(1)
 			},
-			want: http.StatusInternalServerError,
+			expectedCode: http.StatusInternalServerError,
 		},
 		{
 			name: "Such username exists",
@@ -70,10 +68,10 @@ func TestHandler_CreateAdmin(t *testing.T) {
 				Username: "admin",
 				Password: "password",
 			},
-			mockSetup: func(adminService *service.MockadminService) {
+			mockSetup: func(adminService *MockadminService) {
 				adminService.EXPECT().CreateAdmin(gomock.Any(), gomock.Any()).Return(admin.ErrUsernameUsed).Times(1)
 			},
-			want: http.StatusInternalServerError,
+			expectedCode: http.StatusInternalServerError,
 		},
 	}
 
@@ -83,13 +81,11 @@ func TestHandler_CreateAdmin(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			mockService := service.NewMockadminService(ctrl)
+			mockService := NewMockadminService(ctrl)
 			tt.mockSetup(mockService)
 
 			reqBody, err := json.Marshal(tt.args)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			req := httptest.NewRequest(http.MethodPost, "/admins", bytes.NewReader(reqBody))
 			res := httptest.NewRecorder()
@@ -97,7 +93,7 @@ func TestHandler_CreateAdmin(t *testing.T) {
 
 			handler.CreateAdmin(t.Context(), res, req)
 
-			assert.Equal(t, tt.want, res.Code)
+			assert.Equal(t, tt.expectedCode, res.Code)
 		})
 	}
 }

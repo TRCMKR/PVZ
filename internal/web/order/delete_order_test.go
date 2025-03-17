@@ -1,5 +1,3 @@
-//go:build unit
-
 package order
 
 import (
@@ -8,11 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"gitlab.ozon.dev/alexplay1224/homework/internal/mocks/service"
-
-	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestHandler_DeleteOrder(t *testing.T) {
@@ -20,13 +16,13 @@ func TestHandler_DeleteOrder(t *testing.T) {
 	tests := []struct {
 		name           string
 		orderIDParam   string
-		mockSetup      func(orderService *service.MockorderService)
+		mockSetup      func(orderService *MockorderService)
 		expectedStatus int
 	}{
 		{
 			name:         "Valid order ID",
 			orderIDParam: "123",
-			mockSetup: func(orderService *service.MockorderService) {
+			mockSetup: func(orderService *MockorderService) {
 				orderService.EXPECT().ReturnOrder(gomock.Any(), 123).Return(nil).Times(1)
 			},
 			expectedStatus: http.StatusOK,
@@ -34,13 +30,13 @@ func TestHandler_DeleteOrder(t *testing.T) {
 		{
 			name:           "Invalid order ID format",
 			orderIDParam:   "invalid",
-			mockSetup:      func(orderService *service.MockorderService) {},
+			mockSetup:      func(orderService *MockorderService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:         "Error in OrderService.ReturnOrder",
 			orderIDParam: "123",
-			mockSetup: func(orderService *service.MockorderService) {
+			mockSetup: func(orderService *MockorderService) {
 				orderService.EXPECT().ReturnOrder(gomock.Any(), 123).Return(errors.New("internal error")).Times(1)
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -53,7 +49,7 @@ func TestHandler_DeleteOrder(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockOrderService := service.NewMockorderService(ctrl)
+			mockOrderService := NewMockorderService(ctrl)
 			tt.mockSetup(mockOrderService)
 
 			req := httptest.NewRequest(http.MethodDelete, "/orders/"+tt.orderIDParam, nil)

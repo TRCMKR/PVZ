@@ -1,5 +1,3 @@
-//go:build unit
-
 package order
 
 import (
@@ -9,10 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"gitlab.ozon.dev/alexplay1224/homework/internal/mocks/service"
-
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestHandler_UpdateOrders(t *testing.T) {
@@ -20,7 +16,7 @@ func TestHandler_UpdateOrders(t *testing.T) {
 	tests := []struct {
 		name           string
 		requestBody    string
-		mockSetup      func(mockOrderService *service.MockorderService)
+		mockSetup      func(mockOrderService *MockorderService)
 		expectedStatus int
 		expectedBody   string
 	}{
@@ -31,7 +27,7 @@ func TestHandler_UpdateOrders(t *testing.T) {
                 "order_ids": [123, 456],
                 "action": "return"
             }`,
-			mockSetup: func(mockOrderService *service.MockorderService) {
+			mockSetup: func(mockOrderService *MockorderService) {
 				mockOrderService.EXPECT().ProcessOrders(gomock.Any(), 1, []int{123, 456}, "return").
 					Return(0, nil).Times(1)
 			},
@@ -41,13 +37,13 @@ func TestHandler_UpdateOrders(t *testing.T) {
 		{
 			name:           "Invalid JSON",
 			requestBody:    `{"user_id": 1, "order_ids": [123, 456], "action": "return"`,
-			mockSetup:      func(mockOrderService *service.MockorderService) {},
+			mockSetup:      func(mockOrderService *MockorderService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "Missing fields",
 			requestBody:    `{"user_id": 1, "order_ids": [], "action": ""}`,
-			mockSetup:      func(mockOrderService *service.MockorderService) {},
+			mockSetup:      func(mockOrderService *MockorderService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
@@ -57,7 +53,7 @@ func TestHandler_UpdateOrders(t *testing.T) {
                 "order_ids": [123, 456],
                 "action": "buy"
             }`,
-			mockSetup: func(mockOrderService *service.MockorderService) {
+			mockSetup: func(mockOrderService *MockorderService) {
 				mockOrderService.EXPECT().ProcessOrders(gomock.Any(), 1, []int{123, 456}, "buy").
 					Return(2, errors.New("undefined action")).Times(1)
 			},
@@ -71,7 +67,7 @@ func TestHandler_UpdateOrders(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockOrderService := service.NewMockorderService(ctrl)
+			mockOrderService := NewMockorderService(ctrl)
 			tt.mockSetup(mockOrderService)
 
 			req := httptest.NewRequest(http.MethodPost, "/orders/update", strings.NewReader(tt.requestBody))

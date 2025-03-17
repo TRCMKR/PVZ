@@ -1,25 +1,25 @@
+//go:build integration
+
 package order
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/Rhymond/go-money"
-	_ "github.com/lib/pq"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
 	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
-	"log"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-	"time"
+
+	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOrderHandler_UpdateOrders(t *testing.T) {
@@ -34,8 +34,8 @@ func TestOrderHandler_UpdateOrders(t *testing.T) {
 		{
 			name: "Update existing order",
 			requestBody: `{
-                "user_id": 123,
-                "order_ids": [1],
+                "user_id": 789,
+                "order_ids": [4],
                 "action": "give"
             }`,
 			expectedStatus: http.StatusOK,
@@ -54,59 +54,28 @@ func TestOrderHandler_UpdateOrders(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	config.InitEnv("../../../../.env.test")
+	rootDir, err := config.GetRootDir()
+	require.NoError(t, err)
+	config.InitEnv(rootDir + "/.env.test")
 	cfg := *config.NewConfig()
 
-	connStr, pgContainer, err := integration.InitPostgresContainer(ctx, cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	db, err := postgres.NewDB(ctx, connStr)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	defer db.Close()
-
+	connStr, pgContainer, err := integration.InitPostgresContainer(t.Context(), cfg)
+	require.NoError(t, err)
+	db, err := postgres.NewDB(t.Context(), connStr)
+	require.NoError(t, err)
 	ordersRepo := repository.NewOrderRepo(*db)
-
-	orders := []models.Order{
-		{
-			ID:          1,
-			UserID:      123,
-			Weight:      10,
-			Price:       *money.New(1000, money.RUB),
-			Status:      1,
-			ArrivalDate: time.Now(),
-			LastChange:  time.Now(),
-			ExpiryDate:  time.Now().AddDate(1, 0, 0),
-		},
-	}
-
-	for _, order := range orders {
-		ordersRepo.AddOrder(ctx, order)
-	}
+	orderService := orderServicePkg.NewService(ordersRepo)
 
 	t.Cleanup(func() {
-		if err := pgContainer.Terminate(ctx); err != nil {
+		if err := pgContainer.Terminate(context.Background()); err != nil {
 			t.Fatalf("failed to terminate pgContainer: %s", err)
 		}
+		defer db.Close()
 	})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
-			db, err := postgres.NewDB(ctx, connStr)
-			if err != nil {
-				log.Panic(err)
-			}
-
-			defer db.Close()
-
-			ordersRepo := repository.NewOrderRepo(*db)
-			orderService := orderServicePkg.NewService(ordersRepo)
 
 			reqBody := []byte(tt.requestBody)
 

@@ -24,4 +24,5 @@ func (h *Handler) DeleteOrder(ctx context.Context, w http.ResponseWriter, r *htt
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("success"))
 }

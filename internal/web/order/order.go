@@ -1,5 +1,3 @@
-//go:generate mockgen -source=main.go -destination=../../mocks/service/mock_order_service.go -package=service
-
 package order
 
 import (
@@ -54,13 +52,14 @@ type orderService interface {
 }
 
 var (
-	errNoSuchPackaging   = errors.New("no such packaging")
-	errInvalidOrderID    = errors.New("invalid order id")
-	errWrongNumberFormat = errors.New("wrong number format")
-	errWrongDateFormat   = errors.New("wrong date format")
-	errWrongStatusFormat = errors.New("wrong status format")
-	errFieldsMissing     = errors.New("missing fields")
-	errWrongJsonFormat   = errors.New("wrong json format")
+	errNoSuchPackaging    = errors.New("no such packaging")
+	errInvalidOrderID     = errors.New("invalid order id")
+	errWrongNumberFormat  = errors.New("wrong number format")
+	errWrongDateFormat    = errors.New("wrong date format")
+	errWrongStatusFormat  = errors.New("wrong status format")
+	errFieldsMissing      = errors.New("missing fields")
+	errWrongJsonFormat    = errors.New("wrong json format")
+	ErrUndefinedPackaging = errors.New("undefined packaging")
 )
 
 type inputType uint

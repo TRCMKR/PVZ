@@ -1,21 +1,18 @@
-//go:build unit
-
 package admin
 
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"gitlab.ozon.dev/alexplay1224/homework/internal/mocks/service"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
 
-	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 type adminDeleteRequest struct {
@@ -26,11 +23,11 @@ func TestHandler_DeleteAdmin(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name      string
-		username  string
-		args      adminDeleteRequest
-		mockSetup func(service *service.MockadminService)
-		want      int
+		name         string
+		username     string
+		args         adminDeleteRequest
+		mockSetup    func(service *MockadminService)
+		expectedCode int
 	}{
 		{
 			name:     "Correct deletion",
@@ -38,11 +35,11 @@ func TestHandler_DeleteAdmin(t *testing.T) {
 			args: adminDeleteRequest{
 				Password: "12345678",
 			},
-			mockSetup: func(adminService *service.MockadminService) {
+			mockSetup: func(adminService *MockadminService) {
 				adminService.EXPECT().DeleteAdmin(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil).Times(1)
 			},
-			want: http.StatusOK,
+			expectedCode: http.StatusOK,
 		},
 		{
 			name:     "Wrong password",
@@ -50,11 +47,11 @@ func TestHandler_DeleteAdmin(t *testing.T) {
 			args: adminDeleteRequest{
 				Password: "12345678",
 			},
-			mockSetup: func(adminService *service.MockadminService) {
+			mockSetup: func(adminService *MockadminService) {
 				adminService.EXPECT().DeleteAdmin(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(admin.ErrWrongPassword).Times(1)
 			},
-			want: http.StatusInternalServerError,
+			expectedCode: http.StatusInternalServerError,
 		},
 		{
 			name:     "Invalid password",
@@ -62,8 +59,8 @@ func TestHandler_DeleteAdmin(t *testing.T) {
 			args: adminDeleteRequest{
 				Password: "",
 			},
-			mockSetup: func(adminService *service.MockadminService) {},
-			want:      http.StatusBadRequest,
+			mockSetup:    func(adminService *MockadminService) {},
+			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name:     "No such admin",
@@ -71,11 +68,11 @@ func TestHandler_DeleteAdmin(t *testing.T) {
 			args: adminDeleteRequest{
 				Password: "12345678",
 			},
-			mockSetup: func(adminService *service.MockadminService) {
+			mockSetup: func(adminService *MockadminService) {
 				adminService.EXPECT().DeleteAdmin(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(admin.ErrAdminDoesntExist).Times(1)
 			},
-			want: http.StatusInternalServerError,
+			expectedCode: http.StatusInternalServerError,
 		},
 	}
 
@@ -85,13 +82,11 @@ func TestHandler_DeleteAdmin(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			mockService := service.NewMockadminService(ctrl)
+			mockService := NewMockadminService(ctrl)
 			tt.mockSetup(mockService)
 
 			reqBody, err := json.Marshal(tt.args)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			req := httptest.NewRequest(http.MethodDelete, "/admin/"+tt.username, bytes.NewReader(reqBody))
 			req = mux.SetURLVars(req, map[string]string{
@@ -99,14 +94,10 @@ func TestHandler_DeleteAdmin(t *testing.T) {
 			})
 			res := httptest.NewRecorder()
 
-			if tt.name == "Invalid password" {
-				fmt.Print(1)
-			}
-
 			handler := NewHandler(mockService)
 			handler.DeleteAdmin(t.Context(), res, req)
 
-			assert.Equal(t, tt.want, res.Code)
+			assert.Equal(t, tt.expectedCode, res.Code)
 		})
 	}
 }

@@ -1,38 +1,35 @@
-//go:build unit
-
 package order
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"gitlab.ozon.dev/alexplay1224/homework/internal/mocks/service"
-
 	"github.com/Rhymond/go-money"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestHandler_CreateOrder(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name      string
-		args      createOrderRequest
-		mockSetup func(orderService *service.MockorderService)
-		want      int
+		name         string
+		args         createOrderRequest
+		mockSetup    func(orderService *MockorderService)
+		expectedCode int
 	}{
 		{
 			name: "Invalid JSON",
 			args: createOrderRequest{
 				ID: 1,
 			},
-			mockSetup: func(orderService *service.MockorderService) {},
-			want:      http.StatusBadRequest,
+			mockSetup:    func(orderService *MockorderService) {},
+			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name: "Missing fields",
@@ -46,8 +43,8 @@ func TestHandler_CreateOrder(t *testing.T) {
 				Status:         0,
 				ExpiryDate:     time.Time{},
 			},
-			mockSetup: func(orderService *service.MockorderService) {},
-			want:      http.StatusBadRequest,
+			mockSetup:    func(orderService *MockorderService) {},
+			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name: "Packaging error",
@@ -61,8 +58,8 @@ func TestHandler_CreateOrder(t *testing.T) {
 				Status:         0,
 				ExpiryDate:     time.Time{},
 			},
-			mockSetup: func(orderService *service.MockorderService) {},
-			want:      http.StatusBadRequest,
+			mockSetup:    func(orderService *MockorderService) {},
+			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name: "Not enough weight",
@@ -76,12 +73,12 @@ func TestHandler_CreateOrder(t *testing.T) {
 				Status:         0,
 				ExpiryDate:     time.Now().AddDate(1, 0, 0),
 			},
-			mockSetup: func(orderService *service.MockorderService) {
+			mockSetup: func(orderService *MockorderService) {
 				orderService.EXPECT().AcceptOrder(gomock.Any(), gomock.Eq(123), gomock.Eq(2312), gomock.Eq(1.0),
 					gomock.Eq(*money.New(1000, money.RUB)),
 					gomock.Any(), gomock.Any()).Return(errors.New("not enough weight")).Times(1)
 			},
-			want: http.StatusBadRequest,
+			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name: "Correct order",
@@ -95,12 +92,12 @@ func TestHandler_CreateOrder(t *testing.T) {
 				Status:         0,
 				ExpiryDate:     time.Now().AddDate(1, 0, 0),
 			},
-			mockSetup: func(orderService *service.MockorderService) {
+			mockSetup: func(orderService *MockorderService) {
 				orderService.EXPECT().AcceptOrder(gomock.Any(), gomock.Eq(123), gomock.Eq(2312), gomock.Eq(100.0),
 					gomock.Eq(*money.New(1000, money.RUB)),
 					gomock.Any(), gomock.Any()).Return(nil).Times(1)
 			},
-			want: http.StatusOK,
+			expectedCode: http.StatusOK,
 		},
 	}
 
@@ -111,13 +108,11 @@ func TestHandler_CreateOrder(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockOrderService := service.NewMockorderService(ctrl)
+			mockOrderService := NewMockorderService(ctrl)
 			tt.mockSetup(mockOrderService)
 
 			reqBody, err := json.Marshal(tt.args)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			req := httptest.NewRequest(http.MethodPost, "/orders", bytes.NewReader(reqBody))
 			res := httptest.NewRecorder()
@@ -126,7 +121,7 @@ func TestHandler_CreateOrder(t *testing.T) {
 
 			handler.CreateOrder(t.Context(), res, req)
 
-			assert.Equal(t, tt.want, res.Code)
+			assert.Equal(t, tt.expectedCode, res.Code)
 		})
 	}
 }

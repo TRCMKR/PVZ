@@ -1,5 +1,3 @@
-//go:generate mockgen -source=main.go -destination=../mocks/service/mock_admin_service.go -package=service
-
 package admin
 
 import (

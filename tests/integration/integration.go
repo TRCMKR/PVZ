@@ -1,5 +1,3 @@
-//go:build integration
-
 package integration
 
 import (
@@ -14,14 +12,14 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
-	pgcontainer "github.com/testcontainers/testcontainers-go/modules/postgres"
+	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
-func InitPostgresContainer(ctx context.Context, cfg config.Config) (string, *pgcontainer.PostgresContainer, error) {
-	pgContainer, err := pgcontainer.Run(ctx, "postgres:14-alpine",
-		pgcontainer.WithDatabase(cfg.DBName()),
-		pgcontainer.WithUsername(cfg.Username()),
-		pgcontainer.WithPassword(cfg.Password()),
+func InitPostgresContainer(ctx context.Context, cfg config.Config) (string, *postgres.PostgresContainer, error) {
+	pgContainer, err := postgres.Run(ctx, "postgres:14-alpine",
+		postgres.WithDatabase(cfg.DBName()),
+		postgres.WithUsername(cfg.Username()),
+		postgres.WithPassword(cfg.Password()),
 		testcontainers.WithLogger(log.Default()),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
@@ -43,9 +41,16 @@ func InitPostgresContainer(ctx context.Context, cfg config.Config) (string, *pgc
 
 	time.Sleep(2 * time.Second)
 
-	goose.SetDialect("postgres")
-	if err := goose.Up(db, "../../../../migrations"); err != nil {
-		log.Fatalf("failed to run migrations: %v", err)
+	err = goose.SetDialect("postgres")
+	if err != nil {
+		return "", nil, err
+	}
+	rootDir, err := config.GetRootDir()
+	if err != nil {
+		return "", nil, err
+	}
+	if err = goose.Up(db, rootDir+"/migrations"); err != nil {
+		log.Panicf("failed to run migrations: %v", err)
 	}
 
 	return connStr, pgContainer, nil

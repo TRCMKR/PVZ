@@ -72,8 +72,8 @@ func (r *OrderRepo) RemoveOrder(ctx context.Context, id int) error {
 							UPDATE orders 
 							SET status = $1 
 							WHERE id = $2
-							AND status <> 4
-							`, 4, id)
+							AND status <> $3
+							`, 4, id, models.DeletedOrder)
 
 	if err != nil {
 		log.Printf("Failed to remove order %v: %v", id, errRemoveOrderFailed)

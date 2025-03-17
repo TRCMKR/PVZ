@@ -6,17 +6,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/Rhymond/go-money"
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
 	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -36,16 +35,16 @@ type createOrderRequest struct {
 func TestOrderHandler_CreateOrder(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name string
-		args createOrderRequest
-		want int
+		name           string
+		args           createOrderRequest
+		expectedStatus int
 	}{
 		{
 			name: "Invalid JSON",
 			args: createOrderRequest{
 				ID: 1,
 			},
-			want: http.StatusBadRequest,
+			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name: "Missing fields",
@@ -58,7 +57,7 @@ func TestOrderHandler_CreateOrder(t *testing.T) {
 				ExtraPackaging: 0,
 				ExpiryDate:     time.Now().AddDate(1, 0, 0),
 			},
-			want: http.StatusBadRequest,
+			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name: "Packaging error",
@@ -71,7 +70,7 @@ func TestOrderHandler_CreateOrder(t *testing.T) {
 				ExtraPackaging: -1,
 				ExpiryDate:     time.Now().AddDate(1, 0, 0),
 			},
-			want: http.StatusBadRequest,
+			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name: "Not enough weight",
@@ -84,7 +83,7 @@ func TestOrderHandler_CreateOrder(t *testing.T) {
 				ExtraPackaging: 3,
 				ExpiryDate:     time.Now().AddDate(1, 0, 0),
 			},
-			want: http.StatusBadRequest,
+			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name: "Correct order",
@@ -97,57 +96,48 @@ func TestOrderHandler_CreateOrder(t *testing.T) {
 				ExtraPackaging: 3,
 				ExpiryDate:     time.Now().AddDate(1, 0, 0),
 			},
-			want: http.StatusOK,
+			expectedStatus: http.StatusOK,
 		},
 	}
 
 	ctx := context.Background()
-	config.InitEnv("../../../../.env.test")
+	rootDir, err := config.GetRootDir()
+	require.NoError(t, err)
+	config.InitEnv(rootDir + "/.env.test")
 	cfg := *config.NewConfig()
 
-	connStr, pgContainer, err := integration.InitPostgresContainer(ctx, cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
+	connStr, pgContainer, err := integration.InitPostgresContainer(t.Context(), cfg)
+	require.NoError(t, err)
+	db, err := postgres.NewDB(t.Context(), connStr)
+	require.NoError(t, err)
+	ordersRepo := repository.NewOrderRepo(*db)
+	orderService := orderServicePkg.NewService(ordersRepo)
 
 	t.Cleanup(func() {
-		if err := pgContainer.Terminate(ctx); err != nil {
+		if err := pgContainer.Terminate(context.Background()); err != nil {
 			t.Fatalf("failed to terminate pgContainer: %s", err)
 		}
+		defer db.Close()
 	})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			db, err := postgres.NewDB(ctx, connStr)
-			if err != nil {
-				log.Panic(err)
-			}
-
-			defer db.Close()
-
-			ordersRepo := repository.NewOrderRepo(*db)
 
 			reqBody, err := json.Marshal(tt.args)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			req := httptest.NewRequest(http.MethodPost, "/orders", bytes.NewReader(reqBody))
-			fmt.Printf("%s", string(reqBody))
 			res := httptest.NewRecorder()
-
-			orderService := orderServicePkg.NewService(ordersRepo)
 
 			handler := orderHandlerPkg.NewHandler(orderService)
 
-			if tt.name == "Correct order" {
-				fmt.Print(1)
-			}
-
 			handler.CreateOrder(ctx, res, req)
 
-			assert.Equal(t, tt.want, res.Code)
+			assert.Equal(t, tt.expectedStatus, res.Code)
+			if tt.expectedStatus == http.StatusOK {
+				require.Equal(t, "success", res.Body.String())
+			}
 		})
 	}
 }

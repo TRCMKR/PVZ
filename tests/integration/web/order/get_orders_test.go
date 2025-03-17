@@ -1,11 +1,13 @@
+//go:build integration
+
 package order
 
 import (
 	"context"
 	"encoding/json"
-	"github.com/Rhymond/go-money"
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
@@ -13,11 +15,9 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
 	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 )
 
 func TestOrderHandler_GetOrders(t *testing.T) {
@@ -31,7 +31,7 @@ func TestOrderHandler_GetOrders(t *testing.T) {
 		{
 			name: "Valid request with filters",
 			queryParams: map[string]string{
-				"user_id": "123",
+				"user_id": "52",
 				"count":   "10",
 				"page":    "0",
 			},
@@ -58,76 +58,36 @@ func TestOrderHandler_GetOrders(t *testing.T) {
 		{
 			name: "No filters, page and count provided",
 			queryParams: map[string]string{
-				"count": "5",
+				"count": "4",
 			},
 			expectedStatus: http.StatusOK,
-			expectedCount:  1,
-		},
-		{
-			name: "Valid request with filters",
-			queryParams: map[string]string{
-				"order_id": "1",
-				"user_id":  "123",
-			},
-			expectedStatus: http.StatusOK,
-			expectedCount:  1,
+			expectedCount:  4,
 		},
 	}
 
 	ctx := context.Background()
-	config.InitEnv("../../../../.env.test")
+	rootDir, err := config.GetRootDir()
+	require.NoError(t, err)
+	config.InitEnv(rootDir + "/.env.test")
 	cfg := *config.NewConfig()
 
-	connStr, pgContainer, err := integration.InitPostgresContainer(ctx, cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	db, err := postgres.NewDB(ctx, connStr)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	defer db.Close()
-
+	connStr, pgContainer, err := integration.InitPostgresContainer(t.Context(), cfg)
+	require.NoError(t, err)
+	db, err := postgres.NewDB(t.Context(), connStr)
+	require.NoError(t, err)
 	ordersRepo := repository.NewOrderRepo(*db)
-
-	orders := []models.Order{
-		{
-			ID:          1,
-			UserID:      123,
-			Weight:      10,
-			Price:       *money.New(1000, money.RUB),
-			Status:      1,
-			ArrivalDate: time.Now(),
-			LastChange:  time.Now(),
-			ExpiryDate:  time.Now().AddDate(1, 0, 0),
-		},
-	}
-
-	for _, order := range orders {
-		ordersRepo.AddOrder(ctx, order)
-	}
+	orderService := orderServicePkg.NewService(ordersRepo)
 
 	t.Cleanup(func() {
-		if err := pgContainer.Terminate(ctx); err != nil {
+		if err := pgContainer.Terminate(context.Background()); err != nil {
 			t.Fatalf("failed to terminate pgContainer: %s", err)
 		}
+		defer db.Close()
 	})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
-			db, err := postgres.NewDB(ctx, connStr)
-			if err != nil {
-				log.Panic(err)
-			}
-
-			defer db.Close()
-
-			ordersRepo := repository.NewOrderRepo(*db)
-			orderService := orderServicePkg.NewService(ordersRepo)
 
 			req := httptest.NewRequest(http.MethodGet, "/orders", nil)
 			q := req.URL.Query()
@@ -149,9 +109,7 @@ func TestOrderHandler_GetOrders(t *testing.T) {
 					Orders []models.Order `json:"orders"`
 				}
 				err := json.NewDecoder(res.Body).Decode(&response)
-				if err != nil {
-					t.Fatalf("Error decoding response: %v", err)
-				}
+				require.NoError(t, err)
 				assert.Equal(t, tt.expectedCount, response.Count)
 			}
 		})

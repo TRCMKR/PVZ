@@ -18,8 +18,8 @@ endif
 MIGRATION_FOLDER=$(CURDIR)/migrations
 
 .PHONY: build
-## builds app + clean + fmt + lint
-build: fmt lint clean
+## builds app + fmt + lint + test + clean
+build: fmt lint test clean
 	go build $(BUILD_FLAGS) -o ./build/$(BINARY) ./cmd/app
 
 .PHONY: run
@@ -76,23 +76,23 @@ cache:
 build-windows:
 	GOOS=windows GOARCH=amd64 go build $(BUILD_FLAGS) -o ./build/$(BINARY).exe
 
-## creates migration with first param as name
 .PHONY: migration-create
+## creates migration with first param as name
 migration-create:
 	goose -dir "$(MIGRATION_FOLDER)" create $(name) sql
 
-## applies latest migration
 .PHONY: migration-up
+## applies latest migration
 migration-up:
 	goose -dir "$(MIGRATION_FOLDER)" postgres "$(POSTGRES_SETUP_TEST)" up
 
-## rolls back latest migration
 .PHONY: migration-down
+## rolls back latest migration
 migration-down:
 	goose -dir "$(MIGRATION_FOLDER)" postgres "$(POSTGRES_SETUP_TEST)" down
 
-## checks migration status
 .PHONY: migration-status
+## checks migration status
 migration-status:
 	goose -dir "$(MIGRATION_FOLDER)" postgres "$(POSTGRES_SETUP_TEST)" status
 
@@ -107,19 +107,19 @@ mock-gen:
 	go generate ./...
 
 .PHONY: test
-## tests
-test: run-unit-tests run-int-tests
+## runs all tests
+test:
+	go test -count=1 ./... -tags=integration
 
 .PHONY: test-cover
 ## shows test coverage without cache
 test-cover:
-	go test -cover -count=1 -covermode=count gitlab.ozon.dev/alexplay1224/homework/internal/... -tags=unit
+	go test -cover -count=1 -covermode=count gitlab.ozon.dev/alexplay1224/homework/internal/...
 
+.PHONY: run-unit-tests
+## runs unit tests
 run-unit-tests:
-	go test -count=1 ./... -tags=unit
-
-run-int-tests:
-	go test -count=1 ./... -tags=integration
+	go test -count=1 ./...
 
 .PHONY: help
 ## prints help about all targets

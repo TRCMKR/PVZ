@@ -1,25 +1,24 @@
+//go:build integration
+
 package order
 
 import (
 	"context"
 	"fmt"
-	"github.com/Rhymond/go-money"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
 	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
-	"time"
 )
 
 func TestOrderHandler_DeleteOrder(t *testing.T) {
@@ -42,63 +41,28 @@ func TestOrderHandler_DeleteOrder(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
-	config.InitEnv("../../../../.env.test")
+	rootDir, err := config.GetRootDir()
+	require.NoError(t, err)
+	config.InitEnv(rootDir + "/.env.test")
 	cfg := *config.NewConfig()
 
-	connStr, pgContainer, err := integration.InitPostgresContainer(ctx, cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	db, err := postgres.NewDB(ctx, connStr)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	defer db.Close()
-
+	connStr, pgContainer, err := integration.InitPostgresContainer(t.Context(), cfg)
+	require.NoError(t, err)
+	db, err := postgres.NewDB(t.Context(), connStr)
+	require.NoError(t, err)
 	ordersRepo := repository.NewOrderRepo(*db)
-
-	orders := []models.Order{
-		{
-			ID:          1,
-			UserID:      123,
-			Weight:      10,
-			Price:       *money.New(1000, money.RUB),
-			Status:      1,
-			ArrivalDate: time.Now(),
-			LastChange:  time.Now(),
-			ExpiryDate:  time.Now().AddDate(-1, 0, 0),
-		},
-	}
-
-	for _, order := range orders {
-		err = ordersRepo.AddOrder(ctx, order)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
+	orderService := orderServicePkg.NewService(ordersRepo)
 
 	t.Cleanup(func() {
-		if err := pgContainer.Terminate(ctx); err != nil {
+		if err := pgContainer.Terminate(context.Background()); err != nil {
 			t.Fatalf("failed to terminate pgContainer: %s", err)
 		}
+		defer db.Close()
 	})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
-			db, err := postgres.NewDB(ctx, connStr)
-			if err != nil {
-				log.Panic(err)
-			}
-
-			defer db.Close()
-
-			ordersRepo := repository.NewOrderRepo(*db)
-			orderService := orderServicePkg.NewService(ordersRepo)
 
 			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/orders/%d", tt.orderID), nil)
 			req = mux.SetURLVars(req, map[string]string{
@@ -107,9 +71,12 @@ func TestOrderHandler_DeleteOrder(t *testing.T) {
 			res := httptest.NewRecorder()
 			handler := orderHandlerPkg.NewHandler(orderService)
 
-			handler.DeleteOrder(ctx, res, req)
+			handler.DeleteOrder(t.Context(), res, req)
 
 			assert.Equal(t, tt.expectedStatus, res.Code)
+			if tt.expectedStatus == http.StatusOK {
+				require.Equal(t, "success", res.Body.String())
+			}
 		})
 	}
 }

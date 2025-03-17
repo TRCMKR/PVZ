@@ -4,15 +4,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/joho/godotenv"
 )
 
 func InitEnv(envFile string) {
-	//envFile := ".env"
-	//if os.Getenv("APP_ENV") == "test" {
-	//	envFile = ".env.test"
-	//}
 	err := godotenv.Overload(envFile)
 	if err != nil {
 		log.Fatalf("Error loading %s file", envFile)
@@ -70,4 +67,23 @@ func (c *Config) Password() string {
 
 func (c *Config) DBName() string {
 	return c.dbname
+}
+
+func GetRootDir() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		if _, err = os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir, nil
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", os.ErrNotExist
+		}
+		dir = parent
+	}
 }
