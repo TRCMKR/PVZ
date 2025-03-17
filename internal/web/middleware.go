@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	
+	"gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
 )
 
 var (
@@ -38,7 +40,7 @@ func FieldLogger(handler http.Handler) http.Handler {
 }
 
 type AuthMiddleware struct {
-	adminService adminService
+	adminService admin.Service
 }
 
 func (a *AuthMiddleware) parseHeader(request *http.Request) (string, error) {

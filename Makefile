@@ -113,7 +113,7 @@ test: run-unit-tests run-int-tests
 .PHONY: test-cover
 ## shows test coverage without cache
 test-cover:
-	go test -cover -covermode=count gitlab.ozon.dev/alexplay1224/homework/internal/... -tags=unit
+	go test -cover -count=1 -covermode=count gitlab.ozon.dev/alexplay1224/homework/internal/... -tags=unit
 
 run-unit-tests:
 	go test -count=1 ./... -tags=unit

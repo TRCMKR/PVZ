@@ -8,7 +8,10 @@ import (
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/service"
+	adminServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
+	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
+	adminHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/admin"
+	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
@@ -36,44 +39,18 @@ type adminStorage interface {
 }
 
 type App struct {
-	orderService orderService
-	adminService adminService
+	orderService orderServicePkg.Service
+	adminService adminServicePkg.Service
 	router       *mux.Router
 }
 
 func NewApp(orders orderStorage, admins adminStorage) *App {
 	return &App{
-		orderService: &service.OrderService{
-			Storage: orders,
-		},
-		adminService: &service.AdminService{
-			Storage: admins,
-		},
-		router: mux.NewRouter(),
+		orderService: *orderServicePkg.NewService(orders),
+		adminService: *adminServicePkg.NewService(admins),
+		router:       mux.NewRouter(),
 	}
 }
-
-const (
-	OrderIDParam         = "id"
-	UserIDParam          = "user_id"
-	WeightParam          = "weight"
-	PriceParam           = "price"
-	StatusParam          = "status"
-	ArrivalDateParam     = "arrival_date"
-	ArrivalDateFromParam = "arrival_date_from"
-	ArrivalDateToParam   = "arrival_date_to"
-	ExpiryDateParam      = "expiry_date"
-	ExpiryDateFromParam  = "expiry_date_from"
-	ExpiryDateToParam    = "expiry_date_to"
-	WeightFromParam      = "weight_from"
-	WeightToParam        = "weight_to"
-	PriceFromParam       = "price_from"
-	PriceToParam         = "price_to"
-	CountParam           = "count"
-	PageParam            = "page"
-
-	adminUsernameParam = "admin_username"
-)
 
 func (a *App) wrapHandler(ctx context.Context, handler func(context.Context, http.ResponseWriter,
 	*http.Request)) http.HandlerFunc {
@@ -83,8 +60,8 @@ func (a *App) wrapHandler(ctx context.Context, handler func(context.Context, htt
 }
 
 type server struct {
-	orders OrderHandler
-	admins AdminHandler
+	orders orderHandlerPkg.Handler
+	admins adminHandlerPkg.Handler
 }
 
 // @title			PVZ API Documentation
@@ -94,12 +71,8 @@ type server struct {
 // @BasePath		/
 func (a *App) Run(ctx context.Context) error {
 	impl := server{
-		orders: OrderHandler{
-			OrderService: a.orderService,
-		},
-		admins: AdminHandler{
-			adminService: a.adminService,
-		},
+		orders: *orderHandlerPkg.NewHandler(&a.orderService),
+		admins: *adminHandlerPkg.NewHandler(&a.adminService),
 	}
 	router := mux.NewRouter()
 	router.Use(FieldLogger)
@@ -132,7 +105,7 @@ func (a *App) Run(ctx context.Context) error {
 	//	@Success		200	{string}	string	"Order deleted successfully"
 	//	@Failure		404	{object}	models.ErrorResponse
 	//	@Router			/orders/{id} [delete]
-	router.HandleFunc(fmt.Sprintf("/orders/{%s:[0-9]+}", OrderIDParam),
+	router.HandleFunc(fmt.Sprintf("/orders/{%s:[0-9]+}", orderHandlerPkg.OrderIDParam),
 		authMiddleware.BasicAuthChecker(ctx, a.wrapHandler(ctx, impl.orders.DeleteOrder)).ServeHTTP).
 		Methods(http.MethodDelete)
 
@@ -172,7 +145,7 @@ func (a *App) Run(ctx context.Context) error {
 	//	@Failure		400				{object}	models.ErrorResponse
 	//	@Router			/admins/{admin_username} [post]
 	router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}",
-		adminUsernameParam), a.wrapHandler(ctx, impl.admins.UpdateAdmin)).
+		adminHandlerPkg.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.UpdateAdmin)).
 		Methods(http.MethodPost)
 
 	//	@Summary		Delete Admin
@@ -185,7 +158,7 @@ func (a *App) Run(ctx context.Context) error {
 	//	@Failure		404				{object}	models.ErrorResponse
 	//	@Router			/admins/{admin_username} [delete]
 	router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}",
-		adminUsernameParam), a.wrapHandler(ctx, impl.admins.DeleteAdmin)).
+		adminHandlerPkg.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.DeleteAdmin)).
 		Methods(http.MethodDelete)
 
 	// Путь для отображения Swagger UI
