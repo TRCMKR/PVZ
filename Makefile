@@ -1,4 +1,6 @@
 BINARY=app
+DOCKER_COMPOSE=docker compose
+TEST_CONTAINER_NAME=test_app
 
 BUILD_FLAGS=-ldflags="-s -w"
 
@@ -16,8 +18,8 @@ endif
 MIGRATION_FOLDER=$(CURDIR)/migrations
 
 .PHONY: build
-## builds app + clean + fmt + lint
-build: fmt lint clean
+## builds app + fmt + lint + test + clean
+build: fmt lint test clean
 	go build $(BUILD_FLAGS) -o ./build/$(BINARY) ./cmd/app
 
 .PHONY: run
@@ -49,11 +51,6 @@ lint: vet
 vet:
 	go vet ./...
 
-.PHONY: install-lint
-## installs linter
-install-lint:
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
 .PHONY: deps
 ## installs dependencies
 deps:
@@ -79,29 +76,50 @@ cache:
 build-windows:
 	GOOS=windows GOARCH=amd64 go build $(BUILD_FLAGS) -o ./build/$(BINARY).exe
 
-## creates migration with first param as name
 .PHONY: migration-create
+## creates migration with first param as name
 migration-create:
 	goose -dir "$(MIGRATION_FOLDER)" create $(name) sql
 
-## applies latest migration
 .PHONY: migration-up
+## applies latest migration
 migration-up:
 	goose -dir "$(MIGRATION_FOLDER)" postgres "$(POSTGRES_SETUP_TEST)" up
 
-## rolls back latest migration
 .PHONY: migration-down
+## rolls back latest migration
 migration-down:
 	goose -dir "$(MIGRATION_FOLDER)" postgres "$(POSTGRES_SETUP_TEST)" down
 
-## checks migration status
 .PHONY: migration-status
+## checks migration status
 migration-status:
 	goose -dir "$(MIGRATION_FOLDER)" postgres "$(POSTGRES_SETUP_TEST)" status
 
 .PHONY: swag-init
+## makes swagger pages
 swag-init:
-	swag init -g "./internal/web/router.go" --parseInternal --pd
+	swag init -g "./internal/web/router.go" --parseInternal --pd --parseDepth 3
+
+.PHONY: mock-gen
+## generates mocks
+mock-gen:
+	go generate ./...
+
+.PHONY: test
+## runs all tests
+test:
+	go test -count=1 ./... -tags=integration
+
+.PHONY: test-cover
+## shows test coverage without cache
+test-cover:
+	go test -cover -count=1 -covermode=count gitlab.ozon.dev/alexplay1224/homework/internal/...
+
+.PHONY: run-unit-tests
+## runs unit tests
+run-unit-tests:
+	go test -count=1 ./...
 
 .PHONY: help
 ## prints help about all targets

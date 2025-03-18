@@ -9,9 +9,164 @@
     "host": "localhost:9000",
     "basePath": "/",
     "paths": {
-        "/orders": {
+        "/admins": {
             "post": {
-                "description": "Creates a new order.",
+                "description": "Creates a new admin user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admins"
+                ],
+                "summary": "Create admin",
+                "parameters": [
+                    {
+                        "description": "Admin details",
+                        "name": "admin",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_web_admin.createAdminRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Admin created successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or missing fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/admins/{username}": {
+            "post": {
+                "description": "Update the password of an admin by providing the old and new passwords",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admins"
+                ],
+                "summary": "Update admin's password",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Admin Username",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Admin Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_web_admin.updateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Admin password updated successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or missing fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an admin by providing the username and password for confirmation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admins"
+                ],
+                "summary": "Delete an admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Admin Username",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Delete Admin Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_web_admin.deleteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Admin deleted successfully",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or missing fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/orders": {
+            "get": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Retrieves a paginated list of orders based on the provided filter parameters (e.g., count, page, etc.)",
                 "consumes": [
                     "application/json"
                 ],
@@ -21,15 +176,200 @@
                 "tags": [
                     "orders"
                 ],
-                "summary": "Create an Order",
+                "summary": "Get orders with filters",
                 "parameters": [
                     {
-                        "description": "Order",
+                        "type": "integer",
+                        "description": "Order ID",
+                        "name": "order_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Weight of the order",
+                        "name": "weight",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Minimum weight of the order",
+                        "name": "weight_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Maximum weight of the order",
+                        "name": "weight_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Price of the order",
+                        "name": "price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Minimum price of the order",
+                        "name": "price_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Maximum price of the order",
+                        "name": "price_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Status of the order",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Start date of the expiry range",
+                        "name": "expiry_date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date",
+                        "description": "End date of the expiry range",
+                        "name": "expiry_date_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Start date of the arrival range",
+                        "name": "arrival_date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date",
+                        "description": "End date of the arrival range",
+                        "name": "arrival_date_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of orders per page",
+                        "name": "count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success:",
+                        "schema": {
+                            "$ref": "#/definitions/internal_web_order.getOrdersResponce"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request, invalid parameters",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Creates a new order based on the provided order details and validates the fields",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Create a new order",
+                "parameters": [
+                    {
+                        "description": "Order details",
                         "name": "order",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.Order"
+                            "$ref": "#/definitions/internal_web_order.createOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid packaging",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/orders/process": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Processes the given orders based on the action and order IDs provided",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Process orders",
+                "parameters": [
+                    {
+                        "description": "Process Orders Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_web_order.processOrderRequest"
                         }
                     }
                 ],
@@ -37,11 +377,69 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.Order"
+                            "$ref": "#/definitions/internal_web_order.processOrderRequest"
                         }
                     },
                     "400": {
-                        "description": "Bad Request"
+                        "description": "Invalid request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/orders/{orderID}": {
+            "delete": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Deletes the specified order and returns success or error response",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Delete an order by its ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Order ID",
+                        "name": "orderID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Order ID",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
@@ -94,7 +492,11 @@
                 },
                 "status": {
                     "description": "@Description Current status of the order (e.g., 'stored', 'given', etc.)\n@Example \"stored\"",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.StatusType"
+                        }
+                    ]
                 },
                 "user_id": {
                     "description": "@Description ID of the user who created the order\n@Example 456",
@@ -121,8 +523,131 @@
                 "WrapPackaging"
             ]
         },
+        "gitlab_ozon_dev_alexplay1224_homework_internal_models.StatusType": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                3,
+                4
+            ],
+            "x-enum-varnames": [
+                "StoredOrder",
+                "GivenOrder",
+                "ReturnedOrder",
+                "DeletedOrder"
+            ]
+        },
+        "internal_web_admin.createAdminRequest": {
+            "description": "Request to create a new admin user",
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "ID is the unique identifier for the admin",
+                    "type": "integer"
+                },
+                "password": {
+                    "description": "Password is the admin's password",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "Username is the name the admin will use to log in",
+                    "type": "string"
+                }
+            }
+        },
+        "internal_web_admin.deleteRequest": {
+            "description": "Request to delete an admin by providing the username and password",
+            "type": "object",
+            "properties": {
+                "password": {
+                    "description": "Password is required to confirm the deletion",
+                    "type": "string"
+                }
+            }
+        },
+        "internal_web_admin.updateRequest": {
+            "description": "Request to update the password of an admin by providing the old and new passwords",
+            "type": "object",
+            "properties": {
+                "new_password": {
+                    "description": "New password for the admin",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "Old password of the admin",
+                    "type": "string"
+                }
+            }
+        },
+        "internal_web_order.createOrderRequest": {
+            "type": "object",
+            "properties": {
+                "expiry_date": {
+                    "type": "string"
+                },
+                "extra_packaging": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "packaging": {
+                    "type": "integer"
+                },
+                "price": {
+                    "$ref": "#/definitions/money.Money"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "weight": {
+                    "type": "number"
+                }
+            }
+        },
+        "internal_web_order.getOrdersResponce": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "orders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.Order"
+                    }
+                }
+            }
+        },
+        "internal_web_order.processOrderRequest": {
+            "description": "Request to process orders by action and order IDs",
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "order_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "money.Money": {
             "type": "object"
+        }
+    },
+    "securityDefinitions": {
+        "BasicAuth": {
+            "type": "basic"
         }
     }
 }

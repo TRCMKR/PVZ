@@ -5,11 +5,11 @@ import (
 	"errors"
 	"log"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
-
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
+
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
 )
 
 type AdminRepo struct {
