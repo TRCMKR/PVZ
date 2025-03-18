@@ -13,6 +13,38 @@ import (
 	myquery "gitlab.ozon.dev/alexplay1224/homework/internal/query"
 )
 
+type getOrdersResponce struct {
+	Count  int            `json:"count"`
+	Orders []models.Order `json:"orders"`
+}
+
+// GetOrders retrieves a list of orders based on filter parameters
+// @Security BasicAuth
+// @Summary Get orders with filters
+// @Description Retrieves a paginated list of orders based on the provided filter parameters (e.g., count, page, etc.)
+// @Tags orders
+// @Accept  json
+// @Produce  json
+// @Param order_id query int false "Order ID"
+// @Param user_id query int false "User ID"
+// @Param weight query float64 false "Weight of the order"
+// @Param weight_from query float64 false "Minimum weight of the order"
+// @Param weight_to query float64 false "Maximum weight of the order"
+// @Param price query float64 false "Price of the order"
+// @Param price_from query float64 false "Minimum price of the order"
+// @Param price_to query float64 false "Maximum price of the order"
+// @Param status query int false "Status of the order"
+// @Param expiry_date_from query string false "Start date of the expiry range" format(date) "2025-03-10T00:00:00Z"
+// @Param expiry_date_to query string false "End date of the expiry range" format(date) "2025-03-10T00:00:00Z"
+// @Param arrival_date_from query string false "Start date of the arrival range" format(date) "2025-03-10T00:00:00Z"
+// @Param arrival_date_to query string false "End date of the arrival range" format(date) "2025-03-10T00:00:00Z"
+// @Param count query int false "Number of orders per page"
+// @Param page query int false "Page number"
+// @Success 200 {object} getOrdersResponce "Success:
+// @Failure 400 {string} string "Bad request, invalid parameters"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal server error"
+// @Router /orders [get]
 func (h *Handler) GetOrders(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	conds, count, page, err := h.getFilterParams(r)
 	if err != nil {
@@ -26,10 +58,7 @@ func (h *Handler) GetOrders(ctx context.Context, w http.ResponseWriter, r *http.
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	response := struct {
-		Count  int            `json:"count"`
-		Orders []models.Order `json:"orders"`
-	}{
+	response := getOrdersResponce{
 		Count:  len(orders),
 		Orders: orders,
 	}

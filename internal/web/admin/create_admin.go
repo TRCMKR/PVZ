@@ -8,12 +8,34 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
+// createAdminRequest represents the request body for creating an admin
+// @Description Request to create a new admin user
+// @Accept json
+// @Produce json
+// @Param request body createAdminRequest true "Create Admin Request"
+// @Success 200 {string} string "Admin created successfully"
+// @Failure 400 {string} string "Invalid request or missing fields"
+// @Failure 500 {string} string "Internal server error"
+// @Router /admin/create [post]
+type createAdminRequest struct {
+	ID       int    `json:"id"`       // ID is the unique identifier for the admin
+	Username string `json:"username"` // Username is the name the admin will use to log in
+	Password string `json:"password"` // Password is the admin's password
+}
+
+// CreateAdminRequest represents the request body for creating an admin
+// @Summary Create admin
+// @Description Creates a new admin user
+// @Tags admins
+// @Accept json
+// @Produce json
+// @Param admin body createAdminRequest true "Admin details"
+// @Success 200 {string} string "Admin created successfully"
+// @Failure 400 {string} string "Invalid request or missing fields"
+// @Failure 500 {string} string "Internal server error"
+// @Router /admins [post]
 func (h *Handler) CreateAdmin(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	var createRequest = struct {
-		ID       int    `json:"id"`
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}{}
+	var createRequest = createAdminRequest{}
 	err := json.NewDecoder(r.Body).Decode(&createRequest)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -34,4 +56,5 @@ func (h *Handler) CreateAdmin(ctx context.Context, w http.ResponseWriter, r *htt
 	}
 
 	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("admin created successfully"))
 }

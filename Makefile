@@ -99,7 +99,7 @@ migration-status:
 .PHONY: swag-init
 ## makes swagger pages
 swag-init:
-	swag init -g "./internal/web/router.go" --parseInternal --pd
+	swag init -g "./internal/web/router.go" --parseInternal --pd --parseDepth 3
 
 .PHONY: mock-gen
 ## generates mocks

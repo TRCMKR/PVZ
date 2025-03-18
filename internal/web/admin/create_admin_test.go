@@ -14,12 +14,6 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-type createAdminRequest struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 func TestHandler_CreateAdmin(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

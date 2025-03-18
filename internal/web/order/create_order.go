@@ -11,15 +11,19 @@ import (
 	"github.com/Rhymond/go-money"
 )
 
-// @Summary		Create an Order
-// @Description	Creates a new order.
-// @Tags			orders
-// @Accept			json
-// @Produce		json
-// @Param			order	body		models.Order	true	"Order"
-// @Success		200		{object}	models.Order
-// @Failure		400
-// @Router			/orders [post]
+// CreateOrder handles the creation of an order
+// @Security BasicAuth
+// @Summary Create a new order
+// @Description Creates a new order based on the provided order details and validates the fields
+// @Tags orders
+// @Accept  json
+// @Produce  json
+// @Param order body createOrderRequest true "Order details"
+// @Success 200 {string} string "Success"
+// @Failure 400 {string} string "Invalid JSON format"
+// @Failure 400 {string} string "Missing required fields"
+// @Failure 400 {string} string "Invalid packaging"
+// @Router /orders [post]
 func (h *Handler) CreateOrder(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	var order = createOrderRequest{}
 
@@ -55,7 +59,7 @@ func (h *Handler) CreateOrder(ctx context.Context, w http.ResponseWriter, r *htt
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("success"))
+	_, _ = w.Write([]byte("success"))
 }
 
 func getPackaging(packagingStr string) (models.Packaging, error) {

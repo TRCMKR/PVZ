@@ -25,7 +25,6 @@ var (
 	ErrUndefinedAction    = errors.New("undefined action")
 	ErrNotEnoughWeight    = errors.New("not enough weight")
 	ErrWrongPackaging     = errors.New("wrong packaging")
-	ErrUndefinedPackaging = errors.New("undefined packaging")
 )
 
 type orderStorage interface {

@@ -3,13 +3,15 @@ package web
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/stretchr/testify/require"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
-	"go.uber.org/mock/gomock"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
+
+	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type request struct {
@@ -188,7 +190,7 @@ func TestApp_Run(t *testing.T) {
 			tt.mockSetup(*mockOrderStorage, *mockAdminStorage)
 
 			var authHeader string
-			req, err := http.NewRequest(tt.args.method, tt.args.path, bytes.NewReader(tt.args.body))
+			req, err := http.NewRequestWithContext(t.Context(), tt.args.method, tt.args.path, bytes.NewReader(tt.args.body))
 			require.NoError(t, err)
 			if tt.authorized {
 				username := "user"
