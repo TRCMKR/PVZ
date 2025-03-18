@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
@@ -11,7 +12,11 @@ import (
 )
 
 func main() {
-	config.InitEnv()
+	if os.Getenv("APP_ENV") == "test" {
+		config.InitEnv(".env.test")
+	} else {
+		config.InitEnv(".env")
+	}
 	cfg := config.NewConfig()
 
 	ctx, cancel := context.WithCancel(context.Background())

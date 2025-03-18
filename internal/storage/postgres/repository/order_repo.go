@@ -47,7 +47,7 @@ func (r *OrderRepo) AddOrder(ctx context.Context, order models.Order) error {
 							VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 							`,
 		tmp.ID, tmp.UserID, tmp.Weight, tmp.Price, tmp.Packaging, tmp.ExtraPackaging,
-		tmp.Status, tmp.ArrivalDate, tmp.ExpiryDate, tmp.LastChange)
+		tmp.Status, tmp.ArrivalDate.Time, tmp.ExpiryDate.Time, tmp.LastChange.Time)
 
 	if err != nil {
 		log.Printf("Failed to insert order %v: %v", tmp.ID, errAddOrderFailed)
@@ -64,7 +64,7 @@ func (r *OrderRepo) RemoveOrder(ctx context.Context, id int) error {
 		return err
 	}
 
-	if someOrder.Status == "deleted" {
+	if someOrder.Status == models.DeletedOrder {
 		return errNoSuchOrder
 	}
 
@@ -72,8 +72,8 @@ func (r *OrderRepo) RemoveOrder(ctx context.Context, id int) error {
 							UPDATE orders 
 							SET status = $1 
 							WHERE id = $2
-							AND status <> 4
-							`, 4, id)
+							AND status <> $3
+							`, 4, id, models.DeletedOrder)
 
 	if err != nil {
 		log.Printf("Failed to remove order %v: %v", id, errRemoveOrderFailed)
@@ -222,7 +222,7 @@ func (r *OrderRepo) GetOrders(ctx context.Context, params []query.Cond,
 
 func (r *OrderRepo) Contains(ctx context.Context, id int) (bool, error) {
 	var exists bool
-	err := r.db.Get(ctx, &exists, `SELECT EXISTS(SELECT 1 FROM orders WHERE id = $1 AND status <> 4)`, id)
+	err := r.db.Get(ctx, &exists, `SELECT EXISTS(SELECT 1 FROM orders WHERE id = $1)`, id)
 	if err != nil {
 		log.Printf("Failed to find order %v: %v", id, errFindingOrder)
 

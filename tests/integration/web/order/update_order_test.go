@@ -1,0 +1,99 @@
+//go:build integration
+
+package order
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
+	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
+	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
+	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
+
+	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestOrderHandler_UpdateOrders(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		requestBody    string
+		expectedStatus int
+		failed         int
+	}{
+		{
+			name: "Update existing order",
+			requestBody: `{
+                "user_id": 789,
+                "order_ids": [4],
+                "action": "give"
+            }`,
+			expectedStatus: http.StatusOK,
+			failed:         0,
+		},
+		{
+			name: "Update non-existing order",
+			requestBody: `{
+                "user_id": 123,
+                "order_ids": [1232],
+                "action": "give"
+            }`,
+			expectedStatus: http.StatusOK,
+			failed:         1,
+		},
+	}
+
+	ctx := context.Background()
+	rootDir, err := config.GetRootDir()
+	require.NoError(t, err)
+	config.InitEnv(rootDir + "/.env.test")
+	cfg := *config.NewConfig()
+
+	connStr, pgContainer, err := integration.InitPostgresContainer(t.Context(), cfg)
+	require.NoError(t, err)
+	db, err := postgres.NewDB(t.Context(), connStr)
+	require.NoError(t, err)
+	ordersRepo := repository.NewOrderRepo(*db)
+	orderService := orderServicePkg.NewService(ordersRepo)
+
+	t.Cleanup(func() {
+		if err := pgContainer.Terminate(context.Background()); err != nil {
+			t.Fatalf("failed to terminate pgContainer: %s", err)
+		}
+		defer db.Close()
+	})
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			reqBody := []byte(tt.requestBody)
+
+			req := httptest.NewRequest(http.MethodPost, "/orders/process", bytes.NewReader(reqBody))
+			res := httptest.NewRecorder()
+			handler := orderHandlerPkg.NewHandler(orderService)
+
+			handler.UpdateOrders(ctx, res, req)
+
+			var response = struct {
+				Failed int `json:"failed"`
+			}{}
+
+			assert.Equal(t, tt.expectedStatus, res.Code)
+			if tt.expectedStatus == http.StatusOK {
+				require.NoError(t, json.Unmarshal(res.Body.Bytes(), &response))
+				assert.Equal(t, tt.failed, response.Failed)
+			}
+		})
+	}
+}

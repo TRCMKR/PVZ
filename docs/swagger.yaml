@@ -42,10 +42,11 @@ definitions:
           @Description Price of the order
           @Example {"amount": 100, "currency": "USD"}
       status:
+        allOf:
+        - $ref: '#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.StatusType'
         description: |-
           @Description Current status of the order (e.g., 'stored', 'given', etc.)
           @Example "stored"
-        type: string
       user_id:
         description: |-
           @Description ID of the user who created the order
@@ -69,6 +70,89 @@ definitions:
     - BagPackaging
     - BoxPackaging
     - WrapPackaging
+  gitlab_ozon_dev_alexplay1224_homework_internal_models.StatusType:
+    enum:
+    - 1
+    - 2
+    - 3
+    - 4
+    type: integer
+    x-enum-varnames:
+    - StoredOrder
+    - GivenOrder
+    - ReturnedOrder
+    - DeletedOrder
+  internal_web_admin.createAdminRequest:
+    description: Request to create a new admin user
+    properties:
+      id:
+        description: ID is the unique identifier for the admin
+        type: integer
+      password:
+        description: Password is the admin's password
+        type: string
+      username:
+        description: Username is the name the admin will use to log in
+        type: string
+    type: object
+  internal_web_admin.deleteRequest:
+    description: Request to delete an admin by providing the username and password
+    properties:
+      password:
+        description: Password is required to confirm the deletion
+        type: string
+    type: object
+  internal_web_admin.updateRequest:
+    description: Request to update the password of an admin by providing the old and
+      new passwords
+    properties:
+      new_password:
+        description: New password for the admin
+        type: string
+      password:
+        description: Old password of the admin
+        type: string
+    type: object
+  internal_web_order.createOrderRequest:
+    properties:
+      expiry_date:
+        type: string
+      extra_packaging:
+        type: integer
+      id:
+        type: integer
+      packaging:
+        type: integer
+      price:
+        $ref: '#/definitions/money.Money'
+      status:
+        type: integer
+      user_id:
+        type: integer
+      weight:
+        type: number
+    type: object
+  internal_web_order.getOrdersResponce:
+    properties:
+      count:
+        type: integer
+      orders:
+        items:
+          $ref: '#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.Order'
+        type: array
+    type: object
+  internal_web_order.processOrderRequest:
+    description: Request to process orders by action and order IDs
+    properties:
+      action:
+        type: string
+      order_ids:
+        items:
+          type: integer
+        type: array
+      user_id:
+        type: integer
+    type: object
   money.Money:
     type: object
 host: localhost:9000
@@ -78,28 +162,292 @@ info:
   title: PVZ API Documentation
   version: "1.0"
 paths:
-  /orders:
+  /admins:
     post:
       consumes:
       - application/json
-      description: Creates a new order.
+      description: Creates a new admin user
       parameters:
-      - description: Order
+      - description: Admin details
+        in: body
+        name: admin
+        required: true
+        schema:
+          $ref: '#/definitions/internal_web_admin.createAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Admin created successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request or missing fields
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create admin
+      tags:
+      - admins
+  /admins/{username}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an admin by providing the username and password for confirmation
+      parameters:
+      - description: Admin Username
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Delete Admin Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_web_admin.deleteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Admin deleted successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request or missing fields
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete an admin
+      tags:
+      - admins
+    post:
+      consumes:
+      - application/json
+      description: Update the password of an admin by providing the old and new passwords
+      parameters:
+      - description: Admin Username
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Update Admin Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_web_admin.updateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Admin password updated successfully
+          schema:
+            type: string
+        "400":
+          description: Invalid request or missing fields
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Update admin's password
+      tags:
+      - admins
+  /orders:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of orders based on the provided filter
+        parameters (e.g., count, page, etc.)
+      parameters:
+      - description: Order ID
+        in: query
+        name: order_id
+        type: integer
+      - description: User ID
+        in: query
+        name: user_id
+        type: integer
+      - description: Weight of the order
+        in: query
+        name: weight
+        type: number
+      - description: Minimum weight of the order
+        in: query
+        name: weight_from
+        type: number
+      - description: Maximum weight of the order
+        in: query
+        name: weight_to
+        type: number
+      - description: Price of the order
+        in: query
+        name: price
+        type: number
+      - description: Minimum price of the order
+        in: query
+        name: price_from
+        type: number
+      - description: Maximum price of the order
+        in: query
+        name: price_to
+        type: number
+      - description: Status of the order
+        in: query
+        name: status
+        type: integer
+      - description: Start date of the expiry range
+        format: date
+        in: query
+        name: expiry_date_from
+        type: string
+      - description: End date of the expiry range
+        format: date
+        in: query
+        name: expiry_date_to
+        type: string
+      - description: Start date of the arrival range
+        format: date
+        in: query
+        name: arrival_date_from
+        type: string
+      - description: End date of the arrival range
+        format: date
+        in: query
+        name: arrival_date_to
+        type: string
+      - description: Number of orders per page
+        in: query
+        name: count
+        type: integer
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Success:'
+          schema:
+            $ref: '#/definitions/internal_web_order.getOrdersResponce'
+        "400":
+          description: Bad request, invalid parameters
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BasicAuth: []
+      summary: Get orders with filters
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      description: Creates a new order based on the provided order details and validates
+        the fields
+      parameters:
+      - description: Order details
         in: body
         name: order
         required: true
         schema:
-          $ref: '#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.Order'
+          $ref: '#/definitions/internal_web_order.createOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+        "400":
+          description: Invalid packaging
+          schema:
+            type: string
+      security:
+      - BasicAuth: []
+      summary: Create a new order
+      tags:
+      - orders
+  /orders/{orderID}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes the specified order and returns success or error response
+      parameters:
+      - description: Order ID
+        in: path
+        name: orderID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+        "400":
+          description: Invalid Order ID
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - BasicAuth: []
+      summary: Delete an order by its ID
+      tags:
+      - orders
+  /orders/process:
+    post:
+      consumes:
+      - application/json
+      description: Processes the given orders based on the action and order IDs provided
+      parameters:
+      - description: Process Orders Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_web_order.processOrderRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/gitlab_ozon_dev_alexplay1224_homework_internal_models.Order'
+            $ref: '#/definitions/internal_web_order.processOrderRequest'
         "400":
-          description: Bad Request
-      summary: Create an Order
+          description: Invalid request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BasicAuth: []
+      summary: Process orders
       tags:
       - orders
+securityDefinitions:
+  BasicAuth:
+    type: basic
 swagger: "2.0"

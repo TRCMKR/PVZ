@@ -1,0 +1,32 @@
+package admin
+
+import (
+	"context"
+
+	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
+)
+
+func (s *Service) UpdateAdmin(ctx context.Context, username string, password string, admin models.Admin) error {
+	ok, err := s.ContainsUsername(ctx, username)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrAdminDoesntExist
+	}
+
+	someAdmin, err := s.Storage.GetAdminByUsername(ctx, username)
+	if err != nil {
+		return err
+	}
+	if !someAdmin.CheckPassword(password) {
+		return ErrWrongPassword
+	}
+
+	err = s.Storage.UpdateAdmin(ctx, someAdmin.ID, admin)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

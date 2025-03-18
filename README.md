@@ -1,16 +1,16 @@
 ## Утилита для управления ПВЗ
 
 ### Web Команды
-- `/orders [get]` – получает список заказов, фильтрация на все поля, кроме id и даты последнего изменения
+- `/orders [get]` – получает список заказов, фильтрация на все поля, кроме даты последнего изменения
 ```bash
 curl -u lol:12345678 --request GET \
-"localhost:9000/orders?user_id=789&count=5&page=1"
+"localhost:9000/orders"
 ```
 - `/orders [post]` – создаёт новый заказ
 ```bash
 curl -u lol:12345678 --header "Content-Type: application/json" \
 --request POST \
---data '{"id": 1009,"user_id":52,"weight":100,"price":{"amount":1000000,"currency":"RUB"},"packaging":2,"extra_packaging":3,"expiry_date":"2025-03-10T00:00:00Z"}' \
+--data '{"id": 1009,"user_id":789,"weight":100,"price":{"amount":1000000,"currency":"RUB"},"packaging":2,"extra_packaging":3,"expiry_date":"4025-03-10T00:00:00Z"}' \
 "http://localhost:9000/orders"
 ```
 - `/orders/{id} [delete]` – удаляет заказ
