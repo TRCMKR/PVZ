@@ -42,6 +42,13 @@ func (s *Service) AcceptOrder(ctx context.Context, orderID int, userID int, weig
 		return ErrOrderExpired
 	}
 
+	if (packagings[0].GetType() == models.NoPackaging && packagings[1].GetType() != models.NoPackaging) ||
+		(packagings[0].GetType() == models.WrapPackaging && packagings[1].GetType() != models.NoPackaging) ||
+		(packagings[0].GetType() != models.WrapPackaging && packagings[0].GetType() != models.NoPackaging &&
+			packagings[1].GetType() != models.NoPackaging && packagings[1].GetType() != models.WrapPackaging) {
+		return ErrWrongPackaging
+	}
+
 	var ok bool
 	var err error
 	if ok, err = s.Storage.Contains(ctx, orderID); ok {

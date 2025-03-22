@@ -1,6 +1,8 @@
 package config
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -86,4 +88,30 @@ func GetRootDir() (string, error) {
 		}
 		dir = parent
 	}
+}
+
+func ReadFirstFileWord(filename string) (string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanWords)
+
+	if !scanner.Scan() {
+		return "", errors.New("file is empty or has no words")
+	}
+	firstWord := scanner.Text()
+
+	if scanner.Scan() {
+		return "", errors.New("file contains more than one word")
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+
+	return firstWord, nil
 }

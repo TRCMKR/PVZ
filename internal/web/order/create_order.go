@@ -58,6 +58,7 @@ func (h *Handler) CreateOrder(ctx context.Context, w http.ResponseWriter, r *htt
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("success"))
 }

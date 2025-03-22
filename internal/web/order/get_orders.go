@@ -56,6 +56,8 @@ func (h *Handler) GetOrders(ctx context.Context, w http.ResponseWriter, r *http.
 	orders, err := h.OrderService.GetOrders(ctx, conds, count, page)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
 	}
 
 	response := getOrdersResponce{

@@ -5,9 +5,14 @@ package order
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
@@ -15,9 +20,6 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
 	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestOrderHandler_GetOrders(t *testing.T) {

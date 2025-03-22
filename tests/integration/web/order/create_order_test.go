@@ -6,20 +6,22 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
 	"github.com/Rhymond/go-money"
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
 	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-	"time"
 )
 
 type createOrderRequest struct {

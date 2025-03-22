@@ -24,25 +24,25 @@ func TestHandler_UpdateOrders(t *testing.T) {
 			name: "Valid request",
 			requestBody: `{
                 "user_id": 1,
-                "order_ids": [123, 456],
+                "id": 123,
                 "action": "return"
             }`,
 			mockSetup: func(mockOrderService *MockorderService) {
-				mockOrderService.EXPECT().ProcessOrders(gomock.Any(), 1, []int{123, 456}, "return").
-					Return(0, nil).Times(1)
+				mockOrderService.EXPECT().ProcessOrder(gomock.Any(), 1, 123, "return").
+					Return(nil).Times(1)
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   `{"failed":0}`,
+			expectedBody:   `success`,
 		},
 		{
 			name:           "Invalid JSON",
-			requestBody:    `{"user_id": 1, "order_ids": [123, 456], "action": "return"`,
+			requestBody:    `{"user_id": 1, "id": 123, "action": "return"`,
 			mockSetup:      func(mockOrderService *MockorderService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "Missing fields",
-			requestBody:    `{"user_id": 1, "order_ids": [], "action": ""}`,
+			requestBody:    `{"user_id": 1, "order_ids":0, "action": ""}`,
 			mockSetup:      func(mockOrderService *MockorderService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -50,12 +50,12 @@ func TestHandler_UpdateOrders(t *testing.T) {
 			name: "Service error",
 			requestBody: `{
                 "user_id": 1,
-                "order_ids": [123, 456],
+                "id": 123,
                 "action": "buy"
             }`,
 			mockSetup: func(mockOrderService *MockorderService) {
-				mockOrderService.EXPECT().ProcessOrders(gomock.Any(), 1, []int{123, 456}, "buy").
-					Return(2, errors.New("undefined action")).Times(1)
+				mockOrderService.EXPECT().ProcessOrder(gomock.Any(), 1, 123, "buy").
+					Return(errors.New("undefined action")).Times(1)
 			},
 			expectedStatus: http.StatusInternalServerError,
 		},
@@ -77,12 +77,12 @@ func TestHandler_UpdateOrders(t *testing.T) {
 
 			handler := NewHandler(mockOrderService)
 
-			handler.UpdateOrders(t.Context(), res, req)
+			handler.UpdateOrder(t.Context(), res, req)
 
 			assert.Equal(t, tt.expectedStatus, res.Code)
 
 			if tt.expectedBody != "" {
-				assert.JSONEq(t, tt.expectedBody, res.Body.String())
+				assert.Equal(t, tt.expectedBody, res.Body.String())
 			}
 		})
 	}

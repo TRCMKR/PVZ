@@ -3,7 +3,7 @@
 INSERT INTO packagings(id, name)
 VALUES
     (0, 'none'),
-    (1, 'bax'),
+    (1, 'bag'),
     (2, 'box'),
     (3, 'wrap');
 

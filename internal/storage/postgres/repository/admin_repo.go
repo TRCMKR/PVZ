@@ -7,20 +7,10 @@ import (
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
-
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
 )
 
 type AdminRepo struct {
 	db database
-}
-
-type database interface {
-	Get(context.Context, interface{}, string, ...interface{}) error
-	Select(context.Context, interface{}, string, ...interface{}) error
-	Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error)
-	ExecQueryRow(context.Context, string, ...interface{}) pgx.Row
 }
 
 func NewAdminRepo(db postgres.Database) *AdminRepo {

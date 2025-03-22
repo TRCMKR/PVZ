@@ -605,3 +605,65 @@ func (c *MockadminStorageUpdateAdminCall) DoAndReturn(f func(context.Context, in
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
+
+// MockauditLoggerStorage is a mock of auditLoggerStorage interface.
+type MockauditLoggerStorage struct {
+	ctrl     *gomock.Controller
+	recorder *MockauditLoggerStorageMockRecorder
+	isgomock struct{}
+}
+
+// MockauditLoggerStorageMockRecorder is the mock recorder for MockauditLoggerStorage.
+type MockauditLoggerStorageMockRecorder struct {
+	mock *MockauditLoggerStorage
+}
+
+// NewMockauditLoggerStorage creates a new mock instance.
+func NewMockauditLoggerStorage(ctrl *gomock.Controller) *MockauditLoggerStorage {
+	mock := &MockauditLoggerStorage{ctrl: ctrl}
+	mock.recorder = &MockauditLoggerStorageMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockauditLoggerStorage) EXPECT() *MockauditLoggerStorageMockRecorder {
+	return m.recorder
+}
+
+// CreateLog mocks base method.
+func (m *MockauditLoggerStorage) CreateLog(arg0 context.Context, arg1 models.Log) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateLog", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateLog indicates an expected call of CreateLog.
+func (mr *MockauditLoggerStorageMockRecorder) CreateLog(arg0, arg1 any) *MockauditLoggerStorageCreateLogCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLog", reflect.TypeOf((*MockauditLoggerStorage)(nil).CreateLog), arg0, arg1)
+	return &MockauditLoggerStorageCreateLogCall{Call: call}
+}
+
+// MockauditLoggerStorageCreateLogCall wrap *gomock.Call
+type MockauditLoggerStorageCreateLogCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockauditLoggerStorageCreateLogCall) Return(arg0 error) *MockauditLoggerStorageCreateLogCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockauditLoggerStorageCreateLogCall) Do(f func(context.Context, models.Log) error) *MockauditLoggerStorageCreateLogCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockauditLoggerStorageCreateLogCall) DoAndReturn(f func(context.Context, models.Log) error) *MockauditLoggerStorageCreateLogCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}

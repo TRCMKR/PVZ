@@ -2,7 +2,6 @@ package order
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
@@ -31,7 +30,7 @@ func isOrderEligible(order models.Order, userID int, action string) bool {
 	return order.Status == models.StoredOrder
 }
 
-func (s *Service) processOrder(ctx context.Context, userID int, orderID int, action string) error {
+func (s *Service) ProcessOrder(ctx context.Context, userID int, orderID int, action string) error {
 	if ok, err := s.Storage.Contains(ctx, orderID); err != nil || !ok {
 		return ErrOrderNotFound
 	}
@@ -60,18 +59,18 @@ func (s *Service) processOrder(ctx context.Context, userID int, orderID int, act
 	return nil
 }
 
-func (s *Service) ProcessOrders(ctx context.Context, userID int, orderIDs []int, action string) (int, error) {
-	ordersFailed := 0
-
-	for _, orderID := range orderIDs {
-		err := s.processOrder(ctx, userID, orderID, action)
-		if err != nil {
-			if errors.Is(err, ErrUndefinedAction) {
-				return 0, ErrUndefinedAction
-			}
-			ordersFailed++
-		}
-	}
-
-	return ordersFailed, nil
-}
+//func (s *Service) ProcessOrders(ctx context.Context, userID int, orderIDs []int, action string) (int, error) {
+//	ordersFailed := 0
+//
+//	for _, orderID := range orderIDs {
+//		err := s.processOrder(ctx, userID, orderID, action)
+//		if err != nil {
+//			if errors.Is(err, ErrUndefinedAction) {
+//				return 0, ErrUndefinedAction
+//			}
+//			ordersFailed++
+//		}
+//	}
+//
+//	return ordersFailed, nil
+//}

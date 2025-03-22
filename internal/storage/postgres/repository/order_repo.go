@@ -104,7 +104,7 @@ func (r *OrderRepo) UpdateOrder(ctx context.Context, id int, order models.Order)
 	if err != nil {
 		log.Printf("Failed to update order %v: %v", id, errUpdateOrderFailed)
 
-		return errUpdateOrderFailed
+		return err
 	}
 
 	return nil

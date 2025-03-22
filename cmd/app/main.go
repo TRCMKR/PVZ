@@ -4,6 +4,9 @@ import (
 	"context"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
@@ -30,9 +33,26 @@ func main() {
 
 	ordersRepo := repository.NewOrderRepo(*db)
 	adminsRepo := repository.NewAdminRepo(*db)
+	logsRepo := repository.NewLogsRepo(*db)
 
-	app := web.NewApp(ordersRepo, adminsRepo)
-	if err = app.Run(ctx); err != nil {
-		log.Panic("Error: couldn't run app", err)
+	app := web.NewApp(ctx, ordersRepo, adminsRepo, logsRepo, 2, 5, 2*time.Second)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		log.Println("Received shutdown signal")
+		cancel()
+	}()
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- app.Run(ctx)
+	}()
+	select {
+	case <-ctx.Done():
+		log.Println("Context canceled, shutting down...")
+	case err = <-errCh:
+		if err != nil {
+			log.Panic("Error: couldn't run app", err)
+		}
 	}
 }

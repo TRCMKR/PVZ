@@ -5,7 +5,6 @@ package order
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -29,27 +28,26 @@ func TestOrderHandler_UpdateOrders(t *testing.T) {
 		name           string
 		requestBody    string
 		expectedStatus int
-		failed         int
+		expectedBody   string
 	}{
 		{
 			name: "Update existing order",
 			requestBody: `{
                 "user_id": 789,
-                "order_ids": [4],
+                "id": 4,
                 "action": "give"
             }`,
 			expectedStatus: http.StatusOK,
-			failed:         0,
+			expectedBody:   "success",
 		},
 		{
 			name: "Update non-existing order",
 			requestBody: `{
                 "user_id": 123,
-                "order_ids": [1232],
+                "id": 1232,
                 "action": "give"
             }`,
-			expectedStatus: http.StatusOK,
-			failed:         1,
+			expectedStatus: http.StatusInternalServerError,
 		},
 	}
 
@@ -83,16 +81,11 @@ func TestOrderHandler_UpdateOrders(t *testing.T) {
 			res := httptest.NewRecorder()
 			handler := orderHandlerPkg.NewHandler(orderService)
 
-			handler.UpdateOrders(ctx, res, req)
-
-			var response = struct {
-				Failed int `json:"failed"`
-			}{}
+			handler.UpdateOrder(ctx, res, req)
 
 			assert.Equal(t, tt.expectedStatus, res.Code)
 			if tt.expectedStatus == http.StatusOK {
-				require.NoError(t, json.Unmarshal(res.Body.Bytes(), &response))
-				assert.Equal(t, tt.failed, response.Failed)
+				assert.Equal(t, tt.expectedBody, res.Body.String())
 			}
 		})
 	}
