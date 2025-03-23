@@ -13,19 +13,19 @@ func (s *Service) pack(order *models.Order, packaging models.Packaging) error {
 	if packaging.GetCheckWeight() && order.Weight < packaging.GetMinWeight() {
 		return ErrNotEnoughWeight
 	}
+	//
+	//if order.Packaging == models.WrapPackaging || order.ExtraPackaging != models.NoPackaging {
+	//	return ErrWrongPackaging
+	//}
 
-	if order.Packaging == models.WrapPackaging || order.ExtraPackaging != models.NoPackaging {
-		return ErrWrongPackaging
-	}
-
-	if order.Packaging == models.NoPackaging {
-		order.Packaging = packaging.GetType()
-	} else {
-		if packaging.GetType() != models.WrapPackaging {
-			return ErrWrongPackaging
-		}
-		order.ExtraPackaging = packaging.GetType()
-	}
+	//if order.Packaging == models.NoPackaging {
+	//	order.Packaging = packaging.GetType()
+	//} else {
+	//	if packaging.GetType() != models.WrapPackaging {
+	//		return ErrWrongPackaging
+	//	}
+	//	order.ExtraPackaging = packaging.GetType()
+	//}
 
 	tmp, err := order.Price.Add(packaging.GetCost())
 	if err != nil {

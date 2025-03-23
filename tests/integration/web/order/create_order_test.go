@@ -85,7 +85,7 @@ func TestOrderHandler_CreateOrder(t *testing.T) {
 				ExtraPackaging: 3,
 				ExpiryDate:     time.Now().AddDate(1, 0, 0),
 			},
-			expectedStatus: http.StatusBadRequest,
+			expectedStatus: http.StatusInternalServerError,
 		},
 		{
 			name: "Correct order",

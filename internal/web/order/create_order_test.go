@@ -78,7 +78,7 @@ func TestHandler_CreateOrder(t *testing.T) {
 					gomock.Eq(*money.New(1000, money.RUB)),
 					gomock.Any(), gomock.Any()).Return(errors.New("not enough weight")).Times(1)
 			},
-			expectedCode: http.StatusBadRequest,
+			expectedCode: http.StatusInternalServerError,
 		},
 		{
 			name: "Correct order",

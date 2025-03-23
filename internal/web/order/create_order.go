@@ -53,7 +53,7 @@ func (h *Handler) CreateOrder(ctx context.Context, w http.ResponseWriter, r *htt
 
 	err = h.OrderService.AcceptOrder(ctx, order.ID, order.UserID, order.Weight, order.Price, order.ExpiryDate, packagings)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		return
 	}

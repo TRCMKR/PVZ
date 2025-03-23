@@ -3,6 +3,7 @@ package auditlogger
 import (
 	"context"
 	"strings"
+	"sync"
 	"time"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
@@ -20,10 +21,13 @@ type Service struct {
 
 func NewService(ctx context.Context, logs auditLoggerStorage, workerCount int, batchSize int,
 	timeout time.Duration) *Service {
-	jobs := make(chan models.Log, batchSize*20)
+	jobs := make(chan models.Log, batchSize*20*workerCount)
+	var wg sync.WaitGroup
+	wg.Add(workerCount)
 	go func() {
-		defer close(jobs)
 		<-ctx.Done()
+		wg.Wait()
+		close(jobs)
 	}()
 
 	rootDir, err := config.GetRootDir()
@@ -41,7 +45,10 @@ func NewService(ctx context.Context, logs auditLoggerStorage, workerCount int, b
 
 	dbWorkerCount := workerCount/2 + workerCount%2
 	for i := 0; i < dbWorkerCount; i++ {
-		go s.dbWorker(ctx, batchSize, timeout, jobs)
+		go func() {
+			defer wg.Done()
+			s.dbWorker(ctx, batchSize, timeout, jobs)
+		}()
 	}
 
 	stdoutWorkerCount := workerCount / 2
@@ -49,7 +56,10 @@ func NewService(ctx context.Context, logs auditLoggerStorage, workerCount int, b
 		return strings.Contains(log.String(), word)
 	}
 	for i := 0; i < stdoutWorkerCount; i++ {
-		go s.stduoutWorker(batchSize, timeout, jobs, operator)
+		go func() {
+			defer wg.Done()
+			s.stduoutWorker(ctx, batchSize, timeout, jobs, operator)
+		}()
 	}
 
 	return s

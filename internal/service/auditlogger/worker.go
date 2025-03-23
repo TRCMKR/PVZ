@@ -12,7 +12,7 @@ func (s *Service) dbWorker(ctx context.Context, batchSize int, timeout time.Dura
 	s.dbLogger(ctx, batches)
 }
 
-func (s *Service) stduoutWorker(batchSize int, timeout time.Duration, jobs chan models.Log, operator func(log models.Log) bool) {
+func (s *Service) stduoutWorker(ctx context.Context, batchSize int, timeout time.Duration, jobs chan models.Log, operator func(log models.Log) bool) {
 	filtered := s.filter(jobs, operator)
 	batches := s.batcher(filtered, batchSize, timeout)
 	s.stdoutLogger(batches)

@@ -151,11 +151,14 @@ func (a *AuditLoggerMiddleware) AuditLogger(ctx context.Context, handler http.Ha
 		username, _, _ := r.BasicAuth()
 		rw := &responseWriterWrapper{ResponseWriter: w, statusCode: http.StatusOK}
 		handler.ServeHTTP(rw, r)
-		go func() {
+		select {
+		case <-ctx.Done():
+			return
+		default:
 			someAdmin, _ := a.adminService.GetAdminByUsername(ctx, username)
 			responseText := strings.TrimSpace(rw.body.String())
 			currentLog := *models.NewLog(request.ID, someAdmin.ID, responseText, r.URL.Path, r.Method, rw.statusCode)
-			a.auditLoggerService.CreateLog(currentLog)
-		}()
+			a.auditLoggerService.CreateLog(ctx, currentLog)
+		}
 	})
 }
