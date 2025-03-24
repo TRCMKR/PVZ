@@ -135,22 +135,21 @@ func (a *AuditLoggerMiddleware) AuditLogger(ctx context.Context, handler http.Ha
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request requestBody
 		body, err := io.ReadAll(r.Body)
-		if err == nil {
-			err = json.Unmarshal(body, &request)
-			if err != nil {
-				request.ID = -1
-			} else if request.ID == 0 {
-				if !bytes.Contains(body, []byte(`"id"`)) {
-					request.ID = -1
-				}
-			}
-		} else {
+		if err != nil {
 			request.ID, _ = strconv.Atoi(mux.Vars(r)[orderHandlerPkg.OrderIDParam])
+		} else {
+			err = json.Unmarshal(body, &request)
+			if err != nil || request.ID == 0 {
+				request.ID = -1
+			}
 		}
 		r.Body = io.NopCloser(bytes.NewReader(body))
+
 		username, _, _ := r.BasicAuth()
+
 		rw := &responseWriterWrapper{ResponseWriter: w, statusCode: http.StatusOK}
 		handler.ServeHTTP(rw, r)
+
 		select {
 		case <-ctx.Done():
 			return

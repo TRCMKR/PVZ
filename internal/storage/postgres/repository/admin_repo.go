@@ -6,14 +6,13 @@ import (
 	"log"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
 )
 
 type AdminRepo struct {
 	db database
 }
 
-func NewAdminRepo(db postgres.Database) *AdminRepo {
+func NewAdminRepo(db database) *AdminRepo {
 	return &AdminRepo{
 		db: db,
 	}

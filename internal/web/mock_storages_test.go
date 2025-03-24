@@ -631,7 +631,7 @@ func (m *MockauditLoggerStorage) EXPECT() *MockauditLoggerStorageMockRecorder {
 }
 
 // CreateLog mocks base method.
-func (m *MockauditLoggerStorage) CreateLog(arg0 context.Context, arg1 models.Log) error {
+func (m *MockauditLoggerStorage) CreateLog(arg0 context.Context, arg1 []models.Log) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateLog", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -657,13 +657,13 @@ func (c *MockauditLoggerStorageCreateLogCall) Return(arg0 error) *MockauditLogge
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockauditLoggerStorageCreateLogCall) Do(f func(context.Context, models.Log) error) *MockauditLoggerStorageCreateLogCall {
+func (c *MockauditLoggerStorageCreateLogCall) Do(f func(context.Context, []models.Log) error) *MockauditLoggerStorageCreateLogCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockauditLoggerStorageCreateLogCall) DoAndReturn(f func(context.Context, models.Log) error) *MockauditLoggerStorageCreateLogCall {
+func (c *MockauditLoggerStorageCreateLogCall) DoAndReturn(f func(context.Context, []models.Log) error) *MockauditLoggerStorageCreateLogCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

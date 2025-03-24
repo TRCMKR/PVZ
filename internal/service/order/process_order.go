@@ -59,6 +59,7 @@ func (s *Service) ProcessOrder(ctx context.Context, userID int, orderID int, act
 	return nil
 }
 
+// вдруг бизнес захочет 🤓
 //func (s *Service) ProcessOrders(ctx context.Context, userID int, orderIDs []int, action string) (int, error) {
 //	ordersFailed := 0
 //

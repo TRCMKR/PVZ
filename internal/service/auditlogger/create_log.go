@@ -11,9 +11,9 @@ func (s *Service) CreateLog(ctx context.Context, order models.Log) {
 	select {
 	case <-ctx.Done():
 		fmt.Print("context canceled, writing log canceled")
+
 		return
 	default:
 		s.jobs <- order
 	}
-
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -12,6 +13,12 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/web"
+)
+
+const (
+	workerCount = 1
+	batchSize   = 5
+	timeout     = 2 * time.Second
 )
 
 func main() {
@@ -22,8 +29,7 @@ func main() {
 	}
 	cfg := config.NewConfig()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
 	db, err := postgres.NewDB(ctx, cfg.String())
 	if err != nil {
 		log.Panic(err)
@@ -31,18 +37,13 @@ func main() {
 
 	defer db.Close()
 
-	ordersRepo := repository.NewOrderRepo(*db)
-	adminsRepo := repository.NewAdminRepo(*db)
-	logsRepo := repository.NewLogsRepo(*db)
+	ordersRepo := repository.NewOrderRepo(db)
+	adminsRepo := repository.NewAdminRepo(db)
+	logsRepo := repository.NewLogsRepo(db)
 
-	app := web.NewApp(ctx, ordersRepo, adminsRepo, logsRepo, 2, 5, 2*time.Second)
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		log.Println("Received shutdown signal")
-		cancel()
-	}()
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	app := web.NewApp(ctx, ordersRepo, adminsRepo, logsRepo, workerCount, batchSize, timeout)
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- app.Run(ctx)
@@ -52,7 +53,9 @@ func main() {
 		log.Println("Context canceled, shutting down...")
 	case err = <-errCh:
 		if err != nil {
-			log.Panic("Error: couldn't run app", err)
+			_, file, line, _ := runtime.Caller(1)
+
+			log.Panicf("Error at %s:%d - %v", file, line, err)
 		}
 	}
 }

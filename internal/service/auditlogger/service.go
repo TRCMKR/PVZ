@@ -2,16 +2,18 @@ package auditlogger
 
 import (
 	"context"
+	"log"
 	"strings"
-	"sync"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
 type auditLoggerStorage interface {
-	CreateLog(context.Context, models.Log) error
+	CreateLog(context.Context, []models.Log) error
 }
 
 type Service struct {
@@ -22,21 +24,21 @@ type Service struct {
 func NewService(ctx context.Context, logs auditLoggerStorage, workerCount int, batchSize int,
 	timeout time.Duration) *Service {
 	jobs := make(chan models.Log, batchSize*20*workerCount)
-	var wg sync.WaitGroup
-	wg.Add(workerCount)
+
+	g, gCtx := errgroup.WithContext(ctx)
+
 	go func() {
-		<-ctx.Done()
-		wg.Wait()
+		<-gCtx.Done()
 		close(jobs)
 	}()
 
 	rootDir, err := config.GetRootDir()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	word, err := config.ReadFirstFileWord(rootDir + "/logger.config")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	s := &Service{
 		Storage: logs,
@@ -45,10 +47,9 @@ func NewService(ctx context.Context, logs auditLoggerStorage, workerCount int, b
 
 	dbWorkerCount := workerCount/2 + workerCount%2
 	for i := 0; i < dbWorkerCount; i++ {
-		go func() {
-			defer wg.Done()
-			s.dbWorker(ctx, batchSize, timeout, jobs)
-		}()
+		g.Go(func() error {
+			return s.dbWorker(gCtx, batchSize, timeout, jobs)
+		})
 	}
 
 	stdoutWorkerCount := workerCount / 2
@@ -56,11 +57,16 @@ func NewService(ctx context.Context, logs auditLoggerStorage, workerCount int, b
 		return strings.Contains(log.String(), word)
 	}
 	for i := 0; i < stdoutWorkerCount; i++ {
-		go func() {
-			defer wg.Done()
-			s.stduoutWorker(ctx, batchSize, timeout, jobs, operator)
-		}()
+		g.Go(func() error {
+			return s.stdoutWorker(gCtx, batchSize, timeout, jobs, operator)
+		})
 	}
+
+	go func() {
+		if err := g.Wait(); err != nil {
+			log.Fatalf("Error occurred during service execution: %v", err)
+		}
+	}()
 
 	return s
 }

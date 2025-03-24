@@ -37,6 +37,10 @@ func (db Database) ExecQueryRow(ctx context.Context, query string, args ...inter
 	return db.cluster.QueryRow(ctx, query, args...)
 }
 
+func (db Database) SendBatch(ctx context.Context, batch *pgx.Batch) pgx.BatchResults {
+	return db.cluster.SendBatch(ctx, batch)
+}
+
 func (db Database) Close() {
 	db.cluster.Close()
 }

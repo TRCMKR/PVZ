@@ -16,6 +16,7 @@ type database interface {
 	Select(context.Context, interface{}, string, ...interface{}) error
 	Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error)
 	ExecQueryRow(context.Context, string, ...interface{}) pgx.Row
+	SendBatch(context.Context, *pgx.Batch) pgx.BatchResults
 }
 
 type order struct {

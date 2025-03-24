@@ -6,43 +6,37 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
-func (s *Service) batcher(results <-chan models.Log, batchSize int, timeout time.Duration) <-chan models.Log {
-	batch := make(chan models.Log, batchSize-1)
-	batches := make(chan models.Log, batchSize*20)
-	unload := func() {
-		currentBatchSize := len(batch)
-		for i := 1; i <= currentBatchSize; i++ {
-			tmp := <-batch
-			batches <- tmp
-		}
-	}
-
+func (s *Service) batcher(results <-chan models.Log, batchSize int, timeout time.Duration) <-chan []models.Log {
+	batches := make(chan []models.Log, 20)
 	ticker := time.NewTicker(timeout)
 
 	go func() {
-		defer func() {
-			ticker.Stop()
-			unload()
-			close(batch)
-			close(batches)
-		}()
+		defer close(batches)
+
+		batch := make([]models.Log, 0, batchSize)
+
+		unload := func() {
+			if len(batch) > 0 {
+				batches <- batch
+				batch = make([]models.Log, 0, batchSize)
+			}
+		}
 
 		for {
-
 			select {
 			case <-ticker.C:
 				unload()
 			case res, ok := <-results:
 				if !ok {
+					unload()
+					ticker.Stop()
+
 					return
 				}
 
-				select {
-				case batch <- res:
-					//fmt.Println("Пишем в батч, осталось места:", batchSize-len(batch))
-				default:
+				batch = append(batch, res)
+				if len(batch) == batchSize {
 					unload()
-					batches <- res
 				}
 				ticker.Reset(timeout)
 			}

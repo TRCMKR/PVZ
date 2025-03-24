@@ -41,7 +41,7 @@ type adminStorage interface {
 }
 
 type auditLoggerStorage interface {
-	CreateLog(context.Context, models.Log) error
+	CreateLog(context.Context, []models.Log) error
 }
 
 type App struct {
