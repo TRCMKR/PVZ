@@ -4,13 +4,20 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
+	"github.com/gorilla/mux"
+
+	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/service/auditlogger"
+	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 )
 
 var (
@@ -96,5 +103,65 @@ func (a *AuthMiddleware) BasicAuthChecker(ctx context.Context, handler http.Hand
 		}
 
 		handler.ServeHTTP(w, r)
+	})
+}
+
+type AuditLoggerMiddleware struct {
+	adminService       admin.Service
+	auditLoggerService auditlogger.Service
+}
+
+type responseWriterWrapper struct {
+	http.ResponseWriter
+	statusCode int
+	body       bytes.Buffer
+}
+
+func (rw *responseWriterWrapper) Write(b []byte) (int, error) {
+	rw.body.Write(b)
+	return rw.ResponseWriter.Write(b)
+}
+
+func (rw *responseWriterWrapper) WriteHeader(statusCode int) {
+	rw.statusCode = statusCode
+	rw.ResponseWriter.WriteHeader(statusCode)
+}
+
+type requestBody struct {
+	ID int `json:"id"`
+}
+
+func (a *AuditLoggerMiddleware) AuditLogger(ctx context.Context, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request requestBody
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			request.ID, _ = strconv.Atoi(mux.Vars(r)[order_Handler.OrderIDParam])
+		} else {
+			err = json.Unmarshal(body, &request)
+			if err != nil || request.ID == 0 {
+				request.ID = -1
+			}
+		}
+
+		r.Body = io.NopCloser(bytes.NewReader(body))
+
+		username, _, _ := r.BasicAuth()
+
+		rw := &responseWriterWrapper{ResponseWriter: w, statusCode: http.StatusOK}
+		handler.ServeHTTP(rw, r)
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			someAdmin, _ := a.adminService.GetAdminByUsername(ctx, username)
+
+			responseText := strings.TrimSpace(rw.body.String())
+
+			currentLog := *models.NewLog(request.ID, someAdmin.ID, responseText, r.URL.Path, r.Method, rw.statusCode)
+
+			a.auditLoggerService.CreateLog(ctx, currentLog)
+		}
 	})
 }

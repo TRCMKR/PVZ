@@ -5,20 +5,22 @@ package order
 import (
 	"context"
 	"fmt"
-	"github.com/gorilla/mux"
-	_ "github.com/lib/pq"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
-	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
-	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
-	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
+
+	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
+	order_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
+	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
+	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
 )
 
 func TestOrderHandler_DeleteOrder(t *testing.T) {
@@ -51,7 +53,7 @@ func TestOrderHandler_DeleteOrder(t *testing.T) {
 	db, err := postgres.NewDB(t.Context(), connStr)
 	require.NoError(t, err)
 	ordersRepo := repository.NewOrderRepo(*db)
-	orderService := orderServicePkg.NewService(ordersRepo)
+	orderService := order_Service.NewService(ordersRepo)
 
 	t.Cleanup(func() {
 		if err := pgContainer.Terminate(context.Background()); err != nil {
@@ -66,10 +68,10 @@ func TestOrderHandler_DeleteOrder(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/orders/%d", tt.orderID), nil)
 			req = mux.SetURLVars(req, map[string]string{
-				orderHandlerPkg.OrderIDParam: strconv.Itoa(tt.orderID),
+				order_Handler.OrderIDParam: strconv.Itoa(tt.orderID),
 			})
 			res := httptest.NewRecorder()
-			handler := orderHandlerPkg.NewHandler(orderService)
+			handler := order_Handler.NewHandler(orderService)
 
 			handler.DeleteOrder(t.Context(), res, req)
 

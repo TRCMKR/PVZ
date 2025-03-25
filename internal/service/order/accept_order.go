@@ -14,16 +14,9 @@ func (s *Service) pack(order *models.Order, packaging models.Packaging) error {
 		return ErrNotEnoughWeight
 	}
 
-	if order.Packaging == models.WrapPackaging || order.ExtraPackaging != models.NoPackaging {
-		return ErrWrongPackaging
-	}
-
 	if order.Packaging == models.NoPackaging {
 		order.Packaging = packaging.GetType()
 	} else {
-		if packaging.GetType() != models.WrapPackaging {
-			return ErrWrongPackaging
-		}
 		order.ExtraPackaging = packaging.GetType()
 	}
 
@@ -36,14 +29,29 @@ func (s *Service) pack(order *models.Order, packaging models.Packaging) error {
 	return nil
 }
 
+func (s *Service) checkPackaging(packagingType models.PackagingType, extraPackagingType models.PackagingType) error {
+	if ((packagingType == models.NoPackaging || packagingType == models.WrapPackaging) &&
+		extraPackagingType != models.NoPackaging) ||
+		(packagingType != models.NoPackaging && packagingType != models.WrapPackaging &&
+			extraPackagingType != models.NoPackaging && extraPackagingType != models.WrapPackaging) {
+		return ErrWrongPackaging
+	}
+
+	return nil
+}
+
 func (s *Service) AcceptOrder(ctx context.Context, orderID int, userID int, weight float64, price money.Money,
 	expiryDate time.Time, packagings []models.Packaging) error {
 	if expiryDate.Before(time.Now()) {
 		return ErrOrderExpired
 	}
 
+	err := s.checkPackaging(packagings[0].GetType(), packagings[1].GetType())
+	if err != nil {
+		return err
+	}
+
 	var ok bool
-	var err error
 	if ok, err = s.Storage.Contains(ctx, orderID); ok {
 		return ErrOrderAlreadyExists
 	}

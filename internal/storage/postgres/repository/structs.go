@@ -1,12 +1,23 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 
 	"github.com/Rhymond/go-money"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
 )
+
+type database interface {
+	Get(context.Context, interface{}, string, ...interface{}) error
+	Select(context.Context, interface{}, string, ...interface{}) error
+	Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error)
+	ExecQueryRow(context.Context, string, ...interface{}) pgx.Row
+	SendBatch(context.Context, *pgx.Batch) pgx.BatchResults
+}
 
 type order struct {
 	ID             int                  `db:"id"`
@@ -48,12 +59,15 @@ func convertToModel(someOrder *order) *models.Order {
 		ExtraPackaging: someOrder.ExtraPackaging,
 		Status:         someOrder.Status,
 	}
+
 	if someOrder.ArrivalDate.Valid {
 		orderModel.ArrivalDate = someOrder.ArrivalDate.Time
 	}
+
 	if someOrder.ExpiryDate.Valid {
 		orderModel.ExpiryDate = someOrder.ExpiryDate.Time
 	}
+
 	if someOrder.LastChange.Valid {
 		orderModel.LastChange = someOrder.LastChange.Time
 	}

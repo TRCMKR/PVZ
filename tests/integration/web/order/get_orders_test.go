@@ -5,19 +5,21 @@ package order
 import (
 	"context"
 	"encoding/json"
-	_ "github.com/lib/pq"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
-	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
-	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
-	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
+	order_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
+	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
+	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
 )
 
 func TestOrderHandler_GetOrders(t *testing.T) {
@@ -76,7 +78,7 @@ func TestOrderHandler_GetOrders(t *testing.T) {
 	db, err := postgres.NewDB(t.Context(), connStr)
 	require.NoError(t, err)
 	ordersRepo := repository.NewOrderRepo(*db)
-	orderService := orderServicePkg.NewService(ordersRepo)
+	orderService := order_Service.NewService(ordersRepo)
 
 	t.Cleanup(func() {
 		if err := pgContainer.Terminate(context.Background()); err != nil {
@@ -97,7 +99,7 @@ func TestOrderHandler_GetOrders(t *testing.T) {
 			req.URL.RawQuery = q.Encode()
 
 			res := httptest.NewRecorder()
-			handler := orderHandlerPkg.NewHandler(orderService)
+			handler := order_Handler.NewHandler(orderService)
 
 			handler.GetOrders(ctx, res, req)
 

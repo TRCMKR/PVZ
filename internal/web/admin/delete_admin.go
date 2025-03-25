@@ -40,6 +40,7 @@ func (h *Handler) DeleteAdmin(ctx context.Context, w http.ResponseWriter, r *htt
 
 		return
 	}
+
 	var request deleteRequest
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
@@ -47,6 +48,7 @@ func (h *Handler) DeleteAdmin(ctx context.Context, w http.ResponseWriter, r *htt
 
 		return
 	}
+	
 	if request.Password == "" {
 		http.Error(w, ErrFieldsMissing.Error(), http.StatusBadRequest)
 

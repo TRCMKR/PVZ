@@ -5,17 +5,19 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
-	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
-	adminServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
-	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
-	adminHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/admin"
-	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
+	"time"
 
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
+
 	_ "gitlab.ozon.dev/alexplay1224/homework/docs"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
+	admin_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
+	audit_Logger_Storage "gitlab.ozon.dev/alexplay1224/homework/internal/service/auditlogger"
+	order_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
+	admin_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/admin"
+	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 )
 
 type orderStorage interface {
@@ -38,56 +40,78 @@ type adminStorage interface {
 	ContainsID(context.Context, int) (bool, error)
 }
 
-type App struct {
-	orderService orderServicePkg.Service
-	adminService adminServicePkg.Service
-	router       *mux.Router
+type auditLoggerStorage interface {
+	CreateLog(context.Context, []models.Log) error
 }
 
-func NewApp(orders orderStorage, admins adminStorage) *App {
-	return &App{
-		orderService: *orderServicePkg.NewService(orders),
-		adminService: *adminServicePkg.NewService(admins),
-		router:       mux.NewRouter(),
+type App struct {
+	orderService       order_Service.Service
+	adminService       admin_Service.Service
+	auditLoggerService audit_Logger_Storage.Service
+	Router             *mux.Router
+}
+
+func NewApp(ctx context.Context, orders orderStorage, admins adminStorage, logs auditLoggerStorage, workerCount int, batchSize int, timeout time.Duration) (*App, error) {
+	logger, err := audit_Logger_Storage.NewService(ctx, logs, workerCount, batchSize, timeout)
+	if err != nil {
+		return nil, err
 	}
+
+	return &App{
+		orderService:       *order_Service.NewService(orders),
+		adminService:       *admin_Service.NewService(admins),
+		auditLoggerService: *logger,
+		Router:             mux.NewRouter(),
+	}, nil
 }
 
 func (a *App) SetupRoutes(ctx context.Context) {
 	impl := server{
-		orders: *orderHandlerPkg.NewHandler(&a.orderService),
-		admins: *adminHandlerPkg.NewHandler(&a.adminService),
+		orders: *order_Handler.NewHandler(&a.orderService),
+		admins: *admin_Handler.NewHandler(&a.adminService),
 	}
-	a.router.Use(FieldLogger)
+	logger := AuditLoggerMiddleware{
+		adminService:       a.adminService,
+		auditLoggerService: a.auditLoggerService,
+	}
+	a.Router.Use(FieldLogger)
 
 	authMiddleware := AuthMiddleware{
 		adminService: a.adminService,
 	}
 
-	a.router.HandleFunc("/orders", authMiddleware.BasicAuthChecker(ctx,
-		a.wrapHandler(ctx, impl.orders.CreateOrder)).ServeHTTP).
+	a.Router.HandleFunc("/orders",
+		authMiddleware.BasicAuthChecker(ctx,
+			logger.AuditLogger(ctx,
+				a.wrapHandler(ctx, impl.orders.CreateOrder))).ServeHTTP).
 		Methods(http.MethodPost)
 
-	a.router.HandleFunc("/orders", authMiddleware.BasicAuthChecker(ctx,
-		a.wrapHandler(ctx, impl.orders.GetOrders)).ServeHTTP).
+	a.Router.HandleFunc("/orders",
+		authMiddleware.BasicAuthChecker(ctx,
+			a.wrapHandler(ctx, impl.orders.GetOrders)).ServeHTTP).
 		Methods(http.MethodGet)
 
-	a.router.HandleFunc(fmt.Sprintf("/orders/{%s:[0-9]+}", orderHandlerPkg.OrderIDParam),
-		authMiddleware.BasicAuthChecker(ctx, a.wrapHandler(ctx, impl.orders.DeleteOrder)).ServeHTTP).
+	a.Router.HandleFunc(fmt.Sprintf("/orders/{%s:[0-9]+}", order_Handler.OrderIDParam),
+		authMiddleware.BasicAuthChecker(ctx,
+			logger.AuditLogger(ctx,
+				a.wrapHandler(ctx, impl.orders.DeleteOrder))).ServeHTTP).
 		Methods(http.MethodDelete)
 
-	a.router.HandleFunc("/orders/process", authMiddleware.BasicAuthChecker(ctx,
-		a.wrapHandler(ctx, impl.orders.UpdateOrders)).ServeHTTP).
+	a.Router.HandleFunc("/orders/process",
+		authMiddleware.BasicAuthChecker(ctx,
+			logger.AuditLogger(ctx,
+				a.wrapHandler(ctx, impl.orders.UpdateOrder))).ServeHTTP).
 		Methods(http.MethodPost)
 
-	a.router.HandleFunc("/admins", a.wrapHandler(ctx, impl.admins.CreateAdmin)).
+	a.Router.HandleFunc("/admins", a.wrapHandler(ctx, impl.admins.CreateAdmin)).
 		Methods(http.MethodPost)
 
-	a.router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}",
-		adminHandlerPkg.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.UpdateAdmin)).
+	a.Router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}",
+		admin_Handler.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.UpdateAdmin)).
 		Methods(http.MethodPost)
 
-	a.router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}",
-		adminHandlerPkg.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.DeleteAdmin)).
+	a.Router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}",
+		admin_Handler.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.DeleteAdmin)).
 		Methods(http.MethodDelete)
 }
 
@@ -99,8 +123,8 @@ func (a *App) wrapHandler(ctx context.Context, handler func(context.Context, htt
 }
 
 type server struct {
-	orders orderHandlerPkg.Handler
-	admins adminHandlerPkg.Handler
+	orders order_Handler.Handler
+	admins admin_Handler.Handler
 }
 
 // @securityDefinitions.basic BasicAuth
@@ -114,8 +138,8 @@ func (a *App) Run(ctx context.Context) error {
 	a.SetupRoutes(ctx)
 
 	// Путь для отображения Swagger UI
-	a.router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
-	if err := http.ListenAndServe("localhost:9000", a.router); err != nil {
+	a.Router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+	if err := http.ListenAndServe("localhost:9000", a.Router); err != nil {
 		log.Fatal(err)
 	}
 
