@@ -15,6 +15,7 @@ func (s *Service) AcceptOrders(ctx context.Context, orders map[string]models.Ord
 
 			continue
 		}
+
 		err := s.Storage.AddOrder(ctx, someOrder)
 		if err != nil {
 			return ordersFailed, err

@@ -160,41 +160,40 @@ func (c *MockorderServiceGetOrdersCall) DoAndReturn(f func(context.Context, []qu
 	return c
 }
 
-// ProcessOrders mocks base method.
-func (m *MockorderService) ProcessOrders(arg0 context.Context, arg1 int, arg2 []int, arg3 string) (int, error) {
+// ProcessOrder mocks base method.
+func (m *MockorderService) ProcessOrder(arg0 context.Context, arg1, arg2 int, arg3 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessOrders", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "ProcessOrder", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// ProcessOrders indicates an expected call of ProcessOrders.
-func (mr *MockorderServiceMockRecorder) ProcessOrders(arg0, arg1, arg2, arg3 any) *MockorderServiceProcessOrdersCall {
+// ProcessOrder indicates an expected call of ProcessOrder.
+func (mr *MockorderServiceMockRecorder) ProcessOrder(arg0, arg1, arg2, arg3 any) *MockorderServiceProcessOrderCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessOrders", reflect.TypeOf((*MockorderService)(nil).ProcessOrders), arg0, arg1, arg2, arg3)
-	return &MockorderServiceProcessOrdersCall{Call: call}
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessOrder", reflect.TypeOf((*MockorderService)(nil).ProcessOrder), arg0, arg1, arg2, arg3)
+	return &MockorderServiceProcessOrderCall{Call: call}
 }
 
-// MockorderServiceProcessOrdersCall wrap *gomock.Call
-type MockorderServiceProcessOrdersCall struct {
+// MockorderServiceProcessOrderCall wrap *gomock.Call
+type MockorderServiceProcessOrderCall struct {
 	*gomock.Call
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *MockorderServiceProcessOrdersCall) Return(arg0 int, arg1 error) *MockorderServiceProcessOrdersCall {
-	c.Call = c.Call.Return(arg0, arg1)
+func (c *MockorderServiceProcessOrderCall) Return(arg0 error) *MockorderServiceProcessOrderCall {
+	c.Call = c.Call.Return(arg0)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockorderServiceProcessOrdersCall) Do(f func(context.Context, int, []int, string) (int, error)) *MockorderServiceProcessOrdersCall {
+func (c *MockorderServiceProcessOrderCall) Do(f func(context.Context, int, int, string) error) *MockorderServiceProcessOrderCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockorderServiceProcessOrdersCall) DoAndReturn(f func(context.Context, int, []int, string) (int, error)) *MockorderServiceProcessOrdersCall {
+func (c *MockorderServiceProcessOrderCall) DoAndReturn(f func(context.Context, int, int, string) error) *MockorderServiceProcessOrderCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

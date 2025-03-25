@@ -6,20 +6,22 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/Rhymond/go-money"
-	_ "github.com/lib/pq"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
-	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
-	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
-	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/Rhymond/go-money"
+	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
+	order_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
+	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
+	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
 )
 
 type createOrderRequest struct {
@@ -83,7 +85,7 @@ func TestOrderHandler_CreateOrder(t *testing.T) {
 				ExtraPackaging: 3,
 				ExpiryDate:     time.Now().AddDate(1, 0, 0),
 			},
-			expectedStatus: http.StatusBadRequest,
+			expectedStatus: http.StatusInternalServerError,
 		},
 		{
 			name: "Correct order",
@@ -111,7 +113,7 @@ func TestOrderHandler_CreateOrder(t *testing.T) {
 	db, err := postgres.NewDB(t.Context(), connStr)
 	require.NoError(t, err)
 	ordersRepo := repository.NewOrderRepo(*db)
-	orderService := orderServicePkg.NewService(ordersRepo)
+	orderService := order_Service.NewService(ordersRepo)
 
 	t.Cleanup(func() {
 		if err := pgContainer.Terminate(context.Background()); err != nil {
@@ -130,7 +132,7 @@ func TestOrderHandler_CreateOrder(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/orders", bytes.NewReader(reqBody))
 			res := httptest.NewRecorder()
 
-			handler := orderHandlerPkg.NewHandler(orderService)
+			handler := order_Handler.NewHandler(orderService)
 
 			handler.CreateOrder(ctx, res, req)
 

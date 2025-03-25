@@ -48,16 +48,18 @@ func (h *Handler) CreateOrder(ctx context.Context, w http.ResponseWriter, r *htt
 
 		return
 	}
+
 	packagings = append(packagings, packaging)
 	packagings = append(packagings, extraPackaging)
 
 	err = h.OrderService.AcceptOrder(ctx, order.ID, order.UserID, order.Weight, order.Price, order.ExpiryDate, packagings)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("success"))
 }

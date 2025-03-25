@@ -45,7 +45,7 @@ type orderService interface {
 	AcceptOrder(context.Context, int, int, float64, money.Money, time.Time, []models.Packaging) error
 	AcceptOrders(context.Context, map[string]models.Order) (int, error)
 	ReturnOrder(context.Context, int) error
-	ProcessOrders(context.Context, int, []int, string) (int, error)
+	ProcessOrder(context.Context, int, int, string) error
 	UserOrders(context.Context, int, int) ([]models.Order, error)
 	Returns(context.Context) ([]models.Order, error)
 	GetOrders(context.Context, []myquery.Cond, int, int) ([]models.Order, error)

@@ -10,7 +10,7 @@ curl -u lol:12345678 --request GET \
 ```bash
 curl -u lol:12345678 --header "Content-Type: application/json" \
 --request POST \
---data '{"id": 1009,"user_id":789,"weight":100,"price":{"amount":1000000,"currency":"RUB"},"packaging":2,"extra_packaging":3,"expiry_date":"4025-03-10T00:00:00Z"}' \
+--data '{"id": 1222009,"user_id":789,"weight":100,"price":{"amount":1000000,"currency":"RUB"},"packaging":2,"extra_packaging":0,"expiry_date":"4025-03-10T00:00:00Z"}' \
 "http://localhost:9000/orders"
 ```
 - `/orders/{id} [delete]` – удаляет заказ
@@ -22,7 +22,7 @@ curl -u lol:12345678 --request DELETE \
 ```bash
 curl -u lol:12345678 --header "Content-Type: application/json" \
 --request POST \
---data '{"user_id":789,"order_ids":[1009],"action":"give"}' \
+--data '{"user_id":789,"id":1009,"action":"give"}' \
 http://localhost:9000/orders/process
 ```
 

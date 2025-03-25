@@ -28,9 +28,10 @@ const (
 )
 
 const (
-	BagName  = "bag"
-	BoxName  = "box"
-	WrapName = "wrap"
+	NoPackagingName = "none"
+	BagName         = "bag"
+	BoxName         = "box"
+	WrapName        = "wrap"
 )
 
 type Packaging interface {
@@ -49,6 +50,8 @@ func GetPackaging(packaging string) Packaging {
 		return newBox()
 	case WrapName:
 		return newWrap()
+	case NoPackagingName:
+		return newNone()
 	default:
 		return nil
 	}
@@ -114,6 +117,8 @@ func GetPackagingName(packaging PackagingType) string {
 		return BoxName
 	case WrapPackaging:
 		return WrapName
+	case NoPackaging:
+		return NoPackagingName
 	default:
 		return ""
 	}
@@ -160,6 +165,19 @@ func newWrap() Packaging {
 			Cost:        *wrapCost,
 			MinWeight:   0,
 			CheckWeight: false,
+		},
+	}
+}
+
+type None struct {
+	BasePackaging
+}
+
+func newNone() Packaging {
+	return &None{
+		BasePackaging{
+			Type: NoPackaging,
+			Cost: *money.NewFromFloat(0, money.RUB),
 		},
 	}
 }
