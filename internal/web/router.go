@@ -13,11 +13,11 @@ import (
 	_ "gitlab.ozon.dev/alexplay1224/homework/docs"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
-	adminServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
-	auditLoggerStoragePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/auditlogger"
-	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
-	adminHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/admin"
-	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
+	admin_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
+	audit_Logger_Storage "gitlab.ozon.dev/alexplay1224/homework/internal/service/auditlogger"
+	order_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
+	admin_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/admin"
+	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 )
 
 type orderStorage interface {
@@ -45,25 +45,30 @@ type auditLoggerStorage interface {
 }
 
 type App struct {
-	orderService       orderServicePkg.Service
-	adminService       adminServicePkg.Service
-	auditLoggerService auditLoggerStoragePkg.Service
+	orderService       order_Service.Service
+	adminService       admin_Service.Service
+	auditLoggerService audit_Logger_Storage.Service
 	Router             *mux.Router
 }
 
-func NewApp(ctx context.Context, orders orderStorage, admins adminStorage, logs auditLoggerStorage, workerCount int, batchSize int, timeout time.Duration) *App {
-	return &App{
-		orderService:       *orderServicePkg.NewService(orders),
-		adminService:       *adminServicePkg.NewService(admins),
-		auditLoggerService: *auditLoggerStoragePkg.NewService(ctx, logs, workerCount, batchSize, timeout),
-		Router:             mux.NewRouter(),
+func NewApp(ctx context.Context, orders orderStorage, admins adminStorage, logs auditLoggerStorage, workerCount int, batchSize int, timeout time.Duration) (*App, error) {
+	logger, err := audit_Logger_Storage.NewService(ctx, logs, workerCount, batchSize, timeout)
+	if err != nil {
+		return nil, err
 	}
+
+	return &App{
+		orderService:       *order_Service.NewService(orders),
+		adminService:       *admin_Service.NewService(admins),
+		auditLoggerService: *logger,
+		Router:             mux.NewRouter(),
+	}, nil
 }
 
 func (a *App) SetupRoutes(ctx context.Context) {
 	impl := server{
-		orders: *orderHandlerPkg.NewHandler(&a.orderService),
-		admins: *adminHandlerPkg.NewHandler(&a.adminService),
+		orders: *order_Handler.NewHandler(&a.orderService),
+		admins: *admin_Handler.NewHandler(&a.adminService),
 	}
 	logger := AuditLoggerMiddleware{
 		adminService:       a.adminService,
@@ -86,7 +91,7 @@ func (a *App) SetupRoutes(ctx context.Context) {
 			a.wrapHandler(ctx, impl.orders.GetOrders)).ServeHTTP).
 		Methods(http.MethodGet)
 
-	a.Router.HandleFunc(fmt.Sprintf("/orders/{%s:[0-9]+}", orderHandlerPkg.OrderIDParam),
+	a.Router.HandleFunc(fmt.Sprintf("/orders/{%s:[0-9]+}", order_Handler.OrderIDParam),
 		authMiddleware.BasicAuthChecker(ctx,
 			logger.AuditLogger(ctx,
 				a.wrapHandler(ctx, impl.orders.DeleteOrder))).ServeHTTP).
@@ -102,11 +107,11 @@ func (a *App) SetupRoutes(ctx context.Context) {
 		Methods(http.MethodPost)
 
 	a.Router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}",
-		adminHandlerPkg.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.UpdateAdmin)).
+		admin_Handler.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.UpdateAdmin)).
 		Methods(http.MethodPost)
 
 	a.Router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}",
-		adminHandlerPkg.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.DeleteAdmin)).
+		admin_Handler.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.DeleteAdmin)).
 		Methods(http.MethodDelete)
 }
 
@@ -118,8 +123,8 @@ func (a *App) wrapHandler(ctx context.Context, handler func(context.Context, htt
 }
 
 type server struct {
-	orders orderHandlerPkg.Handler
-	admins adminHandlerPkg.Handler
+	orders order_Handler.Handler
+	admins admin_Handler.Handler
 }
 
 // @securityDefinitions.basic BasicAuth

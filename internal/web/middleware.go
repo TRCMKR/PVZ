@@ -17,7 +17,7 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/service/auditlogger"
-	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
+	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 )
 
 var (
@@ -136,13 +136,14 @@ func (a *AuditLoggerMiddleware) AuditLogger(ctx context.Context, handler http.Ha
 		var request requestBody
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			request.ID, _ = strconv.Atoi(mux.Vars(r)[orderHandlerPkg.OrderIDParam])
+			request.ID, _ = strconv.Atoi(mux.Vars(r)[order_Handler.OrderIDParam])
 		} else {
 			err = json.Unmarshal(body, &request)
 			if err != nil || request.ID == 0 {
 				request.ID = -1
 			}
 		}
+
 		r.Body = io.NopCloser(bytes.NewReader(body))
 
 		username, _, _ := r.BasicAuth()
@@ -155,8 +156,11 @@ func (a *AuditLoggerMiddleware) AuditLogger(ctx context.Context, handler http.Ha
 			return
 		default:
 			someAdmin, _ := a.adminService.GetAdminByUsername(ctx, username)
+
 			responseText := strings.TrimSpace(rw.body.String())
+
 			currentLog := *models.NewLog(request.ID, someAdmin.ID, responseText, r.URL.Path, r.Method, rw.statusCode)
+
 			a.auditLoggerService.CreateLog(ctx, currentLog)
 		}
 	})

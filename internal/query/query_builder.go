@@ -36,6 +36,7 @@ func BuildSelectQuery(table string, params ...Param) (string, []interface{}) {
 	}
 
 	sb := strings.Builder{}
+
 	sb.WriteString("SELECT * FROM ")
 	sb.WriteString(s.from)
 	if len(s.args) != 0 {
@@ -74,9 +75,12 @@ func Where(conds ...Cond) Param {
 			sb.WriteString(cond.Field + " ")
 			sb.WriteString(cond.String())
 			sb.WriteString(fmt.Sprintf(" $%d", s.currentIndex))
+
 			s.currentIndex++
+
 			s.args = append(s.args, cond.Value)
 			s.wheres = append(s.wheres, sb.String())
+
 			sb.Reset()
 		}
 	}

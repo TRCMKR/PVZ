@@ -51,6 +51,7 @@ func (h *Handler) UpdateAdmin(ctx context.Context, w http.ResponseWriter, r *htt
 
 		return
 	}
+
 	if request.Password == "" || request.NewPassword == "" {
 		http.Error(w, ErrFieldsMissing.Error(), http.StatusBadRequest)
 

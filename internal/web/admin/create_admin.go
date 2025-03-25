@@ -40,6 +40,7 @@ func (h *Handler) CreateAdmin(ctx context.Context, w http.ResponseWriter, r *htt
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
+
 	if createRequest.ID == 0 || createRequest.Username == "" || createRequest.Password == "" {
 		http.Error(w, ErrFieldsMissing.Error(), http.StatusBadRequest)
 

@@ -59,12 +59,15 @@ func convertToModel(someOrder *order) *models.Order {
 		ExtraPackaging: someOrder.ExtraPackaging,
 		Status:         someOrder.Status,
 	}
+
 	if someOrder.ArrivalDate.Valid {
 		orderModel.ArrivalDate = someOrder.ArrivalDate.Time
 	}
+
 	if someOrder.ExpiryDate.Valid {
 		orderModel.ExpiryDate = someOrder.ExpiryDate.Time
 	}
+
 	if someOrder.LastChange.Valid {
 		orderModel.LastChange = someOrder.LastChange.Time
 	}

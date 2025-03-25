@@ -43,11 +43,17 @@ func main() {
 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	app := web.NewApp(ctx, ordersRepo, adminsRepo, logsRepo, workerCount, batchSize, timeout)
+
+	app, err := web.NewApp(ctx, ordersRepo, adminsRepo, logsRepo, workerCount, batchSize, timeout)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- app.Run(ctx)
 	}()
+
 	select {
 	case <-ctx.Done():
 		log.Println("Context canceled, shutting down...")

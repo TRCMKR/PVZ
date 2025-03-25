@@ -48,6 +48,7 @@ func (h *Handler) CreateOrder(ctx context.Context, w http.ResponseWriter, r *htt
 
 		return
 	}
+
 	packagings = append(packagings, packaging)
 	packagings = append(packagings, extraPackaging)
 

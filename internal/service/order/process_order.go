@@ -23,6 +23,7 @@ func isOrderEligible(order models.Order, userID int, action string) bool {
 	if !isBeforeDeadline(order, action) || order.UserID != userID {
 		return false
 	}
+
 	if action == returnOrder {
 		return order.Status == models.GivenOrder
 	}
@@ -34,6 +35,7 @@ func (s *Service) ProcessOrder(ctx context.Context, userID int, orderID int, act
 	if ok, err := s.Storage.Contains(ctx, orderID); err != nil || !ok {
 		return ErrOrderNotFound
 	}
+
 	someOrder, err := s.Storage.GetByID(ctx, orderID)
 	if err != nil {
 		return err
@@ -50,6 +52,7 @@ func (s *Service) ProcessOrder(ctx context.Context, userID int, orderID int, act
 	default:
 		return ErrUndefinedAction
 	}
+
 	someOrder.LastChange = time.Now()
 	err = s.Storage.UpdateOrder(ctx, orderID, someOrder)
 	if err != nil {

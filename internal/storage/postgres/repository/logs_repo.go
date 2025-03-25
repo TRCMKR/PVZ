@@ -46,9 +46,9 @@ func (r *LogsRepo) CreateLog(ctx context.Context, logBatch []models.Log) error {
 
 	for i := 0; i < len(logBatch); i++ {
 		if _, err := br.Exec(); err != nil {
-			fmt.Println(3)
 			fmt.Println(err.Error())
-			return err
+
+			return errCreateLog
 		}
 	}
 

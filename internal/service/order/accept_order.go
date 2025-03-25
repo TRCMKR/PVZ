@@ -30,8 +30,8 @@ func (s *Service) pack(order *models.Order, packaging models.Packaging) error {
 }
 
 func (s *Service) checkPackaging(packagingType models.PackagingType, extraPackagingType models.PackagingType) error {
-	if (packagingType == models.NoPackaging || packagingType == models.WrapPackaging) &&
-		extraPackagingType != models.NoPackaging ||
+	if ((packagingType == models.NoPackaging || packagingType == models.WrapPackaging) &&
+		extraPackagingType != models.NoPackaging) ||
 		(packagingType != models.NoPackaging && packagingType != models.WrapPackaging &&
 			extraPackagingType != models.NoPackaging && extraPackagingType != models.WrapPackaging) {
 		return ErrWrongPackaging

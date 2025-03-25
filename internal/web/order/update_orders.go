@@ -49,8 +49,7 @@ func (h *Handler) UpdateOrder(ctx context.Context, w http.ResponseWriter, r *htt
 		return
 	}
 
-	err = h.OrderService.ProcessOrder(ctx, processRequest.UserID,
-		processRequest.OrderID, processRequest.Action)
+	err = h.OrderService.ProcessOrder(ctx, processRequest.UserID, processRequest.OrderID, processRequest.Action)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 

@@ -48,7 +48,6 @@ func (r *OrderRepo) AddOrder(ctx context.Context, order models.Order) error {
 							`,
 		tmp.ID, tmp.UserID, tmp.Weight, tmp.Price, tmp.Packaging, tmp.ExtraPackaging,
 		tmp.Status, tmp.ArrivalDate.Time, tmp.ExpiryDate.Time, tmp.LastChange.Time)
-
 	if err != nil {
 		log.Printf("Failed to insert order %v: %v", tmp.ID, errAddOrderFailed)
 
@@ -74,7 +73,6 @@ func (r *OrderRepo) RemoveOrder(ctx context.Context, id int) error {
 							WHERE id = $2
 							AND status <> $3
 							`, 4, id, models.DeletedOrder)
-
 	if err != nil {
 		log.Printf("Failed to remove order %v: %v", id, errRemoveOrderFailed)
 
@@ -100,7 +98,6 @@ func (r *OrderRepo) UpdateOrder(ctx context.Context, id int, order models.Order)
 							`,
 		order.UserID, order.Weight, order.Price.Amount(), order.Packaging, order.ExtraPackaging,
 		order.Status, order.ArrivalDate, order.ExpiryDate, order.LastChange, id)
-
 	if err != nil {
 		log.Printf("Failed to update order %v: %v", id, errUpdateOrderFailed)
 
@@ -118,7 +115,6 @@ func (r *OrderRepo) GetByID(ctx context.Context, id int) (models.Order, error) {
 									WHERE id = $1
 									AND status <> 4
 									`, id)
-
 	if err != nil {
 		log.Printf("Failed to get order %v: %v", id, errGetOrderByID)
 
@@ -172,7 +168,6 @@ func (r *OrderRepo) GetReturns(ctx context.Context) ([]models.Order, error) {
 								WHERE status = 3
 								ORDER BY last_change DESC
 								`)
-
 	if err != nil {
 		log.Printf("Failed to get order by user id: %v", errGetReturnsFailed)
 
@@ -196,6 +191,7 @@ func (r *OrderRepo) GetOrders(ctx context.Context, params []query.Cond,
 		Field:    "status",
 		Value:    4,
 	})
+
 	selectQuery, args := query.BuildSelectQuery("orders",
 		query.Where(params...),
 		query.OrderBy("last_change"),

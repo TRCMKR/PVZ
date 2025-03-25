@@ -10,10 +10,10 @@ import (
 	"testing"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
-	orderServicePkg "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
+	order_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
-	orderHandlerPkg "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
+	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
 
 	_ "github.com/lib/pq"
@@ -62,7 +62,7 @@ func TestOrderHandler_UpdateOrders(t *testing.T) {
 	db, err := postgres.NewDB(t.Context(), connStr)
 	require.NoError(t, err)
 	ordersRepo := repository.NewOrderRepo(*db)
-	orderService := orderServicePkg.NewService(ordersRepo)
+	orderService := order_Service.NewService(ordersRepo)
 
 	t.Cleanup(func() {
 		if err := pgContainer.Terminate(context.Background()); err != nil {
@@ -79,7 +79,7 @@ func TestOrderHandler_UpdateOrders(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodPost, "/orders/process", bytes.NewReader(reqBody))
 			res := httptest.NewRecorder()
-			handler := orderHandlerPkg.NewHandler(orderService)
+			handler := order_Handler.NewHandler(orderService)
 
 			handler.UpdateOrder(ctx, res, req)
 

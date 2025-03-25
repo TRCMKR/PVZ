@@ -22,7 +22,7 @@ type Service struct {
 }
 
 func NewService(ctx context.Context, logs auditLoggerStorage, workerCount int, batchSize int,
-	timeout time.Duration) *Service {
+	timeout time.Duration) (*Service, error) {
 	jobs := make(chan models.Log, batchSize*20*workerCount)
 
 	g, gCtx := errgroup.WithContext(ctx)
@@ -34,12 +34,14 @@ func NewService(ctx context.Context, logs auditLoggerStorage, workerCount int, b
 
 	rootDir, err := config.GetRootDir()
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
+
 	word, err := config.ReadFirstFileWord(rootDir + "/logger.config")
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
+
 	s := &Service{
 		Storage: logs,
 		jobs:    jobs,
@@ -52,10 +54,10 @@ func NewService(ctx context.Context, logs auditLoggerStorage, workerCount int, b
 		})
 	}
 
-	stdoutWorkerCount := workerCount / 2
 	operator := func(log models.Log) bool {
 		return strings.Contains(log.String(), word)
 	}
+	stdoutWorkerCount := workerCount / 2
 	for i := 0; i < stdoutWorkerCount; i++ {
 		g.Go(func() error {
 			return s.stdoutWorker(gCtx, batchSize, timeout, jobs, operator)
@@ -63,10 +65,10 @@ func NewService(ctx context.Context, logs auditLoggerStorage, workerCount int, b
 	}
 
 	go func() {
-		if err := g.Wait(); err != nil {
+		if err = g.Wait(); err != nil {
 			log.Fatalf("Error occurred during service execution: %v", err)
 		}
 	}()
 
-	return s
+	return s, nil
 }
