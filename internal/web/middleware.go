@@ -156,11 +156,8 @@ func (a *AuditLoggerMiddleware) AuditLogger(ctx context.Context, handler http.Ha
 			return
 		default:
 			someAdmin, _ := a.adminService.GetAdminByUsername(ctx, username)
-
 			responseText := strings.TrimSpace(rw.body.String())
-
 			currentLog := *models.NewLog(request.ID, someAdmin.ID, responseText, r.URL.Path, r.Method, rw.statusCode)
-
 			a.auditLoggerService.CreateLog(ctx, currentLog)
 		}
 	})

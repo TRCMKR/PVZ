@@ -15,6 +15,7 @@ import (
 
 	models "gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	query "gitlab.ozon.dev/alexplay1224/homework/internal/query"
+	tx_manager "gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/tx_manager"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -602,6 +603,182 @@ func (c *MockadminStorageUpdateAdminCall) Do(f func(context.Context, int, models
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *MockadminStorageUpdateAdminCall) DoAndReturn(f func(context.Context, int, models.Admin) error) *MockadminStorageUpdateAdminCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// MocktxManager is a mock of txManager interface.
+type MocktxManager struct {
+	ctrl     *gomock.Controller
+	recorder *MocktxManagerMockRecorder
+	isgomock struct{}
+}
+
+// MocktxManagerMockRecorder is the mock recorder for MocktxManager.
+type MocktxManagerMockRecorder struct {
+	mock *MocktxManager
+}
+
+// NewMocktxManager creates a new mock instance.
+func NewMocktxManager(ctrl *gomock.Controller) *MocktxManager {
+	mock := &MocktxManager{ctrl: ctrl}
+	mock.recorder = &MocktxManagerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MocktxManager) EXPECT() *MocktxManagerMockRecorder {
+	return m.recorder
+}
+
+// GetQueryEngine mocks base method.
+func (m *MocktxManager) GetQueryEngine(ctx context.Context) tx_manager.Database {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetQueryEngine", ctx)
+	ret0, _ := ret[0].(tx_manager.Database)
+	return ret0
+}
+
+// GetQueryEngine indicates an expected call of GetQueryEngine.
+func (mr *MocktxManagerMockRecorder) GetQueryEngine(ctx any) *MocktxManagerGetQueryEngineCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQueryEngine", reflect.TypeOf((*MocktxManager)(nil).GetQueryEngine), ctx)
+	return &MocktxManagerGetQueryEngineCall{Call: call}
+}
+
+// MocktxManagerGetQueryEngineCall wrap *gomock.Call
+type MocktxManagerGetQueryEngineCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MocktxManagerGetQueryEngineCall) Return(arg0 tx_manager.Database) *MocktxManagerGetQueryEngineCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MocktxManagerGetQueryEngineCall) Do(f func(context.Context) tx_manager.Database) *MocktxManagerGetQueryEngineCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MocktxManagerGetQueryEngineCall) DoAndReturn(f func(context.Context) tx_manager.Database) *MocktxManagerGetQueryEngineCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// RunReadCommitted mocks base method.
+func (m *MocktxManager) RunReadCommitted(ctx context.Context, fn func(context.Context) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RunReadCommitted", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RunReadCommitted indicates an expected call of RunReadCommitted.
+func (mr *MocktxManagerMockRecorder) RunReadCommitted(ctx, fn any) *MocktxManagerRunReadCommittedCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunReadCommitted", reflect.TypeOf((*MocktxManager)(nil).RunReadCommitted), ctx, fn)
+	return &MocktxManagerRunReadCommittedCall{Call: call}
+}
+
+// MocktxManagerRunReadCommittedCall wrap *gomock.Call
+type MocktxManagerRunReadCommittedCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MocktxManagerRunReadCommittedCall) Return(arg0 error) *MocktxManagerRunReadCommittedCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MocktxManagerRunReadCommittedCall) Do(f func(context.Context, func(context.Context) error) error) *MocktxManagerRunReadCommittedCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MocktxManagerRunReadCommittedCall) DoAndReturn(f func(context.Context, func(context.Context) error) error) *MocktxManagerRunReadCommittedCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// RunRepeatableRead mocks base method.
+func (m *MocktxManager) RunRepeatableRead(ctx context.Context, fn func(context.Context) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RunRepeatableRead", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RunRepeatableRead indicates an expected call of RunRepeatableRead.
+func (mr *MocktxManagerMockRecorder) RunRepeatableRead(ctx, fn any) *MocktxManagerRunRepeatableReadCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunRepeatableRead", reflect.TypeOf((*MocktxManager)(nil).RunRepeatableRead), ctx, fn)
+	return &MocktxManagerRunRepeatableReadCall{Call: call}
+}
+
+// MocktxManagerRunRepeatableReadCall wrap *gomock.Call
+type MocktxManagerRunRepeatableReadCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MocktxManagerRunRepeatableReadCall) Return(arg0 error) *MocktxManagerRunRepeatableReadCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MocktxManagerRunRepeatableReadCall) Do(f func(context.Context, func(context.Context) error) error) *MocktxManagerRunRepeatableReadCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MocktxManagerRunRepeatableReadCall) DoAndReturn(f func(context.Context, func(context.Context) error) error) *MocktxManagerRunRepeatableReadCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// RunSerializable mocks base method.
+func (m *MocktxManager) RunSerializable(ctx context.Context, fn func(context.Context) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RunSerializable", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RunSerializable indicates an expected call of RunSerializable.
+func (mr *MocktxManagerMockRecorder) RunSerializable(ctx, fn any) *MocktxManagerRunSerializableCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunSerializable", reflect.TypeOf((*MocktxManager)(nil).RunSerializable), ctx, fn)
+	return &MocktxManagerRunSerializableCall{Call: call}
+}
+
+// MocktxManagerRunSerializableCall wrap *gomock.Call
+type MocktxManagerRunSerializableCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MocktxManagerRunSerializableCall) Return(arg0 error) *MocktxManagerRunSerializableCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MocktxManagerRunSerializableCall) Do(f func(context.Context, func(context.Context) error) error) *MocktxManagerRunSerializableCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MocktxManagerRunSerializableCall) DoAndReturn(f func(context.Context, func(context.Context) error) error) *MocktxManagerRunSerializableCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

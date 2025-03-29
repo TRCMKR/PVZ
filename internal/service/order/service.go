@@ -6,6 +6,7 @@ import (
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/tx_manager"
 )
 
 const (
@@ -38,12 +39,21 @@ type orderStorage interface {
 	Contains(context.Context, int) (bool, error)
 }
 
-type Service struct {
-	Storage orderStorage
+type txManager interface {
+	RunSerializable(ctx context.Context, fn func(ctxTx context.Context) error) error
+	RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error
+	RunReadCommitted(ctx context.Context, fn func(ctxTx context.Context) error) error
+	GetQueryEngine(ctx context.Context) tx_manager.Database
 }
 
-func NewService(storage orderStorage) *Service {
+type Service struct {
+	Storage   orderStorage
+	txManager txManager
+}
+
+func NewService(storage orderStorage, txManager txManager) *Service {
 	return &Service{
-		Storage: storage,
+		Storage:   storage,
+		txManager: txManager,
 	}
 }

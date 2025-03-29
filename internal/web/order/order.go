@@ -43,7 +43,6 @@ const (
 
 type orderService interface {
 	AcceptOrder(context.Context, int, int, float64, money.Money, time.Time, []models.Packaging) error
-	AcceptOrders(context.Context, map[string]models.Order) (int, error)
 	ReturnOrder(context.Context, int) error
 	ProcessOrder(context.Context, int, int, string) error
 	UserOrders(context.Context, int, int) ([]models.Order, error)
@@ -62,12 +61,12 @@ var (
 	ErrUndefinedPackaging = errors.New("undefined packaging")
 )
 
-type inputType uint
+type InputType uint
 
 const (
-	numberType inputType = iota
-	wordType
-	dateType
+	NumberType InputType = iota
+	WordType
+	DateType
 )
 
 const (

@@ -7,6 +7,8 @@ const (
 	NotEquals
 	GreaterEqualThan
 	LessEqualThan
+	LessThan
+	GreaterThan
 )
 
 type Cond struct {

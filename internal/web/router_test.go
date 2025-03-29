@@ -12,11 +12,11 @@ import (
 
 	"github.com/Rhymond/go-money"
 
-	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
-
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/crypto/bcrypt"
+
+	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
 type request struct {
@@ -33,7 +33,7 @@ func TestApp_Run(t *testing.T) {
 		name         string
 		args         request
 		authorized   bool
-		mockSetup    func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage, mockLogStorage MockauditLoggerStorage)
+		mockSetup    func(MockorderStorage, MockadminStorage, MockauditLoggerStorage, MocktxManager)
 		expectedCode int
 	}{
 		{
@@ -43,7 +43,8 @@ func TestApp_Run(t *testing.T) {
 				path:   "/orders",
 			},
 			authorized: true,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage, mockLogStorage MockauditLoggerStorage) {
+			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
+				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
@@ -59,7 +60,8 @@ func TestApp_Run(t *testing.T) {
 				path:   "/order",
 			},
 			authorized: true,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage, mockLogStorage MockauditLoggerStorage) {
+			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
+				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
 			},
 			expectedCode: http.StatusNotFound,
 		},
@@ -70,7 +72,8 @@ func TestApp_Run(t *testing.T) {
 				path:   "/orders",
 			},
 			authorized: false,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage, mockLogStorage MockauditLoggerStorage) {
+			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
+				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
@@ -88,7 +91,9 @@ func TestApp_Run(t *testing.T) {
 								"packaging":2,"extra_packaging":3,"expiry_date":"4025-03-10T00:00:00Z"}`),
 			},
 			authorized: true,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage, mockLogStorage MockauditLoggerStorage) {
+			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
+				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
@@ -111,7 +116,8 @@ func TestApp_Run(t *testing.T) {
 								"packaging":2,"extra_packaging":3,"expiry_date":"2025-03-10T00:00:00Z"}`),
 			},
 			authorized: true,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage, mockLogStorage MockauditLoggerStorage) {
+			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
+				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
 			},
 			expectedCode: http.StatusNotFound,
 		},
@@ -122,7 +128,9 @@ func TestApp_Run(t *testing.T) {
 				path:   "/orders/123",
 			},
 			authorized: true,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage, mockLogStorage MockauditLoggerStorage) {
+			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
+				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
@@ -143,7 +151,9 @@ func TestApp_Run(t *testing.T) {
 				body:   []byte(`{"id":4,"user_id":789,"action":"give"}`),
 			},
 			authorized: true,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage, mockLogStorage MockauditLoggerStorage) {
+			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
+				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
@@ -153,7 +163,8 @@ func TestApp_Run(t *testing.T) {
 				mockOrderStorage.EXPECT().UpdateOrder(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				mockOrderStorage.EXPECT().Contains(gomock.Any(), gomock.Any()).Return(true, nil)
 				mockOrderStorage.EXPECT().GetByID(gomock.Any(), gomock.Any()).Return(models.Order{
-					ID: 4, UserID: 789, Weight: 1233, Price: *money.New(22222, money.RUB), Status: 1, ExpiryDate: time.Now().Add(time.Hour)}, nil)
+					ID: 4, UserID: 789, Weight: 1233, Price: *money.New(22222, money.RUB),
+					Status: 1, ExpiryDate: time.Now().Add(time.Hour)}, nil)
 			},
 			expectedCode: http.StatusOK,
 		},
@@ -165,7 +176,9 @@ func TestApp_Run(t *testing.T) {
 				body:   []byte(`{"id":52,"username":"sdasds","password":"give"}`),
 			},
 			authorized: false,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage, mockLogStorage MockauditLoggerStorage) {
+			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
+				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+				tx.EXPECT().RunReadCommitted(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().CreateAdmin(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().ContainsID(gomock.Any(), gomock.Any()).Return(false, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(false, nil)
@@ -180,7 +193,9 @@ func TestApp_Run(t *testing.T) {
 				body:   []byte(`{"password":"password"}`),
 			},
 			authorized: false,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage, mockLogStorage MockauditLoggerStorage) {
+			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
+				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().DeleteAdmin(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
@@ -197,16 +212,20 @@ func TestApp_Run(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			mockTxManager := NewMocktxManager(ctrl)
+
 			mockOrderStorage := NewMockorderStorage(ctrl)
 			mockAdminStorage := NewMockadminStorage(ctrl)
 			mockLogStorage := NewMockauditLoggerStorage(ctrl)
-			app := NewApp(context.Background(), mockOrderStorage, mockAdminStorage, mockLogStorage, 2, 5, 500*time.Second)
+			app, _ := NewApp(context.Background(), mockOrderStorage, mockAdminStorage, mockLogStorage,
+				mockTxManager, 2, 5, 500*time.Second)
 			app.SetupRoutes(context.Background())
 
-			tt.mockSetup(*mockOrderStorage, *mockAdminStorage, *mockLogStorage)
+			tt.mockSetup(*mockOrderStorage, *mockAdminStorage, *mockLogStorage, *mockTxManager)
 
 			var authHeader string
-			req, err := http.NewRequestWithContext(context.Background(), tt.args.method, tt.args.path, bytes.NewReader(tt.args.body))
+			req, err := http.NewRequestWithContext(context.Background(), tt.args.method, tt.args.path,
+				bytes.NewReader(tt.args.body))
 			require.NoError(t, err)
 			if tt.authorized {
 				username := "user"

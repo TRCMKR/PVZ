@@ -131,21 +131,21 @@ func (h *Handler) validateDateParam(param string) (string, error) {
 	return date.Format(time.RFC3339), nil
 }
 
-func (h *Handler) getFilters() map[string]inputType {
-	return map[string]inputType{
-		OrderIDParam:         numberType,
-		UserIDParam:          numberType,
-		WeightParam:          numberType,
-		WeightFromParam:      numberType,
-		WeightToParam:        numberType,
-		PriceParam:           numberType,
-		PriceFromParam:       numberType,
-		PriceToParam:         numberType,
-		StatusParam:          numberType,
-		ExpiryDateFromParam:  dateType,
-		ExpiryDateToParam:    dateType,
-		ArrivalDateFromParam: dateType,
-		ArrivalDateToParam:   dateType,
+func GetFilters() map[string]InputType {
+	return map[string]InputType{
+		OrderIDParam:         NumberType,
+		UserIDParam:          NumberType,
+		WeightParam:          NumberType,
+		WeightFromParam:      NumberType,
+		WeightToParam:        NumberType,
+		PriceParam:           NumberType,
+		PriceFromParam:       NumberType,
+		PriceToParam:         NumberType,
+		StatusParam:          NumberType,
+		ExpiryDateFromParam:  DateType,
+		ExpiryDateToParam:    DateType,
+		ArrivalDateFromParam: DateType,
+		ArrivalDateToParam:   DateType,
 	}
 }
 
@@ -188,7 +188,7 @@ func (h *Handler) getColumnMap() map[string]string {
 func (h *Handler) getFilterParams(r *http.Request) ([]myquery.Cond, int, int, error) {
 	query := r.URL.Query()
 
-	filters := h.getFilters()
+	filters := GetFilters()
 	condMap := h.getCondMap()
 	columnMap := h.getColumnMap()
 
@@ -225,13 +225,13 @@ func (h *Handler) getFilterParams(r *http.Request) ([]myquery.Cond, int, int, er
 	return conds, count, page, nil
 }
 
-func (h *Handler) validateParam(value string, inputType inputType) (string, error) {
+func (h *Handler) validateParam(value string, inputType InputType) (string, error) {
 	switch inputType {
-	case numberType:
+	case NumberType:
 		return h.validateNumberParam(value)
-	case wordType:
+	case WordType:
 		return h.validateWordParam(value)
-	case dateType:
+	case DateType:
 		return h.validateDateParam(value)
 	default:
 		return "", fmt.Errorf("unknown input type: %v", inputType)

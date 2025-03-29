@@ -16,6 +16,7 @@ import (
 	admin_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
 	audit_Logger_Storage "gitlab.ozon.dev/alexplay1224/homework/internal/service/auditlogger"
 	order_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/tx_manager"
 	admin_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/admin"
 	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 )
@@ -40,6 +41,13 @@ type adminStorage interface {
 	ContainsID(context.Context, int) (bool, error)
 }
 
+type txManager interface {
+	RunSerializable(ctx context.Context, fn func(ctxTx context.Context) error) error
+	RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error
+	RunReadCommitted(ctx context.Context, fn func(ctxTx context.Context) error) error
+	GetQueryEngine(ctx context.Context) tx_manager.Database
+}
+
 type auditLoggerStorage interface {
 	CreateLog(context.Context, []models.Log) error
 }
@@ -51,14 +59,15 @@ type App struct {
 	Router             *mux.Router
 }
 
-func NewApp(ctx context.Context, orders orderStorage, admins adminStorage, logs auditLoggerStorage, workerCount int, batchSize int, timeout time.Duration) (*App, error) {
+func NewApp(ctx context.Context, orders orderStorage, admins adminStorage, logs auditLoggerStorage, txManager txManager,
+	workerCount int, batchSize int, timeout time.Duration) (*App, error) {
 	logger, err := audit_Logger_Storage.NewService(ctx, logs, workerCount, batchSize, timeout)
 	if err != nil {
 		return nil, err
 	}
 
 	return &App{
-		orderService:       *order_Service.NewService(orders),
+		orderService:       *order_Service.NewService(orders, txManager),
 		adminService:       *admin_Service.NewService(admins),
 		auditLoggerService: *logger,
 		Router:             mux.NewRouter(),

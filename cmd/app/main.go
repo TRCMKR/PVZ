@@ -11,12 +11,14 @@ import (
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/facade"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/tx_manager"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/web"
 )
 
 const (
-	workerCount = 1
+	workerCount = 2
 	batchSize   = 5
 	timeout     = 2 * time.Second
 )
@@ -37,14 +39,18 @@ func main() {
 
 	defer db.Close()
 
-	ordersRepo := repository.NewOrderRepo(db)
+	tx := tx_manager.NewTxManager(db)
+
+	ordersRepo := repository.NewOrderRepo(tx)
+	ordersFacade := facade.NewOrderFacade(ctx, ordersRepo, 10000)
 	adminsRepo := repository.NewAdminRepo(db)
+	adminsFacade := facade.NewAdminFacade(adminsRepo, 10000)
 	logsRepo := repository.NewLogsRepo(db)
 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	app, err := web.NewApp(ctx, ordersRepo, adminsRepo, logsRepo, workerCount, batchSize, timeout)
+	app, err := web.NewApp(ctx, ordersFacade, adminsFacade, logsRepo, tx, workerCount, batchSize, timeout)
 	if err != nil {
 		log.Fatal(err)
 	}

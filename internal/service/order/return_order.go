@@ -8,27 +8,24 @@ import (
 )
 
 func (s *Service) ReturnOrder(ctx context.Context, orderID int) error {
-	if ok, err := s.Storage.Contains(ctx, orderID); err != nil || !ok {
-		return ErrOrderNotFound
-	}
+	return s.txManager.RunSerializable(ctx, func(ctx context.Context) error {
+		if ok, err := s.Storage.Contains(ctx, orderID); err != nil || !ok {
+			return ErrOrderNotFound
+		}
 
-	someOrder, err := s.Storage.GetByID(ctx, orderID)
-	if err != nil {
-		return err
-	}
+		someOrder, err := s.Storage.GetByID(ctx, orderID)
+		if err != nil {
+			return err
+		}
 
-	if someOrder.Status == models.GivenOrder {
-		return ErrOrderIsGiven
-	}
+		if someOrder.Status == models.GivenOrder {
+			return ErrOrderIsGiven
+		}
 
-	if !someOrder.ExpiryDate.Before(time.Now()) {
-		return ErrOrderIsNotExpired
-	}
+		if !someOrder.ExpiryDate.Before(time.Now()) {
+			return ErrOrderIsNotExpired
+		}
 
-	err = s.Storage.RemoveOrder(ctx, orderID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+		return s.Storage.RemoveOrder(ctx, orderID)
+	})
 }

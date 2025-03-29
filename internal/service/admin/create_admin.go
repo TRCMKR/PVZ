@@ -23,10 +23,5 @@ func (s *Service) CreateAdmin(ctx context.Context, admin models.Admin) error {
 		return ErrIDUsed
 	}
 
-	err = s.Storage.CreateAdmin(ctx, admin)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.Storage.CreateAdmin(ctx, admin)
 }

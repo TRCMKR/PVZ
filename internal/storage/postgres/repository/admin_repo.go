@@ -74,7 +74,7 @@ func (r *AdminRepo) UpdateAdmin(ctx context.Context, id int, admin models.Admin)
 func (r *AdminRepo) DeleteAdmin(ctx context.Context, username string) error {
 	_, err := r.db.Exec(ctx, `
 							DELETE FROM admins
-						   	WHERE username = $1
+							WHERE username = $1
 							`, username)
 	if err != nil {
 		log.Printf("Failed to delete admin %v", errDeleteAdminFailed)

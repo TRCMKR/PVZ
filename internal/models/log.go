@@ -6,14 +6,14 @@ import (
 )
 
 type Log struct {
-	ID      int       `json:"id" db:"id"`
+	ID      int       `json:"id"       db:"id"`
 	OrderID int       `json:"order_id" db:"order_id"`
 	AdminID int       `json:"admin_id" db:"admin_id"`
-	Message string    `json:"message" db:"message"`
-	Date    time.Time `json:"date" db:"date"`
-	Url     string    `json:"url" db:"url"`
-	Method  string    `json:"method" db:"method"`
-	Status  int       `json:"status" db:"status"`
+	Message string    `json:"message"  db:"message"`
+	Date    time.Time `json:"date"     db:"date"`
+	Url     string    `json:"url"      db:"url"`
+	Method  string    `json:"method"   db:"method"`
+	Status  int       `json:"status"   db:"status"`
 }
 
 func NewLog(orderID int, adminID int, message string, url string, method string, status int) *Log {

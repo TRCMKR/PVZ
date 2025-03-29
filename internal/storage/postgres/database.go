@@ -41,6 +41,10 @@ func (db Database) SendBatch(ctx context.Context, batch *pgx.Batch) pgx.BatchRes
 	return db.cluster.SendBatch(ctx, batch)
 }
 
+func (db Database) BeginTx(ctx context.Context, opts pgx.TxOptions) (pgx.Tx, error) {
+	return db.cluster.BeginTx(ctx, opts)
+}
+
 func (db Database) Close() {
 	db.cluster.Close()
 }
