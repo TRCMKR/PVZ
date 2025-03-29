@@ -130,7 +130,7 @@ func TestApp_Run(t *testing.T) {
 			authorized: true,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
 				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
-				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).Return(nil)
+				tx.EXPECT().RunSerializable(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
@@ -153,7 +153,7 @@ func TestApp_Run(t *testing.T) {
 			authorized: true,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
 				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
-				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).Return(nil)
+				tx.EXPECT().RunSerializable(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
@@ -178,7 +178,6 @@ func TestApp_Run(t *testing.T) {
 			authorized: false,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
 				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
-				tx.EXPECT().RunReadCommitted(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().CreateAdmin(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().ContainsID(gomock.Any(), gomock.Any()).Return(false, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(false, nil)
@@ -195,7 +194,6 @@ func TestApp_Run(t *testing.T) {
 			authorized: false,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
 				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
-				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().DeleteAdmin(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).

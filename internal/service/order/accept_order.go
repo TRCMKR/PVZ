@@ -80,7 +80,7 @@ func (s *Service) AcceptOrder(ctx context.Context, orderID int, userID int, weig
 		}
 	}
 
-	return s.txManager.RunReadCommitted(ctx, func(ctx context.Context) error {
+	return s.txManager.RunRepeatableRead(ctx, func(ctx context.Context) error {
 		if ok, err := s.Storage.Contains(ctx, currentOrder.ID); ok {
 			return ErrOrderAlreadyExists
 		} else if err != nil {
