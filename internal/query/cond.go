@@ -57,7 +57,11 @@ func (c *Cond) String() string {
 		return "<>"
 	case GreaterEqualThan:
 		return ">="
-	default:
+	case GreaterThan:
+		return ">"
+	case LessEqualThan:
 		return "<="
+	default:
+		return "<"
 	}
 }

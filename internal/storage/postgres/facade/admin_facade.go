@@ -40,6 +40,10 @@ func (f *AdminFacade) CreateAdmin(ctx context.Context, admin models.Admin) error
 }
 
 func (f *AdminFacade) GetAdminByUsername(ctx context.Context, username string) (models.Admin, error) {
+	if admin, ok := f.cache.Get(username); ok {
+		return admin, nil
+	}
+
 	admin, err := f.adminStorage.GetAdminByUsername(ctx, username)
 	if err != nil {
 		return models.Admin{}, err

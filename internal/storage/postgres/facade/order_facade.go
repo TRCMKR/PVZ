@@ -194,8 +194,6 @@ func abs(x int) int {
 }
 
 func (f *OrderFacade) GetOrders(ctx context.Context, params []query.Cond, count int, page int) ([]models.Order, error) {
-	result := make([]models.Order, 0, count)
-
 	operator := func(order models.Order) (bool, error) {
 		var ok bool
 		for _, cond := range params {
@@ -219,31 +217,33 @@ func (f *OrderFacade) GetOrders(ctx context.Context, params []query.Cond, count 
 	})
 
 	params = append(params, query.Cond{
-		Operator: query.GreaterThan,
+		Operator: query.LessThan,
 		Field:    "last_change",
 		Value:    recentOrders[len(recentOrders)-1].LastChange,
 	})
 
+	result := make([]models.Order, 0, count)
 	if count == 0 {
 		dbOrders, err := f.orderStorage.GetOrders(ctx, params, count, 0)
 		if err != nil {
 			return nil, err
 		}
 
-		result = append(result, dbOrders...)
+		result = append(recentOrders, dbOrders...)
 
 		return result, nil
 	}
 
-	newResult := make([]models.Order, 0, count)
-	if len(result) < count && len(result) != 0 {
+	recentOrders = recentOrders[page*count : min(count*(page+1), len(recentOrders))]
+
+	if len(recentOrders) < count && len(recentOrders) != 0 {
 		dbOrders, err := f.orderStorage.GetOrders(ctx, params, count-len(result), 0)
 		if err != nil {
 			return nil, err
 		}
 
-		newResult = append(newResult, dbOrders...)
-	} else if len(result) == 0 {
+		result = append(recentOrders, dbOrders...)
+	} else if len(recentOrders) == 0 {
 		//dbPage := len(result)/count + min(1, len(result)%count)
 		dbPage := (len(result) + count - 1) / count
 
@@ -252,12 +252,12 @@ func (f *OrderFacade) GetOrders(ctx context.Context, params []query.Cond, count 
 			return nil, err
 		}
 
-		newResult = append(newResult, dbOrders...)
+		result = append(recentOrders, dbOrders...)
 	} else {
-		newResult = result[page*count : min(count*(page+1), len(result))]
+		result = recentOrders
 	}
 
-	return newResult, nil
+	return result, nil
 }
 
 func (f *OrderFacade) Contains(ctx context.Context, id int) (bool, error) {
