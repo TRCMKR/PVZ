@@ -14,6 +14,7 @@ type cacheItem[K cacheKey, T any] struct {
 	value T
 }
 
+// Cache ...
 type Cache[K cacheKey, T any] struct {
 	currentCapacity int
 	capacity        int
@@ -22,6 +23,7 @@ type Cache[K cacheKey, T any] struct {
 	mu              sync.Mutex
 }
 
+// NewCache ...
 func NewCache[K cacheKey, T any](capacity int) *Cache[K, T] {
 	return &Cache[K, T]{
 		currentCapacity: 0,
@@ -31,6 +33,7 @@ func NewCache[K cacheKey, T any](capacity int) *Cache[K, T] {
 	}
 }
 
+// Put ...
 func (c *Cache[K, T]) Put(key K, value T) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -50,6 +53,7 @@ func (c *Cache[K, T]) Put(key K, value T) {
 	}
 }
 
+// Get ...
 func (c *Cache[K, T]) Get(key K) (T, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -65,6 +69,7 @@ func (c *Cache[K, T]) Get(key K) (T, bool) {
 	return item.Value.(*cacheItem[K, T]).value, true
 }
 
+// Remove ...
 func (c *Cache[K, T]) Remove(key K) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -92,6 +97,7 @@ func (c *Cache[K, T]) removeOldest() {
 	}
 }
 
+// GetAll ...
 func (c *Cache[K, T]) GetAll() []T {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -105,6 +111,7 @@ func (c *Cache[K, T]) GetAll() []T {
 	return items
 }
 
+// GetAllBy ...
 func (c *Cache[K, T]) GetAllBy(op func(T) (bool, error)) []T {
 	c.mu.Lock()
 	defer c.mu.Unlock()

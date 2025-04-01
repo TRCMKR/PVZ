@@ -11,6 +11,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// InitEnv ...
 func InitEnv(envFile string) {
 	err := godotenv.Overload(envFile)
 	if err != nil {
@@ -18,6 +19,7 @@ func InitEnv(envFile string) {
 	}
 }
 
+// Config ...
 type Config struct {
 	host     string
 	port     string
@@ -26,6 +28,7 @@ type Config struct {
 	dbname   string
 }
 
+// NewConfig ...
 func NewConfig() *Config {
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
@@ -51,26 +54,32 @@ func (c *Config) String() string {
 		c.host, c.port, c.username, c.password, c.dbname)
 }
 
+// Host ...
 func (c *Config) Host() string {
 	return c.host
 }
 
+// Port ...
 func (c *Config) Port() string {
 	return c.port
 }
 
+// Username ...
 func (c *Config) Username() string {
 	return c.username
 }
 
+// Password ...
 func (c *Config) Password() string {
 	return c.password
 }
 
+// DBName ...
 func (c *Config) DBName() string {
 	return c.dbname
 }
 
+// GetRootDir ...
 func GetRootDir() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -90,6 +99,7 @@ func GetRootDir() (string, error) {
 	}
 }
 
+// ReadFirstFileWord ...
 func ReadFirstFileWord(filename string) (string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
