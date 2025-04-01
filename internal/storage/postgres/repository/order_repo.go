@@ -10,10 +10,12 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/tx_manager"
 )
 
+// OrderRepo ...
 type OrderRepo struct {
 	tx *tx_manager.TxManager
 }
 
+// NewOrderRepo ...
 func NewOrderRepo(tx *tx_manager.TxManager) *OrderRepo {
 	return &OrderRepo{
 		tx: tx,
@@ -32,6 +34,7 @@ var (
 	errFindingOrder      = errors.New("failed to find order")
 )
 
+// AddOrder ...
 func (r *OrderRepo) AddOrder(ctx context.Context, order models.Order) error {
 	tmp := convertToRepo(&order)
 	_, err := r.tx.GetQueryEngine(ctx).Exec(ctx, `
@@ -58,6 +61,7 @@ func (r *OrderRepo) AddOrder(ctx context.Context, order models.Order) error {
 	return nil
 }
 
+// RemoveOrder ...
 func (r *OrderRepo) RemoveOrder(ctx context.Context, id int) error {
 	someOrder, err := r.GetByID(ctx, id)
 	if err != nil {
@@ -83,6 +87,7 @@ func (r *OrderRepo) RemoveOrder(ctx context.Context, id int) error {
 	return nil
 }
 
+// UpdateOrder ...
 func (r *OrderRepo) UpdateOrder(ctx context.Context, id int, order models.Order) error {
 	_, err := r.tx.GetQueryEngine(ctx).Exec(ctx, `
 												UPDATE orders
@@ -108,6 +113,7 @@ func (r *OrderRepo) UpdateOrder(ctx context.Context, id int, order models.Order)
 	return nil
 }
 
+// GetByID ...
 func (r *OrderRepo) GetByID(ctx context.Context, id int) (models.Order, error) {
 	var someOrder order
 	err := r.tx.GetQueryEngine(ctx).Get(ctx, &someOrder, `
@@ -125,6 +131,7 @@ func (r *OrderRepo) GetByID(ctx context.Context, id int) (models.Order, error) {
 	return *convertToModel(&someOrder), nil
 }
 
+// GetByUserID ...
 func (r *OrderRepo) GetByUserID(ctx context.Context, id int, count int) ([]models.Order, error) {
 	var tmp []order
 	var err error
@@ -161,6 +168,7 @@ func (r *OrderRepo) GetByUserID(ctx context.Context, id int, count int) ([]model
 	return orders, nil
 }
 
+// GetReturns ...
 func (r *OrderRepo) GetReturns(ctx context.Context) ([]models.Order, error) {
 	var tmp []order
 	err := r.tx.GetQueryEngine(ctx).Select(ctx, &tmp, `
@@ -183,6 +191,7 @@ func (r *OrderRepo) GetReturns(ctx context.Context) ([]models.Order, error) {
 	return orders, nil
 }
 
+// GetOrders ...
 func (r *OrderRepo) GetOrders(ctx context.Context, params []query.Cond,
 	count int, page int) ([]models.Order, error) {
 	var tmp []order
@@ -217,6 +226,7 @@ func (r *OrderRepo) GetOrders(ctx context.Context, params []query.Cond,
 	return orders, nil
 }
 
+// OffsetGetOrders ...
 func (r *OrderRepo) OffsetGetOrders(ctx context.Context, params []query.Cond,
 	count int, page int, offset int) ([]models.Order, error) {
 	var tmp []order
@@ -251,6 +261,7 @@ func (r *OrderRepo) OffsetGetOrders(ctx context.Context, params []query.Cond,
 	return orders, nil
 }
 
+// Contains ...
 func (r *OrderRepo) Contains(ctx context.Context, id int) (bool, error) {
 	var exists bool
 	err := r.tx.GetQueryEngine(ctx).Get(ctx, &exists, `SELECT EXISTS(SELECT 1 FROM orders WHERE id = $1)`, id)

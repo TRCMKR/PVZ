@@ -16,11 +16,13 @@ type adminStorage interface {
 	ContainsID(context.Context, int) (bool, error)
 }
 
+// AdminFacade ...
 type AdminFacade struct {
 	cache        *lru.Cache[string, models.Admin]
 	adminStorage adminStorage
 }
 
+// NewAdminFacade ...
 func NewAdminFacade(adminStorage adminStorage, capacity int) *AdminFacade {
 	return &AdminFacade{
 		adminStorage: adminStorage,
@@ -28,6 +30,7 @@ func NewAdminFacade(adminStorage adminStorage, capacity int) *AdminFacade {
 	}
 }
 
+// CreateAdmin ...
 func (f *AdminFacade) CreateAdmin(ctx context.Context, admin models.Admin) error {
 	err := f.adminStorage.CreateAdmin(ctx, admin)
 	if err != nil {
@@ -39,6 +42,7 @@ func (f *AdminFacade) CreateAdmin(ctx context.Context, admin models.Admin) error
 	return nil
 }
 
+// GetAdminByUsername ...
 func (f *AdminFacade) GetAdminByUsername(ctx context.Context, username string) (models.Admin, error) {
 	if admin, ok := f.cache.Get(username); ok {
 		return admin, nil
@@ -54,6 +58,7 @@ func (f *AdminFacade) GetAdminByUsername(ctx context.Context, username string) (
 	return admin, nil
 }
 
+// UpdateAdmin ...
 func (f *AdminFacade) UpdateAdmin(ctx context.Context, id int, admin models.Admin) error {
 	err := f.adminStorage.UpdateAdmin(ctx, id, admin)
 	if err != nil {
@@ -65,6 +70,7 @@ func (f *AdminFacade) UpdateAdmin(ctx context.Context, id int, admin models.Admi
 	return nil
 }
 
+// DeleteAdmin ...
 func (f *AdminFacade) DeleteAdmin(ctx context.Context, username string) error {
 	err := f.adminStorage.DeleteAdmin(ctx, username)
 	if err != nil {
@@ -76,6 +82,7 @@ func (f *AdminFacade) DeleteAdmin(ctx context.Context, username string) error {
 	return nil
 }
 
+// ContainsUsername ...
 func (f *AdminFacade) ContainsUsername(ctx context.Context, username string) (bool, error) {
 	if _, ok := f.cache.Get(username); ok {
 		return true, nil
@@ -93,6 +100,7 @@ func (f *AdminFacade) ContainsUsername(ctx context.Context, username string) (bo
 	return ok, nil
 }
 
+// ContainsID ...
 func (f *AdminFacade) ContainsID(ctx context.Context, id int) (bool, error) {
 	return f.adminStorage.ContainsID(ctx, id)
 }

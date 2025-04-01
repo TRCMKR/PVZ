@@ -27,8 +27,6 @@ func (s *Service) dbLogger(ctx context.Context, batches <-chan []models.Log) err
 		if err != nil {
 			return errWritingLog
 		}
-
-		return nil
 	}
 
 	return nil

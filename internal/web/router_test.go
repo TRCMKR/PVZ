@@ -44,7 +44,7 @@ func TestApp_Run(t *testing.T) {
 			},
 			authorized: true,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
-				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+				_ MockauditLoggerStorage, _ MocktxManager) {
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
@@ -60,8 +60,8 @@ func TestApp_Run(t *testing.T) {
 				path:   "/order",
 			},
 			authorized: true,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
-				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+			mockSetup: func(_ MockorderStorage, _ MockadminStorage,
+				_ MockauditLoggerStorage, _ MocktxManager) {
 			},
 			expectedCode: http.StatusNotFound,
 		},
@@ -73,7 +73,7 @@ func TestApp_Run(t *testing.T) {
 			},
 			authorized: false,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
-				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+				_ MockauditLoggerStorage, _ MocktxManager) {
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
@@ -92,7 +92,7 @@ func TestApp_Run(t *testing.T) {
 			},
 			authorized: true,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
-				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+				_ MockauditLoggerStorage, tx MocktxManager) {
 				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
@@ -116,8 +116,7 @@ func TestApp_Run(t *testing.T) {
 								"packaging":2,"extra_packaging":3,"expiry_date":"2025-03-10T00:00:00Z"}`),
 			},
 			authorized: true,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
-				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+			mockSetup: func(_ MockorderStorage, _ MockadminStorage, _ MockauditLoggerStorage, _ MocktxManager) {
 			},
 			expectedCode: http.StatusNotFound,
 		},
@@ -129,7 +128,7 @@ func TestApp_Run(t *testing.T) {
 			},
 			authorized: true,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
-				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+				_ MockauditLoggerStorage, tx MocktxManager) {
 				tx.EXPECT().RunSerializable(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
@@ -152,7 +151,7 @@ func TestApp_Run(t *testing.T) {
 			},
 			authorized: true,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
-				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+				_ MockauditLoggerStorage, tx MocktxManager) {
 				tx.EXPECT().RunSerializable(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
@@ -176,8 +175,7 @@ func TestApp_Run(t *testing.T) {
 				body:   []byte(`{"id":52,"username":"sdasds","password":"give"}`),
 			},
 			authorized: false,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
-				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+			mockSetup: func(_ MockorderStorage, mockAdminStorage MockadminStorage, _ MockauditLoggerStorage, _ MocktxManager) {
 				mockAdminStorage.EXPECT().CreateAdmin(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().ContainsID(gomock.Any(), gomock.Any()).Return(false, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(false, nil)
@@ -192,8 +190,8 @@ func TestApp_Run(t *testing.T) {
 				body:   []byte(`{"password":"password"}`),
 			},
 			authorized: false,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
-				mockLogStorage MockauditLoggerStorage, tx MocktxManager) {
+			mockSetup: func(_ MockorderStorage, mockAdminStorage MockadminStorage,
+				_ MockauditLoggerStorage, _ MocktxManager) {
 				mockAdminStorage.EXPECT().DeleteAdmin(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
@@ -204,7 +202,10 @@ func TestApp_Run(t *testing.T) {
 	}
 
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+
+	t.Cleanup(func() {
+		ctrl.Finish()
+	})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

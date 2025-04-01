@@ -28,6 +28,7 @@ var (
 	errWrongPassword   = errors.New("wrong password")
 )
 
+// FieldLogger ...
 func FieldLogger(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodDelete {
@@ -46,6 +47,7 @@ func FieldLogger(handler http.Handler) http.Handler {
 	})
 }
 
+// AuthMiddleware ...
 type AuthMiddleware struct {
 	adminService admin.Service
 }
@@ -64,6 +66,7 @@ func (a *AuthMiddleware) parseHeader(request *http.Request) (string, error) {
 	return parts[1], nil
 }
 
+// BasicAuthChecker ...
 func (a *AuthMiddleware) BasicAuthChecker(ctx context.Context, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		credsStr, err := a.parseHeader(r)
@@ -106,6 +109,7 @@ func (a *AuthMiddleware) BasicAuthChecker(ctx context.Context, handler http.Hand
 	})
 }
 
+// AuditLoggerMiddleware ...
 type AuditLoggerMiddleware struct {
 	adminService       admin.Service
 	auditLoggerService auditlogger.Service
@@ -119,6 +123,7 @@ type responseWriterWrapper struct {
 
 func (rw *responseWriterWrapper) Write(b []byte) (int, error) {
 	rw.body.Write(b)
+
 	return rw.ResponseWriter.Write(b)
 }
 
@@ -131,6 +136,7 @@ type requestBody struct {
 	ID int `json:"id"`
 }
 
+// AuditLogger ...
 func (a *AuditLoggerMiddleware) AuditLogger(ctx context.Context, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request requestBody

@@ -37,7 +37,6 @@ linters:
     - asciicheck
     - bidichk
     - bodyclose
-    - contextcheck
     - cyclop
     - decorder
     - dogsled
@@ -50,7 +49,6 @@ linters:
     - errorlint
     - exhaustive
     - copyloopvar
-    - forcetypeassert
     - funlen
     - ginkgolinter
     - gocheckcompilerdirectives
@@ -99,14 +97,13 @@ linters:
     - spancheck
     - sqlclosecheck
     - staticcheck
-    - tagalign
     - tagliatelle
     - testableexamples
     - testifylint
     - thelper
     - tparallel
     - unconvert
-    - unparam
+    - revive
     - unused
     - usestdlibvars
     - wastedassign

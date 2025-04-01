@@ -11,12 +11,14 @@ import (
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 
+	// lib/pg ...
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
+// InitPostgresContainer ...
 func InitPostgresContainer(ctx context.Context, cfg config.Config) (string, *postgres.PostgresContainer, error) {
 	emptyLogger := log.New(io.Discard, "", 0)
 

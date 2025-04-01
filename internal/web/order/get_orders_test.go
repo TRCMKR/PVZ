@@ -51,7 +51,7 @@ func TestHandler_GetOrders(t *testing.T) {
 				"user_id": "123",
 				"count":   "invalid",
 			},
-			mockSetup:      func(orderService *MockorderService) {},
+			mockSetup:      func(_ *MockorderService) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedCount:  0,
 			expectedOrders: nil,
@@ -61,7 +61,7 @@ func TestHandler_GetOrders(t *testing.T) {
 			queryParams: map[string]string{
 				"weight": "not-a-number",
 			},
-			mockSetup:      func(orderService *MockorderService) {},
+			mockSetup:      func(_ *MockorderService) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedCount:  0,
 			expectedOrders: nil,

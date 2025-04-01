@@ -30,7 +30,7 @@ func TestHandler_DeleteOrder(t *testing.T) {
 		{
 			name:           "Invalid order ID format",
 			orderIDParam:   "invalid",
-			mockSetup:      func(orderService *MockorderService) {},
+			mockSetup:      func(_ *MockorderService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{

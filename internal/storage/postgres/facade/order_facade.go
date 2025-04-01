@@ -10,7 +10,6 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/cache/lru"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
-	order_handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 )
 
 type orderStorage interface {
@@ -26,15 +25,18 @@ type orderStorage interface {
 }
 
 var (
-	errWrongOperator = errors.New("wrong operator")
+	errWrongOperator        = errors.New("wrong operator")
+	errUnsupportedValueType = errors.New("unsupported value type")
 )
 
+// OrderFacade ...
 type OrderFacade struct {
 	cache              *lru.Cache[int, models.Order]
 	historyOrdersCache *lru.Cache[int, models.Order]
 	orderStorage       orderStorage
 }
 
+// NewOrderFacade ...
 func NewOrderFacade(ctx context.Context, orderStorage orderStorage, capacity int) *OrderFacade {
 	historyOrdersCache := lru.NewCache[int, models.Order](capacity)
 
@@ -51,6 +53,7 @@ func NewOrderFacade(ctx context.Context, orderStorage orderStorage, capacity int
 	}
 }
 
+// AddOrder ...
 func (f *OrderFacade) AddOrder(ctx context.Context, order models.Order) error {
 	err := f.orderStorage.AddOrder(ctx, order)
 	if err != nil {
@@ -63,6 +66,7 @@ func (f *OrderFacade) AddOrder(ctx context.Context, order models.Order) error {
 	return nil
 }
 
+// RemoveOrder ...
 func (f *OrderFacade) RemoveOrder(ctx context.Context, id int) error {
 	err := f.orderStorage.RemoveOrder(ctx, id)
 	if err != nil {
@@ -75,6 +79,7 @@ func (f *OrderFacade) RemoveOrder(ctx context.Context, id int) error {
 	return nil
 }
 
+// UpdateOrder ...
 func (f *OrderFacade) UpdateOrder(ctx context.Context, id int, order models.Order) error {
 	err := f.orderStorage.UpdateOrder(ctx, id, order)
 	if err != nil {
@@ -87,6 +92,7 @@ func (f *OrderFacade) UpdateOrder(ctx context.Context, id int, order models.Orde
 	return nil
 }
 
+// GetByID ...
 func (f *OrderFacade) GetByID(ctx context.Context, id int) (models.Order, error) {
 	if order, ok := f.cache.Get(id); ok {
 		return order, nil
@@ -102,10 +108,12 @@ func (f *OrderFacade) GetByID(ctx context.Context, id int) (models.Order, error)
 	return order, nil
 }
 
+// GetByUserID ...
 func (f *OrderFacade) GetByUserID(ctx context.Context, id int, userID int) ([]models.Order, error) {
 	return f.orderStorage.GetByUserID(ctx, id, userID)
 }
 
+// GetReturns ...
 func (f *OrderFacade) GetReturns(ctx context.Context) ([]models.Order, error) {
 	return f.orderStorage.GetReturns(ctx)
 }
@@ -137,52 +145,82 @@ func (f *OrderFacade) checkOrder(order models.Order, cond query.Cond) (bool, err
 		return false, err
 	}
 
-	valueType := order_handler.GetFilters()[cond.Field]
+	return f.compareValues(value, cond)
+}
 
+func (f *OrderFacade) compareValues(value interface{}, cond query.Cond) (bool, error) {
 	switch cond.Operator {
 	case query.Equals:
 		return value == cond.Value, nil
-	case query.GreaterEqualThan:
-		switch valueType {
-		case order_handler.NumberType:
-			return value.(int) >= cond.Value.(int), nil
-		case order_handler.DateType:
-			return value.(time.Time).After(cond.Value.(time.Time)) || value.(time.Time).Equal(cond.Value.(time.Time)), nil
-		case order_handler.WordType:
-			return value.(string) >= cond.Value.(string), nil
-		}
-	case query.GreaterThan:
-		switch valueType {
-		case order_handler.NumberType:
-			return value.(int) > cond.Value.(int), nil
-		case order_handler.DateType:
-			return value.(time.Time).After(cond.Value.(time.Time)), nil
-		case order_handler.WordType:
-			return value.(string) > cond.Value.(string), nil
-		}
-	case query.LessEqualThan:
-		switch valueType {
-		case order_handler.NumberType:
-			return value.(int) <= cond.Value.(int), nil
-		case order_handler.DateType:
-			return value.(time.Time).Before(cond.Value.(time.Time)) || value.(time.Time).Equal(cond.Value.(time.Time)), nil
-		case order_handler.WordType:
-			return value.(string) <= cond.Value.(string), nil
-		}
-	case query.LessThan:
-		switch valueType {
-		case order_handler.NumberType:
-			return value.(int) < cond.Value.(int), nil
-		case order_handler.DateType:
-			return value.(time.Time).Before(cond.Value.(time.Time)), nil
-		case order_handler.WordType:
-			return value.(string) < cond.Value.(string), nil
-		}
 	case query.NotEquals:
 		return value != cond.Value, nil
+	default:
+		return f.compare(value, cond.Value, cond.Operator)
+	}
+}
+
+func (f *OrderFacade) compare(value interface{}, condValue interface{}, operator query.CondType) (bool, error) {
+	switch value := value.(type) {
+	case int:
+		condValueInt, _ := condValue.(int)
+
+		return f.compareInts(value, condValueInt, operator)
+	case time.Time:
+		condValueTime, _ := condValue.(time.Time)
+
+		return f.compareTimes(value, condValueTime, operator)
+	case string:
+		condValueStr, _ := condValue.(string)
+
+		return f.compareStrings(value, condValueStr, operator)
 	}
 
-	return false, errWrongOperator
+	return false, errUnsupportedValueType
+}
+
+func (f *OrderFacade) compareInts(value, condValue int, operator query.CondType) (bool, error) {
+	switch operator {
+	case query.GreaterEqualThan:
+		return value >= condValue, nil
+	case query.GreaterThan:
+		return value > condValue, nil
+	case query.LessEqualThan:
+		return value <= condValue, nil
+	case query.LessThan:
+		return value < condValue, nil
+	default:
+		return false, errWrongOperator
+	}
+}
+
+func (f *OrderFacade) compareTimes(value, condValue time.Time, operator query.CondType) (bool, error) {
+	switch operator {
+	case query.GreaterEqualThan:
+		return value.After(condValue) || value.Equal(condValue), nil
+	case query.GreaterThan:
+		return value.After(condValue), nil
+	case query.LessEqualThan:
+		return value.Before(condValue) || value.Equal(condValue), nil
+	case query.LessThan:
+		return value.Before(condValue), nil
+	default:
+		return false, errWrongOperator
+	}
+}
+
+func (f *OrderFacade) compareStrings(value, condValue string, operator query.CondType) (bool, error) {
+	switch operator {
+	case query.GreaterEqualThan:
+		return value >= condValue, nil
+	case query.GreaterThan:
+		return value > condValue, nil
+	case query.LessEqualThan:
+		return value <= condValue, nil
+	case query.LessThan:
+		return value < condValue, nil
+	default:
+		return false, errWrongOperator
+	}
 }
 
 func abs(x int) int {
@@ -193,25 +231,28 @@ func abs(x int) int {
 	return x
 }
 
-func (f *OrderFacade) GetOrders(ctx context.Context, params []query.Cond, count int, page int) ([]models.Order, error) {
-	operator := func(order models.Order) (bool, error) {
-		var ok bool
-		for _, cond := range params {
-			var err error
-			ok, err = f.checkOrder(order, cond)
-			if err != nil {
-				return false, err
-			}
-
-			if !ok {
-				return false, nil
-			}
+func (f *OrderFacade) checkIfOrderMatches(order models.Order, params []query.Cond) (bool, error) {
+	var ok bool
+	for _, cond := range params {
+		var err error
+		ok, err = f.checkOrder(order, cond)
+		if err != nil {
+			return false, err
 		}
 
-		return true, nil
+		if !ok {
+			return false, nil
+		}
 	}
 
-	recentOrders := f.historyOrdersCache.GetAllBy(operator)
+	return true, nil
+}
+
+// GetOrders ...
+func (f *OrderFacade) GetOrders(ctx context.Context, params []query.Cond, count int, page int) ([]models.Order, error) {
+	recentOrders := f.historyOrdersCache.GetAllBy(func(order models.Order) (bool, error) {
+		return f.checkIfOrderMatches(order, params)
+	})
 	sort.Slice(recentOrders, func(i, j int) bool {
 		return recentOrders[i].LastChange.After(recentOrders[j].LastChange)
 	})
@@ -229,37 +270,37 @@ func (f *OrderFacade) GetOrders(ctx context.Context, params []query.Cond, count 
 			return nil, err
 		}
 
-		result = append(recentOrders, dbOrders...)
+		recentOrders = append(recentOrders, dbOrders...)
 
-		return result, nil
+		return recentOrders, nil
 	}
 
 	recentOrders = recentOrders[page*count : min(count*(page+1), len(recentOrders))]
 
-	if len(recentOrders) < count && len(recentOrders) != 0 {
+	switch {
+	case len(recentOrders) < count && len(recentOrders) != 0:
 		dbOrders, err := f.orderStorage.GetOrders(ctx, params, count-len(result), 0)
 		if err != nil {
 			return nil, err
 		}
+		recentOrders = append(recentOrders, dbOrders...)
 
-		result = append(recentOrders, dbOrders...)
-	} else if len(recentOrders) == 0 {
-		//dbPage := len(result)/count + min(1, len(result)%count)
+	case len(recentOrders) == 0:
 		dbPage := (len(result) + count - 1) / count
-
 		dbOrders, err := f.orderStorage.OffsetGetOrders(ctx, params, count, dbPage, abs(len(result)-count*page))
 		if err != nil {
 			return nil, err
 		}
+		recentOrders = append(recentOrders, dbOrders...)
 
-		result = append(recentOrders, dbOrders...)
-	} else {
+	default:
 		result = recentOrders
 	}
 
 	return result, nil
 }
 
+// Contains ...
 func (f *OrderFacade) Contains(ctx context.Context, id int) (bool, error) {
 	if _, ok := f.cache.Get(id); ok {
 		return true, nil

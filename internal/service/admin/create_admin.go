@@ -6,6 +6,7 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
+// CreateAdmin ...
 func (s *Service) CreateAdmin(ctx context.Context, admin models.Admin) error {
 	ok, err := s.ContainsUsername(ctx, admin.Username)
 	if err != nil {

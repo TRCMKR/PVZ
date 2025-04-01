@@ -29,7 +29,7 @@ func (h *Handler) CreateOrder(ctx context.Context, w http.ResponseWriter, r *htt
 
 	err := json.NewDecoder(r.Body).Decode(&order)
 	if err != nil {
-		http.Error(w, errWrongJsonFormat.Error(), http.StatusBadRequest)
+		http.Error(w, errWrongJSONFormat.Error(), http.StatusBadRequest)
 
 		return
 	}

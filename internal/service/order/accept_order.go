@@ -56,6 +56,7 @@ func (s *Service) validateOrder(order models.Order) error {
 	return nil
 }
 
+// AcceptOrder ...
 func (s *Service) AcceptOrder(ctx context.Context, orderID int, userID int, weight float64, price money.Money,
 	expiryDate time.Time, packagings []models.Packaging) error {
 	err := s.checkPackaging(packagings[0].GetType(), packagings[1].GetType())

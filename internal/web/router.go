@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 
+	// docs ...
 	_ "gitlab.ozon.dev/alexplay1224/homework/docs"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
@@ -52,6 +53,7 @@ type auditLoggerStorage interface {
 	CreateLog(context.Context, []models.Log) error
 }
 
+// App ...
 type App struct {
 	orderService       order_Service.Service
 	adminService       admin_Service.Service
@@ -59,6 +61,7 @@ type App struct {
 	Router             *mux.Router
 }
 
+// NewApp ...
 func NewApp(ctx context.Context, orders orderStorage, admins adminStorage, logs auditLoggerStorage, txManager txManager,
 	workerCount int, batchSize int, timeout time.Duration) (*App, error) {
 	logger, err := audit_Logger_Storage.NewService(ctx, logs, workerCount, batchSize, timeout)
@@ -74,6 +77,7 @@ func NewApp(ctx context.Context, orders orderStorage, admins adminStorage, logs 
 	}, nil
 }
 
+// SetupRoutes ...
 func (a *App) SetupRoutes(ctx context.Context) {
 	impl := server{
 		orders: *order_Handler.NewHandler(&a.orderService),
@@ -138,6 +142,7 @@ type server struct {
 
 // @securityDefinitions.basic BasicAuth
 
+// Run ...
 // @title			PVZ API Documentation
 // @version		1.0
 // @description	This is a sample server for Swagger in Go.

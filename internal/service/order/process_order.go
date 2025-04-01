@@ -31,6 +31,7 @@ func isOrderEligible(order models.Order, userID int, action string) bool {
 	return order.Status == models.StoredOrder
 }
 
+// ProcessOrder ...
 func (s *Service) ProcessOrder(ctx context.Context, userID int, orderID int, action string) error {
 	return s.txManager.RunSerializable(ctx, func(ctx context.Context) error {
 		if ok, err := s.Storage.Contains(ctx, orderID); err != nil || !ok {
@@ -60,20 +61,3 @@ func (s *Service) ProcessOrder(ctx context.Context, userID int, orderID int, act
 		return s.Storage.UpdateOrder(ctx, orderID, someOrder)
 	})
 }
-
-// вдруг бизнес захочет 🤓
-// func (s *Service) ProcessOrders(ctx context.Context, userID int, orderIDs []int, action string) (int, error) {
-//	ordersFailed := 0
-//
-//	for _, orderID := range orderIDs {
-//		err := s.processOrder(ctx, userID, orderID, action)
-//		if err != nil {
-//			if errors.Is(err, ErrUndefinedAction) {
-//				return 0, ErrUndefinedAction
-//			}
-//			ordersFailed++
-//		}
-//	}
-//
-//	return ordersFailed, nil
-//}

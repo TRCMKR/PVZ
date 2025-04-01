@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
+// Database ...
 type Database interface {
 	Get(context.Context, interface{}, string, ...interface{}) error
 	Select(context.Context, interface{}, string, ...interface{}) error
@@ -18,16 +19,19 @@ type Database interface {
 
 type txManagerKey struct{}
 
+// TxManager ...
 type TxManager struct {
 	db Database
 }
 
+// NewTxManager ...
 func NewTxManager(db Database) *TxManager {
 	return &TxManager{
 		db: db,
 	}
 }
 
+// RunSerializable ...
 func (m *TxManager) RunSerializable(ctx context.Context, fn func(ctxTx context.Context) error) error {
 	opts := pgx.TxOptions{
 		IsoLevel:   pgx.Serializable,
@@ -37,6 +41,7 @@ func (m *TxManager) RunSerializable(ctx context.Context, fn func(ctxTx context.C
 	return m.beginFunc(ctx, opts, fn)
 }
 
+// RunRepeatableRead ...
 func (m *TxManager) RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error {
 	opts := pgx.TxOptions{
 		IsoLevel:   pgx.RepeatableRead,
@@ -46,6 +51,7 @@ func (m *TxManager) RunRepeatableRead(ctx context.Context, fn func(ctxTx context
 	return m.beginFunc(ctx, opts, fn)
 }
 
+// RunReadCommitted ...
 func (m *TxManager) RunReadCommitted(ctx context.Context, fn func(ctxTx context.Context) error) error {
 	opts := pgx.TxOptions{
 		IsoLevel:   pgx.ReadCommitted,
@@ -74,6 +80,7 @@ func (m *TxManager) beginFunc(ctx context.Context, opts pgx.TxOptions, fn func(c
 	return tx.Commit(ctx)
 }
 
+// GetQueryEngine ...
 func (m *TxManager) GetQueryEngine(ctx context.Context) Database {
 	v, ok := ctx.Value(txManagerKey{}).(Database)
 	if ok && v != nil {

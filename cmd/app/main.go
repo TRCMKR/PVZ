@@ -52,7 +52,7 @@ func main() {
 
 	app, err := web.NewApp(ctx, ordersFacade, adminsFacade, logsRepo, tx, workerCount, batchSize, timeout)
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	errCh := make(chan error, 1)

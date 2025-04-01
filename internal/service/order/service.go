@@ -15,17 +15,38 @@ const (
 )
 
 var (
+	// ErrOrderAlreadyExists ...
 	ErrOrderAlreadyExists = errors.New("such order exists")
-	ErrOrderExpired       = errors.New("expired order")
-	ErrOrderIsNotExpired  = errors.New("order is not expired")
-	ErrOrderNotFound      = errors.New("order not found")
-	ErrOrderIsGiven       = errors.New("order is given")
-	ErrWrongWeight        = errors.New("wrong weight")
-	ErrWrongPrice         = errors.New("wrong price")
-	ErrOrderNotEligible   = errors.New("order not eligible")
-	ErrUndefinedAction    = errors.New("undefined action")
-	ErrNotEnoughWeight    = errors.New("not enough weight")
-	ErrWrongPackaging     = errors.New("wrong packaging")
+
+	// ErrOrderExpired ...
+	ErrOrderExpired = errors.New("expired order")
+
+	// ErrOrderIsNotExpired ...
+	ErrOrderIsNotExpired = errors.New("order is not expired")
+
+	// ErrOrderNotFound ...
+	ErrOrderNotFound = errors.New("order not found")
+
+	// ErrOrderIsGiven ...
+	ErrOrderIsGiven = errors.New("order is given")
+
+	// ErrWrongWeight ...
+	ErrWrongWeight = errors.New("wrong weight")
+
+	// ErrWrongPrice ...
+	ErrWrongPrice = errors.New("wrong price")
+
+	// ErrOrderNotEligible ...
+	ErrOrderNotEligible = errors.New("order not eligible")
+
+	// ErrUndefinedAction ...
+	ErrUndefinedAction = errors.New("undefined action")
+
+	// ErrNotEnoughWeight ...
+	ErrNotEnoughWeight = errors.New("not enough weight")
+
+	// ErrWrongPackaging ...
+	ErrWrongPackaging = errors.New("wrong packaging")
 )
 
 type orderStorage interface {
@@ -46,11 +67,13 @@ type txManager interface {
 	GetQueryEngine(ctx context.Context) tx_manager.Database
 }
 
+// Service ...
 type Service struct {
 	Storage   orderStorage
 	txManager txManager
 }
 
+// NewService ...
 func NewService(storage orderStorage, txManager txManager) *Service {
 	return &Service{
 		Storage:   storage,

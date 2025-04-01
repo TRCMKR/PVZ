@@ -8,10 +8,12 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
+// AdminRepo ...
 type AdminRepo struct {
 	db database
 }
 
+// NewAdminRepo ...
 func NewAdminRepo(db database) *AdminRepo {
 	return &AdminRepo{
 		db: db,
@@ -26,6 +28,7 @@ var (
 	errFindingAdmin             = errors.New("could not find admin")
 )
 
+// CreateAdmin ...
 func (r *AdminRepo) CreateAdmin(ctx context.Context, admin models.Admin) error {
 	_, err := r.db.Exec(ctx, `
 							INSERT INTO admins(id, username, password, created_at)
@@ -40,6 +43,7 @@ func (r *AdminRepo) CreateAdmin(ctx context.Context, admin models.Admin) error {
 	return nil
 }
 
+// GetAdminByUsername ...
 func (r *AdminRepo) GetAdminByUsername(ctx context.Context, username string) (models.Admin, error) {
 	var admin models.Admin
 	err := r.db.Get(ctx, &admin, `
@@ -56,6 +60,7 @@ func (r *AdminRepo) GetAdminByUsername(ctx context.Context, username string) (mo
 	return admin, nil
 }
 
+// UpdateAdmin ...
 func (r *AdminRepo) UpdateAdmin(ctx context.Context, id int, admin models.Admin) error {
 	_, err := r.db.Exec(ctx, `
 							UPDATE admins
@@ -71,6 +76,7 @@ func (r *AdminRepo) UpdateAdmin(ctx context.Context, id int, admin models.Admin)
 	return nil
 }
 
+// DeleteAdmin ...
 func (r *AdminRepo) DeleteAdmin(ctx context.Context, username string) error {
 	_, err := r.db.Exec(ctx, `
 							DELETE FROM admins
@@ -85,6 +91,7 @@ func (r *AdminRepo) DeleteAdmin(ctx context.Context, username string) error {
 	return nil
 }
 
+// ContainsUsername ...
 func (r *AdminRepo) ContainsUsername(ctx context.Context, username string) (bool, error) {
 	var exists bool
 	err := r.db.Get(ctx, &exists, "SELECT EXISTS(SELECT 1 FROM admins WHERE username = $1)", username)
@@ -97,6 +104,7 @@ func (r *AdminRepo) ContainsUsername(ctx context.Context, username string) (bool
 	return exists, nil
 }
 
+// ContainsID ...
 func (r *AdminRepo) ContainsID(ctx context.Context, id int) (bool, error) {
 	var exists bool
 	err := r.db.Get(ctx, &exists, "SELECT EXISTS(SELECT 1 FROM admins WHERE id = $1)", id)
