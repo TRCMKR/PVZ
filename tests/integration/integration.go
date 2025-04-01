@@ -3,10 +3,12 @@ package integration
 import (
 	"context"
 	"database/sql"
+	"io"
 	"log"
 	"time"
 
 	"github.com/testcontainers/testcontainers-go/wait"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 
 	_ "github.com/lib/pq"
@@ -16,11 +18,13 @@ import (
 )
 
 func InitPostgresContainer(ctx context.Context, cfg config.Config) (string, *postgres.PostgresContainer, error) {
+	emptyLogger := log.New(io.Discard, "", 0)
+
 	pgContainer, err := postgres.Run(ctx, "postgres:14-alpine",
 		postgres.WithDatabase(cfg.DBName()),
 		postgres.WithUsername(cfg.Username()),
 		postgres.WithPassword(cfg.Password()),
-		testcontainers.WithLogger(log.Default()),
+		testcontainers.WithLogger(emptyLogger),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).WithStartupTimeout(5*time.Second)),
@@ -41,6 +45,7 @@ func InitPostgresContainer(ctx context.Context, cfg config.Config) (string, *pos
 
 	time.Sleep(2 * time.Second)
 
+	goose.SetLogger(emptyLogger)
 	err = goose.SetDialect("postgres")
 	if err != nil {
 		return "", nil, err

@@ -27,7 +27,8 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
 )
 
-func sendRequest(ctx context.Context, wg *sync.WaitGroup, url string, requestData createOrderRequest, username string, password string, ch chan<- error) {
+func sendRequest(ctx context.Context, wg *sync.WaitGroup, url string, requestData createOrderRequest,
+	username string, password string, ch chan<- error) {
 	defer wg.Done()
 
 	jsonData, err := json.Marshal(requestData)
@@ -37,7 +38,7 @@ func sendRequest(ctx context.Context, wg *sync.WaitGroup, url string, requestDat
 		return
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		ch <- fmt.Errorf("error creating request: %w", err)
 
@@ -72,7 +73,7 @@ func generateOrderRequests(count int) []createOrderRequest {
 
 	for i := 1; i <= count; i++ {
 		request := createOrderRequest{
-			ID:             i + 100,
+			ID:             i + 1000,
 			UserID:         789,
 			Weight:         100,
 			Price:          *money.New(1000, money.RUB),
@@ -107,9 +108,6 @@ func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 	adminsRepo := repository.NewAdminRepo(db)
 	adminsFacade := facade.NewAdminFacade(adminsRepo, 10000)
 	logsRepo := repository.NewLogsRepo(db)
-
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
-	defer cancel()
 
 	app, _ := web.NewApp(ctx, ordersFacade, adminsFacade, logsRepo, txManager, 2, 5, 500*time.Millisecond)
 	app.SetupRoutes(ctx)
