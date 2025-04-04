@@ -9,5 +9,5 @@ import (
 
 // GetOrders ...
 func (s *Service) GetOrders(ctx context.Context, conds []query.Cond, count int, page int) ([]models.Order, error) {
-	return s.Storage.GetOrders(ctx, conds, count, page)
+	return s.Storage.GetOrders(ctx, nil, conds, count, page)
 }

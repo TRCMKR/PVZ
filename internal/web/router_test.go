@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Rhymond/go-money"
+	"github.com/jackc/pgx/v4"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -48,7 +49,7 @@ func TestApp_Run(t *testing.T) {
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
-				mockOrderStorage.EXPECT().GetOrders(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+				mockOrderStorage.EXPECT().GetOrders(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return([]models.Order{}, nil)
 			},
 			expectedCode: http.StatusOK,
@@ -72,13 +73,8 @@ func TestApp_Run(t *testing.T) {
 				path:   "/orders",
 			},
 			authorized: false,
-			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
+			mockSetup: func(_ MockorderStorage, _ MockadminStorage,
 				_ MockauditLoggerStorage, _ MocktxManager) {
-				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
-					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
-				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
-				mockOrderStorage.EXPECT().GetOrders(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-					Return([]models.Order{}, nil)
 			},
 			expectedCode: http.StatusUnauthorized,
 		},
@@ -93,17 +89,18 @@ func TestApp_Run(t *testing.T) {
 			authorized: true,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
 				_ MockauditLoggerStorage, tx MocktxManager) {
-				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
-				mockOrderStorage.EXPECT().GetOrders(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-					Return([]models.Order{}, nil)
-				mockOrderStorage.EXPECT().AddOrder(gomock.Any(), gomock.Any()).Return(nil)
-				mockOrderStorage.EXPECT().Contains(gomock.Any(), gomock.Any()).Return(false, nil).Times(2)
+				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).Return(nil).
+					DoAndReturn(func(ctx context.Context, f func(ctx context.Context, tx pgx.Tx) error) error {
+						return f(ctx, nil)
+					})
+				mockOrderStorage.EXPECT().AddOrder(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				mockOrderStorage.EXPECT().Contains(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil).Return(false, nil)
 			},
 			expectedCode: http.StatusOK,
 		},
@@ -128,17 +125,20 @@ func TestApp_Run(t *testing.T) {
 			},
 			authorized: true,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
-				_ MockauditLoggerStorage, tx MocktxManager) {
-				tx.EXPECT().RunSerializable(gomock.Any(), gomock.Any()).Return(nil)
+				_ MockauditLoggerStorage, mocktxManager MocktxManager) {
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
-				mockOrderStorage.EXPECT().RemoveOrder(gomock.Any(), gomock.Any()).Return(nil)
-				mockOrderStorage.EXPECT().Contains(gomock.Any(), gomock.Any()).Return(true, nil)
-				mockOrderStorage.EXPECT().GetByID(gomock.Any(), gomock.Any()).Return(models.Order{}, nil)
+				mocktxManager.EXPECT().RunSerializable(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(ctx context.Context, f func(ctx context.Context, tx pgx.Tx) error) error {
+						return f(ctx, nil)
+					})
+				mockOrderStorage.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Order{}, nil)
+				mockOrderStorage.EXPECT().Contains(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				mockOrderStorage.EXPECT().RemoveOrder(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 			},
 			expectedCode: http.StatusOK,
 		},
@@ -152,16 +152,19 @@ func TestApp_Run(t *testing.T) {
 			authorized: true,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
 				_ MockauditLoggerStorage, tx MocktxManager) {
-				tx.EXPECT().RunSerializable(gomock.Any(), gomock.Any()).Return(nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
-				mockOrderStorage.EXPECT().UpdateOrder(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-				mockOrderStorage.EXPECT().Contains(gomock.Any(), gomock.Any()).Return(true, nil)
-				mockOrderStorage.EXPECT().GetByID(gomock.Any(), gomock.Any()).Return(models.Order{
+				tx.EXPECT().RunSerializable(gomock.Any(), gomock.Any()).Return(nil).
+					DoAndReturn(func(ctx context.Context, f func(ctx context.Context, tx pgx.Tx) error) error {
+						return f(ctx, nil)
+					})
+				mockOrderStorage.EXPECT().UpdateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				mockOrderStorage.EXPECT().Contains(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				mockOrderStorage.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Order{
 					ID: 4, UserID: 789, Weight: 1233, Price: *money.New(22222, money.RUB),
 					Status: 1, ExpiryDate: time.Now().Add(time.Hour)}, nil)
 			},

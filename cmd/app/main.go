@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"runtime"
 	"syscall"
-	"time"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
@@ -17,18 +16,8 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/web"
 )
 
-const (
-	workerCount = 2
-	batchSize   = 5
-	timeout     = 2 * time.Second
-)
-
 func main() {
-	if os.Getenv("APP_ENV") == "test" {
-		config.InitEnv(".env.test")
-	} else {
-		config.InitEnv(".env")
-	}
+	config.InitEnv(".env")
 	cfg := config.NewConfig()
 
 	ctx := context.Background()
@@ -41,16 +30,16 @@ func main() {
 
 	tx := tx_manager.NewTxManager(db)
 
-	ordersRepo := repository.NewOrderRepo(tx)
+	ordersRepo := repository.NewOrdersRepo(db)
 	ordersFacade := facade.NewOrderFacade(ctx, ordersRepo, 10000)
-	adminsRepo := repository.NewAdminRepo(db)
+	adminsRepo := repository.NewAdminsRepo(db)
 	adminsFacade := facade.NewAdminFacade(adminsRepo, 10000)
 	logsRepo := repository.NewLogsRepo(db)
 
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	app, err := web.NewApp(ctx, ordersFacade, adminsFacade, logsRepo, tx, workerCount, batchSize, timeout)
+	app, err := web.NewApp(ctx, ordersFacade, adminsFacade, logsRepo, tx, cfg.WorkerCount, cfg.BatchSize, cfg.Timeout)
 	if err != nil {
 		log.Panic(err)
 	}

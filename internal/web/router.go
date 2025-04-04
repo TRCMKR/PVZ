@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v4"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 
 	// docs ...
@@ -17,20 +18,19 @@ import (
 	admin_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
 	audit_Logger_Storage "gitlab.ozon.dev/alexplay1224/homework/internal/service/auditlogger"
 	order_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/tx_manager"
 	admin_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/admin"
 	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 )
 
 type orderStorage interface {
-	AddOrder(context.Context, models.Order) error
-	RemoveOrder(context.Context, int) error
-	UpdateOrder(context.Context, int, models.Order) error
-	GetByID(context.Context, int) (models.Order, error)
-	GetByUserID(context.Context, int, int) ([]models.Order, error)
-	GetReturns(context.Context) ([]models.Order, error)
-	GetOrders(context.Context, []query.Cond, int, int) ([]models.Order, error)
-	Contains(context.Context, int) (bool, error)
+	AddOrder(context.Context, pgx.Tx, models.Order) error
+	RemoveOrder(context.Context, pgx.Tx, int) error
+	UpdateOrder(context.Context, pgx.Tx, int, models.Order) error
+	GetByID(context.Context, pgx.Tx, int) (models.Order, error)
+	GetByUserID(context.Context, pgx.Tx, int, int) ([]models.Order, error)
+	GetReturns(context.Context, pgx.Tx) ([]models.Order, error)
+	GetOrders(context.Context, pgx.Tx, []query.Cond, int, int) ([]models.Order, error)
+	Contains(context.Context, pgx.Tx, int) (bool, error)
 }
 
 type adminStorage interface {
@@ -43,10 +43,9 @@ type adminStorage interface {
 }
 
 type txManager interface {
-	RunSerializable(ctx context.Context, fn func(ctxTx context.Context) error) error
-	RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error
-	RunReadCommitted(ctx context.Context, fn func(ctxTx context.Context) error) error
-	GetQueryEngine(ctx context.Context) tx_manager.Database
+	RunSerializable(context.Context, func(context.Context, pgx.Tx) error) error
+	RunRepeatableRead(context.Context, func(context.Context, pgx.Tx) error) error
+	RunReadCommitted(context.Context, func(context.Context, pgx.Tx) error) error
 }
 
 type auditLoggerStorage interface {

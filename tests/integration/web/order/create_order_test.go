@@ -91,7 +91,7 @@ func TestOrderHandler_CreateOrder(t *testing.T) {
 		{
 			name: "Correct order",
 			args: createOrderRequest{
-				ID:             90299,
+				ID:             1000000,
 				UserID:         2312,
 				Weight:         100,
 				Price:          *money.New(1000, money.RUB),
@@ -116,7 +116,7 @@ func TestOrderHandler_CreateOrder(t *testing.T) {
 
 	txManager := tx_manager.NewTxManager(db)
 
-	ordersRepo := repository.NewOrderRepo(txManager)
+	ordersRepo := repository.NewOrdersRepo(db)
 	orderService := order_Service.NewService(ordersRepo, txManager)
 
 	t.Cleanup(func() {

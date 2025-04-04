@@ -70,9 +70,9 @@ func BenchmarkOrderHandler_GetOrders_Cache(b *testing.B) {
 	db, _ := postgres.NewDB(ctx, connStr)
 
 	txManager := tx_manager.NewTxManager(db)
-	ordersRepo := repository.NewOrderRepo(txManager)
+	ordersRepo := repository.NewOrdersRepo(db)
 	ordersFacade := facade.NewOrderFacade(ctx, ordersRepo, 10000)
-	adminsRepo := repository.NewAdminRepo(db)
+	adminsRepo := repository.NewAdminsRepo(db)
 	adminsFacade := facade.NewAdminFacade(adminsRepo, 10000)
 	logsRepo := repository.NewLogsRepo(db)
 
@@ -110,9 +110,9 @@ func BenchmarkOrderHandler_GetOrders_NoAdminCache(b *testing.B) {
 	db, _ := postgres.NewDB(ctx, connStr)
 
 	txManager := tx_manager.NewTxManager(db)
-	ordersRepo := repository.NewOrderRepo(txManager)
+	ordersRepo := repository.NewOrdersRepo(db)
 	ordersFacade := facade.NewOrderFacade(ctx, ordersRepo, 10000)
-	adminsRepo := repository.NewAdminRepo(db)
+	adminsRepo := repository.NewAdminsRepo(db)
 	logsRepo := repository.NewLogsRepo(db)
 
 	app, _ := web.NewApp(ctx, ordersFacade, adminsRepo, logsRepo, txManager, 2, 5, 500*time.Millisecond)
@@ -149,8 +149,8 @@ func BenchmarkOrderHandler_GetOrders_NoOrderCache(b *testing.B) {
 	db, _ := postgres.NewDB(ctx, connStr)
 
 	txManager := tx_manager.NewTxManager(db)
-	ordersRepo := repository.NewOrderRepo(txManager)
-	adminsRepo := repository.NewAdminRepo(db)
+	ordersRepo := repository.NewOrdersRepo(db)
+	adminsRepo := repository.NewAdminsRepo(db)
 	adminsFacade := facade.NewAdminFacade(adminsRepo, 10000)
 	logsRepo := repository.NewLogsRepo(db)
 
@@ -188,8 +188,8 @@ func BenchmarkOrderHandler_GetOrders_NoCache(b *testing.B) {
 	db, _ := postgres.NewDB(ctx, connStr)
 
 	txManager := tx_manager.NewTxManager(db)
-	ordersRepo := repository.NewOrderRepo(txManager)
-	adminsRepo := repository.NewAdminRepo(db)
+	ordersRepo := repository.NewOrdersRepo(db)
+	adminsRepo := repository.NewAdminsRepo(db)
 	logsRepo := repository.NewLogsRepo(db)
 
 	app, _ := web.NewApp(ctx, ordersRepo, adminsRepo, logsRepo, txManager, 2, 5, 500*time.Millisecond)

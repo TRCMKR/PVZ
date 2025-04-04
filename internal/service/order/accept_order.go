@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 
 	"github.com/Rhymond/go-money"
@@ -81,13 +83,13 @@ func (s *Service) AcceptOrder(ctx context.Context, orderID int, userID int, weig
 		}
 	}
 
-	return s.txManager.RunRepeatableRead(ctx, func(ctx context.Context) error {
-		if ok, err := s.Storage.Contains(ctx, currentOrder.ID); ok {
+	return s.txManager.RunRepeatableRead(ctx, func(ctx context.Context, tx pgx.Tx) error {
+		if ok, err := s.Storage.Contains(ctx, tx, currentOrder.ID); ok {
 			return ErrOrderAlreadyExists
 		} else if err != nil {
 			return err
 		}
 
-		return s.Storage.AddOrder(ctx, currentOrder)
+		return s.Storage.AddOrder(ctx, tx, currentOrder)
 	})
 }

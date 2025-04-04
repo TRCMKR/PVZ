@@ -8,8 +8,7 @@ import (
 )
 
 // Database ...
-type Database interface {
-	Get(context.Context, interface{}, string, ...interface{}) error
+type database interface {
 	Select(context.Context, interface{}, string, ...interface{}) error
 	Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error)
 	ExecQueryRow(context.Context, string, ...interface{}) pgx.Row
@@ -17,75 +16,61 @@ type Database interface {
 	BeginTx(context.Context, pgx.TxOptions) (pgx.Tx, error)
 }
 
-type txManagerKey struct{}
-
 // TxManager ...
 type TxManager struct {
-	db Database
+	db database
 }
 
 // NewTxManager ...
-func NewTxManager(db Database) *TxManager {
+func NewTxManager(db database) *TxManager {
 	return &TxManager{
 		db: db,
 	}
 }
 
 // RunSerializable ...
-func (m *TxManager) RunSerializable(ctx context.Context, fn func(ctxTx context.Context) error) error {
+func (m *TxManager) RunSerializable(ctx context.Context, fn func(context.Context, pgx.Tx) error) error {
 	opts := pgx.TxOptions{
 		IsoLevel:   pgx.Serializable,
-		AccessMode: pgx.ReadOnly,
+		AccessMode: pgx.ReadWrite,
 	}
 
 	return m.beginFunc(ctx, opts, fn)
 }
 
 // RunRepeatableRead ...
-func (m *TxManager) RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error {
+func (m *TxManager) RunRepeatableRead(ctx context.Context, fn func(context.Context, pgx.Tx) error) error {
 	opts := pgx.TxOptions{
 		IsoLevel:   pgx.RepeatableRead,
-		AccessMode: pgx.ReadOnly,
+		AccessMode: pgx.ReadWrite,
 	}
 
 	return m.beginFunc(ctx, opts, fn)
 }
 
 // RunReadCommitted ...
-func (m *TxManager) RunReadCommitted(ctx context.Context, fn func(ctxTx context.Context) error) error {
+func (m *TxManager) RunReadCommitted(ctx context.Context, fn func(context.Context, pgx.Tx) error) error {
 	opts := pgx.TxOptions{
 		IsoLevel:   pgx.ReadCommitted,
-		AccessMode: pgx.ReadOnly,
+		AccessMode: pgx.ReadWrite,
 	}
 
 	return m.beginFunc(ctx, opts, fn)
 }
 
-func (m *TxManager) beginFunc(ctx context.Context, opts pgx.TxOptions, fn func(ctxTx context.Context) error) error {
+func (m *TxManager) beginFunc(ctx context.Context, opts pgx.TxOptions, fn func(context.Context, pgx.Tx) error) error {
 	tx, err := m.db.BeginTx(ctx, opts)
+
 	if err != nil {
 		return err
 	}
 	defer func() {
-		if err != nil {
-			_ = tx.Rollback(ctx)
-		}
+		_ = tx.Rollback(ctx)
 	}()
 
-	ctx = context.WithValue(ctx, txManagerKey{}, tx)
-	if err = fn(ctx); err != nil {
+	if err = fn(ctx, tx); err != nil {
 		return err
 	}
 
 	return tx.Commit(ctx)
-}
-
-// GetQueryEngine ...
-func (m *TxManager) GetQueryEngine(ctx context.Context) Database {
-	v, ok := ctx.Value(txManagerKey{}).(Database)
-	if ok && v != nil {
-		return v
-	}
-
-	return m.db
 }

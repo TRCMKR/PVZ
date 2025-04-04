@@ -73,7 +73,7 @@ func generateOrderRequests(count int) []createOrderRequest {
 
 	for i := 1; i <= count; i++ {
 		request := createOrderRequest{
-			ID:             i + 1000,
+			ID:             i + 1000000,
 			UserID:         789,
 			Weight:         100,
 			Price:          *money.New(1000, money.RUB),
@@ -90,7 +90,7 @@ func generateOrderRequests(count int) []createOrderRequest {
 func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 	rootDir, err := config.GetRootDir()
 	require.NoError(t, err)
 	config.InitEnv(rootDir + "/.env.test")
@@ -103,9 +103,9 @@ func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 
 	txManager := tx_manager.NewTxManager(db)
 
-	ordersRepo := repository.NewOrderRepo(txManager)
+	ordersRepo := repository.NewOrdersRepo(db)
 	ordersFacade := facade.NewOrderFacade(ctx, ordersRepo, 10000)
-	adminsRepo := repository.NewAdminRepo(db)
+	adminsRepo := repository.NewAdminsRepo(db)
 	adminsFacade := facade.NewAdminFacade(adminsRepo, 10000)
 	logsRepo := repository.NewLogsRepo(db)
 
@@ -161,4 +161,5 @@ func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 	}
 
 	require.GreaterOrEqual(t, rps, 10.0, "RPS should be greater or equal to 10")
+
 }

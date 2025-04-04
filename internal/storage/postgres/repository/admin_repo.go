@@ -8,14 +8,14 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
-// AdminRepo ...
-type AdminRepo struct {
+// AdminsRepo ...
+type AdminsRepo struct {
 	db database
 }
 
-// NewAdminRepo ...
-func NewAdminRepo(db database) *AdminRepo {
-	return &AdminRepo{
+// NewAdminsRepo ...
+func NewAdminsRepo(db database) *AdminsRepo {
+	return &AdminsRepo{
 		db: db,
 	}
 }
@@ -29,7 +29,7 @@ var (
 )
 
 // CreateAdmin ...
-func (r *AdminRepo) CreateAdmin(ctx context.Context, admin models.Admin) error {
+func (r *AdminsRepo) CreateAdmin(ctx context.Context, admin models.Admin) error {
 	_, err := r.db.Exec(ctx, `
 							INSERT INTO admins(id, username, password, created_at)
 							VALUES ($1, $2, $3, $4)
@@ -44,7 +44,7 @@ func (r *AdminRepo) CreateAdmin(ctx context.Context, admin models.Admin) error {
 }
 
 // GetAdminByUsername ...
-func (r *AdminRepo) GetAdminByUsername(ctx context.Context, username string) (models.Admin, error) {
+func (r *AdminsRepo) GetAdminByUsername(ctx context.Context, username string) (models.Admin, error) {
 	var admin models.Admin
 	err := r.db.Get(ctx, &admin, `
 								SELECT *
@@ -61,7 +61,7 @@ func (r *AdminRepo) GetAdminByUsername(ctx context.Context, username string) (mo
 }
 
 // UpdateAdmin ...
-func (r *AdminRepo) UpdateAdmin(ctx context.Context, id int, admin models.Admin) error {
+func (r *AdminsRepo) UpdateAdmin(ctx context.Context, id int, admin models.Admin) error {
 	_, err := r.db.Exec(ctx, `
 							UPDATE admins
 							SET username = $1, password = $2
@@ -77,7 +77,7 @@ func (r *AdminRepo) UpdateAdmin(ctx context.Context, id int, admin models.Admin)
 }
 
 // DeleteAdmin ...
-func (r *AdminRepo) DeleteAdmin(ctx context.Context, username string) error {
+func (r *AdminsRepo) DeleteAdmin(ctx context.Context, username string) error {
 	_, err := r.db.Exec(ctx, `
 							DELETE FROM admins
 							WHERE username = $1
@@ -92,7 +92,7 @@ func (r *AdminRepo) DeleteAdmin(ctx context.Context, username string) error {
 }
 
 // ContainsUsername ...
-func (r *AdminRepo) ContainsUsername(ctx context.Context, username string) (bool, error) {
+func (r *AdminsRepo) ContainsUsername(ctx context.Context, username string) (bool, error) {
 	var exists bool
 	err := r.db.Get(ctx, &exists, "SELECT EXISTS(SELECT 1 FROM admins WHERE username = $1)", username)
 	if err != nil {
@@ -105,7 +105,7 @@ func (r *AdminRepo) ContainsUsername(ctx context.Context, username string) (bool
 }
 
 // ContainsID ...
-func (r *AdminRepo) ContainsID(ctx context.Context, id int) (bool, error) {
+func (r *AdminsRepo) ContainsID(ctx context.Context, id int) (bool, error) {
 	var exists bool
 	err := r.db.Get(ctx, &exists, "SELECT EXISTS(SELECT 1 FROM admins WHERE id = $1)", id)
 	if err != nil {

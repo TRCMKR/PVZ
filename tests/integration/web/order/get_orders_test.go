@@ -35,7 +35,7 @@ func TestOrderHandler_GetOrders(t *testing.T) {
 			name: "Valid request with filters",
 			queryParams: map[string]string{
 				"user_id": "52",
-				"count":   "10",
+				"count":   "1",
 				"page":    "0",
 			},
 			expectedStatus: http.StatusOK,
@@ -80,7 +80,7 @@ func TestOrderHandler_GetOrders(t *testing.T) {
 	require.NoError(t, err)
 
 	txManager := tx_manager.NewTxManager(db)
-	ordersRepo := repository.NewOrderRepo(txManager)
+	ordersRepo := repository.NewOrdersRepo(db)
 	orderService := order_Service.NewService(ordersRepo, txManager)
 
 	t.Cleanup(func() {

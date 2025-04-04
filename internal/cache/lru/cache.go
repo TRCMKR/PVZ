@@ -16,20 +16,18 @@ type cacheItem[K cacheKey, T any] struct {
 
 // Cache ...
 type Cache[K cacheKey, T any] struct {
-	currentCapacity int
-	capacity        int
-	cache           map[K]*list.Element
-	dataList        *list.List
-	mu              sync.Mutex
+	capacity int
+	cache    map[K]*list.Element
+	list     *list.List
+	mu       sync.Mutex
 }
 
 // NewCache ...
 func NewCache[K cacheKey, T any](capacity int) *Cache[K, T] {
 	return &Cache[K, T]{
-		currentCapacity: 0,
-		capacity:        capacity,
-		cache:           make(map[K]*list.Element, capacity),
-		dataList:        list.New(),
+		capacity: capacity,
+		cache:    make(map[K]*list.Element, capacity),
+		list:     list.New(),
 	}
 }
 
@@ -40,15 +38,14 @@ func (c *Cache[K, T]) Put(key K, value T) {
 
 	if item, ok := c.cache[key]; ok {
 		item.Value.(*cacheItem[K, T]).value = value
-		c.dataList.MoveToFront(item)
+		c.list.MoveToFront(item)
 
 		return
 	}
 
 	item := &cacheItem[K, T]{key, value}
-	c.cache[key] = c.dataList.PushFront(item)
-	c.currentCapacity++
-	if c.currentCapacity > c.capacity {
+	c.cache[key] = c.list.PushFront(item)
+	if len(c.cache) > c.capacity {
 		c.removeOldest()
 	}
 }
@@ -64,7 +61,7 @@ func (c *Cache[K, T]) Get(key K) (T, bool) {
 		return zero, false
 	}
 
-	c.dataList.MoveToFront(item)
+	c.list.MoveToFront(item)
 
 	return item.Value.(*cacheItem[K, T]).value, true
 }
@@ -79,21 +76,16 @@ func (c *Cache[K, T]) Remove(key K) {
 		return
 	}
 
-	c.dataList.Remove(item)
+	c.list.Remove(item)
 	delete(c.cache, key)
-	c.currentCapacity--
 }
 
 func (c *Cache[K, T]) removeOldest() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	oldest := c.dataList.Back()
+	oldest := c.list.Back()
 	if oldest != nil {
-		c.dataList.Remove(oldest)
+		c.list.Remove(oldest)
 		key := oldest.Value.(*cacheItem[K, T]).key
 		delete(c.cache, key)
-		c.currentCapacity--
 	}
 }
 
@@ -102,7 +94,7 @@ func (c *Cache[K, T]) GetAll() []T {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	items := make([]T, 0, c.currentCapacity)
+	items := make([]T, 0, len(c.cache))
 	for _, v := range c.cache {
 		item := v.Value.(*cacheItem[K, T]).value
 		items = append(items, item)
@@ -112,18 +104,21 @@ func (c *Cache[K, T]) GetAll() []T {
 }
 
 // GetAllBy ...
-func (c *Cache[K, T]) GetAllBy(op func(T) (bool, error)) []T {
+func (c *Cache[K, T]) GetAllBy(op func(T) (bool, error)) ([]T, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	items := make([]T, 0, c.currentCapacity)
+	items := make([]T, 0, len(c.cache))
 	for _, v := range c.cache {
 		item := v.Value.(*cacheItem[K, T]).value
-		ok, _ := op(item)
+		ok, err := op(item)
+		if err != nil {
+			return nil, err
+		}
 		if ok {
 			items = append(items, item)
 		}
 	}
 
-	return items
+	return items, nil
 }

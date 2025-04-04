@@ -25,21 +25,13 @@ const (
 )
 
 var (
-	// bagCost ...
-	bagCost = money.NewFromFloat(5.00, money.RUB)
-
-	// boxCost ...
-	boxCost = money.NewFromFloat(20.00, money.RUB)
-
-	// wrapCost ...
+	bagCost  = money.NewFromFloat(5.00, money.RUB)
+	boxCost  = money.NewFromFloat(20.00, money.RUB)
 	wrapCost = money.NewFromFloat(1.00, money.RUB)
 )
 
 const (
-	// bagMinWeight ...
 	bagMinWeight float64 = 10.00
-
-	// boxMinWeight ...
 	boxMinWeight float64 = 30.00
 )
 
@@ -59,19 +51,10 @@ const (
 
 // Packaging ...
 type Packaging interface {
-	// String ...
 	String() string
-
-	// GetType ...
 	GetType() PackagingType
-
-	// GetCost ...
 	GetCost() *money.Money
-
-	// GetMinWeight ...
 	GetMinWeight() float64
-
-	// GetCheckWeight ...
 	GetCheckWeight() bool
 }
 
@@ -179,7 +162,6 @@ type Bag struct {
 	BasePackaging
 }
 
-// newBag ...
 func newBag() Packaging {
 	return &Bag{
 		BasePackaging{
@@ -213,7 +195,6 @@ type Wrap struct {
 	BasePackaging
 }
 
-// newWrap ...
 func newWrap() Packaging {
 	return &Wrap{
 		BasePackaging{
@@ -230,7 +211,6 @@ type None struct {
 	BasePackaging
 }
 
-// newNone ...
 func newNone() Packaging {
 	return &None{
 		BasePackaging{

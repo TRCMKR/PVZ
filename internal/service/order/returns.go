@@ -8,5 +8,5 @@ import (
 
 // Returns ...
 func (s *Service) Returns(ctx context.Context) ([]models.Order, error) {
-	return s.Storage.GetReturns(ctx)
+	return s.Storage.GetReturns(ctx, nil)
 }

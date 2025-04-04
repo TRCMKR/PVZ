@@ -7,21 +7,23 @@ import (
 	"sort"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/cache/lru"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
 )
 
 type orderStorage interface {
-	AddOrder(context.Context, models.Order) error
-	RemoveOrder(context.Context, int) error
-	UpdateOrder(context.Context, int, models.Order) error
-	GetByID(context.Context, int) (models.Order, error)
-	GetByUserID(context.Context, int, int) ([]models.Order, error)
-	GetReturns(context.Context) ([]models.Order, error)
-	GetOrders(context.Context, []query.Cond, int, int) ([]models.Order, error)
-	OffsetGetOrders(context.Context, []query.Cond, int, int, int) ([]models.Order, error)
-	Contains(context.Context, int) (bool, error)
+	AddOrder(context.Context, pgx.Tx, models.Order) error
+	RemoveOrder(context.Context, pgx.Tx, int) error
+	UpdateOrder(context.Context, pgx.Tx, int, models.Order) error
+	GetByID(context.Context, pgx.Tx, int) (models.Order, error)
+	GetByUserID(context.Context, pgx.Tx, int, int) ([]models.Order, error)
+	GetReturns(context.Context, pgx.Tx) ([]models.Order, error)
+	GetOrders(context.Context, pgx.Tx, []query.Cond, int, int) ([]models.Order, error)
+	Contains(context.Context, pgx.Tx, int) (bool, error)
+	OffsetGetOrders(context.Context, pgx.Tx, []query.Cond, int, int, int) ([]models.Order, error)
 }
 
 var (
@@ -40,7 +42,7 @@ type OrderFacade struct {
 func NewOrderFacade(ctx context.Context, orderStorage orderStorage, capacity int) *OrderFacade {
 	historyOrdersCache := lru.NewCache[int, models.Order](capacity)
 
-	recentOrders, _ := orderStorage.GetOrders(ctx, nil, capacity, 0)
+	recentOrders, _ := orderStorage.GetOrders(ctx, nil, nil, capacity, 0)
 
 	for _, order := range recentOrders {
 		historyOrdersCache.Put(order.ID, order)
@@ -54,8 +56,8 @@ func NewOrderFacade(ctx context.Context, orderStorage orderStorage, capacity int
 }
 
 // AddOrder ...
-func (f *OrderFacade) AddOrder(ctx context.Context, order models.Order) error {
-	err := f.orderStorage.AddOrder(ctx, order)
+func (f *OrderFacade) AddOrder(ctx context.Context, tx pgx.Tx, order models.Order) error {
+	err := f.orderStorage.AddOrder(ctx, tx, order)
 	if err != nil {
 		return err
 	}
@@ -67,8 +69,8 @@ func (f *OrderFacade) AddOrder(ctx context.Context, order models.Order) error {
 }
 
 // RemoveOrder ...
-func (f *OrderFacade) RemoveOrder(ctx context.Context, id int) error {
-	err := f.orderStorage.RemoveOrder(ctx, id)
+func (f *OrderFacade) RemoveOrder(ctx context.Context, tx pgx.Tx, id int) error {
+	err := f.orderStorage.RemoveOrder(ctx, tx, id)
 	if err != nil {
 		return err
 	}
@@ -80,8 +82,8 @@ func (f *OrderFacade) RemoveOrder(ctx context.Context, id int) error {
 }
 
 // UpdateOrder ...
-func (f *OrderFacade) UpdateOrder(ctx context.Context, id int, order models.Order) error {
-	err := f.orderStorage.UpdateOrder(ctx, id, order)
+func (f *OrderFacade) UpdateOrder(ctx context.Context, tx pgx.Tx, id int, order models.Order) error {
+	err := f.orderStorage.UpdateOrder(ctx, tx, id, order)
 	if err != nil {
 		return err
 	}
@@ -93,12 +95,12 @@ func (f *OrderFacade) UpdateOrder(ctx context.Context, id int, order models.Orde
 }
 
 // GetByID ...
-func (f *OrderFacade) GetByID(ctx context.Context, id int) (models.Order, error) {
+func (f *OrderFacade) GetByID(ctx context.Context, tx pgx.Tx, id int) (models.Order, error) {
 	if order, ok := f.cache.Get(id); ok {
 		return order, nil
 	}
 
-	order, err := f.orderStorage.GetByID(ctx, id)
+	order, err := f.orderStorage.GetByID(ctx, tx, id)
 	if err != nil {
 		return models.Order{}, err
 	}
@@ -109,13 +111,13 @@ func (f *OrderFacade) GetByID(ctx context.Context, id int) (models.Order, error)
 }
 
 // GetByUserID ...
-func (f *OrderFacade) GetByUserID(ctx context.Context, id int, userID int) ([]models.Order, error) {
-	return f.orderStorage.GetByUserID(ctx, id, userID)
+func (f *OrderFacade) GetByUserID(ctx context.Context, tx pgx.Tx, id int, userID int) ([]models.Order, error) {
+	return f.orderStorage.GetByUserID(ctx, tx, id, userID)
 }
 
 // GetReturns ...
-func (f *OrderFacade) GetReturns(ctx context.Context) ([]models.Order, error) {
-	return f.orderStorage.GetReturns(ctx)
+func (f *OrderFacade) GetReturns(ctx context.Context, tx pgx.Tx) ([]models.Order, error) {
+	return f.orderStorage.GetReturns(ctx, tx)
 }
 
 func (f *OrderFacade) getOrderValue(field string, order models.Order) (interface{}, error) {
@@ -249,10 +251,14 @@ func (f *OrderFacade) checkIfOrderMatches(order models.Order, params []query.Con
 }
 
 // GetOrders ...
-func (f *OrderFacade) GetOrders(ctx context.Context, params []query.Cond, count int, page int) ([]models.Order, error) {
-	recentOrders := f.historyOrdersCache.GetAllBy(func(order models.Order) (bool, error) {
+func (f *OrderFacade) GetOrders(ctx context.Context, tx pgx.Tx, params []query.Cond,
+	count int, page int) ([]models.Order, error) {
+	recentOrders, err := f.historyOrdersCache.GetAllBy(func(order models.Order) (bool, error) {
 		return f.checkIfOrderMatches(order, params)
 	})
+	if err != nil {
+		return nil, err
+	}
 	sort.Slice(recentOrders, func(i, j int) bool {
 		return recentOrders[i].LastChange.After(recentOrders[j].LastChange)
 	})
@@ -265,7 +271,7 @@ func (f *OrderFacade) GetOrders(ctx context.Context, params []query.Cond, count 
 
 	result := make([]models.Order, 0, count)
 	if count == 0 {
-		dbOrders, err := f.orderStorage.GetOrders(ctx, params, count, 0)
+		dbOrders, err := f.orderStorage.GetOrders(ctx, tx, params, count, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -279,7 +285,7 @@ func (f *OrderFacade) GetOrders(ctx context.Context, params []query.Cond, count 
 
 	switch {
 	case len(recentOrders) < count && len(recentOrders) != 0:
-		dbOrders, err := f.orderStorage.GetOrders(ctx, params, count-len(result), 0)
+		dbOrders, err := f.orderStorage.GetOrders(ctx, tx, params, count-len(result), 0)
 		if err != nil {
 			return nil, err
 		}
@@ -287,7 +293,7 @@ func (f *OrderFacade) GetOrders(ctx context.Context, params []query.Cond, count 
 
 	case len(recentOrders) == 0:
 		dbPage := (len(result) + count - 1) / count
-		dbOrders, err := f.orderStorage.OffsetGetOrders(ctx, params, count, dbPage, abs(len(result)-count*page))
+		dbOrders, err := f.orderStorage.OffsetGetOrders(ctx, tx, params, count, dbPage, abs(len(result)-count*page))
 		if err != nil {
 			return nil, err
 		}
@@ -301,7 +307,7 @@ func (f *OrderFacade) GetOrders(ctx context.Context, params []query.Cond, count 
 }
 
 // Contains ...
-func (f *OrderFacade) Contains(ctx context.Context, id int) (bool, error) {
+func (f *OrderFacade) Contains(ctx context.Context, tx pgx.Tx, id int) (bool, error) {
 	if _, ok := f.cache.Get(id); ok {
 		return true, nil
 	}
@@ -309,7 +315,7 @@ func (f *OrderFacade) Contains(ctx context.Context, id int) (bool, error) {
 		return true, nil
 	}
 
-	ok, err := f.orderStorage.Contains(ctx, id)
+	ok, err := f.orderStorage.Contains(ctx, tx, id)
 	if err != nil {
 		return false, err
 	}
@@ -317,7 +323,7 @@ func (f *OrderFacade) Contains(ctx context.Context, id int) (bool, error) {
 		return false, nil
 	}
 
-	order, _ := f.orderStorage.GetByID(ctx, id)
+	order, _ := f.orderStorage.GetByID(ctx, tx, id)
 
 	f.cache.Put(order.ID, order)
 

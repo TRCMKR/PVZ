@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
@@ -33,12 +35,12 @@ func isOrderEligible(order models.Order, userID int, action string) bool {
 
 // ProcessOrder ...
 func (s *Service) ProcessOrder(ctx context.Context, userID int, orderID int, action string) error {
-	return s.txManager.RunSerializable(ctx, func(ctx context.Context) error {
-		if ok, err := s.Storage.Contains(ctx, orderID); err != nil || !ok {
+	return s.txManager.RunSerializable(ctx, func(ctx context.Context, tx pgx.Tx) error {
+		if ok, err := s.Storage.Contains(ctx, tx, orderID); err != nil || !ok {
 			return ErrOrderNotFound
 		}
 
-		someOrder, err := s.Storage.GetByID(ctx, orderID)
+		someOrder, err := s.Storage.GetByID(ctx, tx, orderID)
 		if err != nil {
 			return err
 		}
@@ -58,6 +60,6 @@ func (s *Service) ProcessOrder(ctx context.Context, userID int, orderID int, act
 
 		someOrder.LastChange = time.Now()
 
-		return s.Storage.UpdateOrder(ctx, orderID, someOrder)
+		return s.Storage.UpdateOrder(ctx, tx, orderID, someOrder)
 	})
 }

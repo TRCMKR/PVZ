@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -21,11 +22,14 @@ func InitEnv(envFile string) {
 
 // Config ...
 type Config struct {
-	host     string
-	port     string
-	username string
-	password string
-	dbname   string
+	host        string
+	port        string
+	username    string
+	password    string
+	dbname      string
+	WorkerCount int
+	BatchSize   int
+	Timeout     time.Duration
 }
 
 // NewConfig ...
@@ -41,11 +45,14 @@ func NewConfig() *Config {
 	}
 
 	return &Config{
-		host:     host,
-		port:     port,
-		username: username,
-		password: password,
-		dbname:   dbname,
+		host:        host,
+		port:        port,
+		username:    username,
+		password:    password,
+		dbname:      dbname,
+		WorkerCount: 2,
+		BatchSize:   5,
+		Timeout:     2 * time.Second,
 	}
 }
 

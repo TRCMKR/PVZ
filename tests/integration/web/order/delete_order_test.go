@@ -55,7 +55,7 @@ func TestOrderHandler_DeleteOrder(t *testing.T) {
 	require.NoError(t, err)
 
 	txManager := tx_manager.NewTxManager(db)
-	ordersRepo := repository.NewOrderRepo(txManager)
+	ordersRepo := repository.NewOrdersRepo(db)
 	orderService := order_Service.NewService(ordersRepo, txManager)
 
 	t.Cleanup(func() {

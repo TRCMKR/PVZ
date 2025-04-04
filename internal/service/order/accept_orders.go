@@ -11,13 +11,13 @@ func (s *Service) AcceptOrders(ctx context.Context, orders map[string]models.Ord
 	ordersFailed := 0
 
 	for _, someOrder := range orders {
-		if ok, err := s.Storage.Contains(ctx, someOrder.ID); err != nil || !ok {
+		if ok, err := s.Storage.Contains(ctx, nil, someOrder.ID); err != nil || !ok {
 			ordersFailed++
 
 			continue
 		}
 
-		err := s.Storage.AddOrder(ctx, someOrder)
+		err := s.Storage.AddOrder(ctx, nil, someOrder)
 		if err != nil {
 			return ordersFailed, err
 		}

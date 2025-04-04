@@ -11,8 +11,7 @@ import (
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 
-	// lib/pg ...
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // lib/pg ...
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
