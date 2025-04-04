@@ -6,6 +6,7 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
+// CreateAdmin ...
 func (s *Service) CreateAdmin(ctx context.Context, admin models.Admin) error {
 	ok, err := s.ContainsUsername(ctx, admin.Username)
 	if err != nil {
@@ -23,10 +24,5 @@ func (s *Service) CreateAdmin(ctx context.Context, admin models.Admin) error {
 		return ErrIDUsed
 	}
 
-	err = s.Storage.CreateAdmin(ctx, admin)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.Storage.CreateAdmin(ctx, admin)
 }

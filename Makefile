@@ -111,6 +111,11 @@ mock-gen:
 test:
 	go test -count=1 ./... -tags=integration
 
+.PHONY: bench
+## runs all benchmarks
+bench:
+	go test -bench . -benchtime=5s -benchmem gitlab.ozon.dev/alexplay1224/homework/tests/integration/web/order
+
 .PHONY: test-cover
 ## shows test coverage without cache
 test-cover:

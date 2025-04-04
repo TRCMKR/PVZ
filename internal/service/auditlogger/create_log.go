@@ -7,6 +7,7 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
+// CreateLog ...
 func (s *Service) CreateLog(ctx context.Context, order models.Log) {
 	select {
 	case <-ctx.Done():

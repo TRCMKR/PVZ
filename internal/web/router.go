@@ -8,8 +8,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v4"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 
+	// docs ...
 	_ "gitlab.ozon.dev/alexplay1224/homework/docs"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
@@ -21,14 +23,14 @@ import (
 )
 
 type orderStorage interface {
-	AddOrder(context.Context, models.Order) error
-	RemoveOrder(context.Context, int) error
-	UpdateOrder(context.Context, int, models.Order) error
-	GetByID(context.Context, int) (models.Order, error)
-	GetByUserID(context.Context, int, int) ([]models.Order, error)
-	GetReturns(context.Context) ([]models.Order, error)
-	GetOrders(context.Context, []query.Cond, int, int) ([]models.Order, error)
-	Contains(context.Context, int) (bool, error)
+	AddOrder(context.Context, pgx.Tx, models.Order) error
+	RemoveOrder(context.Context, pgx.Tx, int) error
+	UpdateOrder(context.Context, pgx.Tx, int, models.Order) error
+	GetByID(context.Context, pgx.Tx, int) (models.Order, error)
+	GetByUserID(context.Context, pgx.Tx, int, int) ([]models.Order, error)
+	GetReturns(context.Context, pgx.Tx) ([]models.Order, error)
+	GetOrders(context.Context, pgx.Tx, []query.Cond, int, int) ([]models.Order, error)
+	Contains(context.Context, pgx.Tx, int) (bool, error)
 }
 
 type adminStorage interface {
@@ -40,10 +42,17 @@ type adminStorage interface {
 	ContainsID(context.Context, int) (bool, error)
 }
 
+type txManager interface {
+	RunSerializable(context.Context, func(context.Context, pgx.Tx) error) error
+	RunRepeatableRead(context.Context, func(context.Context, pgx.Tx) error) error
+	RunReadCommitted(context.Context, func(context.Context, pgx.Tx) error) error
+}
+
 type auditLoggerStorage interface {
 	CreateLog(context.Context, []models.Log) error
 }
 
+// App ...
 type App struct {
 	orderService       order_Service.Service
 	adminService       admin_Service.Service
@@ -51,20 +60,23 @@ type App struct {
 	Router             *mux.Router
 }
 
-func NewApp(ctx context.Context, orders orderStorage, admins adminStorage, logs auditLoggerStorage, workerCount int, batchSize int, timeout time.Duration) (*App, error) {
+// NewApp ...
+func NewApp(ctx context.Context, orders orderStorage, admins adminStorage, logs auditLoggerStorage, txManager txManager,
+	workerCount int, batchSize int, timeout time.Duration) (*App, error) {
 	logger, err := audit_Logger_Storage.NewService(ctx, logs, workerCount, batchSize, timeout)
 	if err != nil {
 		return nil, err
 	}
 
 	return &App{
-		orderService:       *order_Service.NewService(orders),
+		orderService:       *order_Service.NewService(orders, txManager),
 		adminService:       *admin_Service.NewService(admins),
 		auditLoggerService: *logger,
 		Router:             mux.NewRouter(),
 	}, nil
 }
 
+// SetupRoutes ...
 func (a *App) SetupRoutes(ctx context.Context) {
 	impl := server{
 		orders: *order_Handler.NewHandler(&a.orderService),
@@ -129,6 +141,7 @@ type server struct {
 
 // @securityDefinitions.basic BasicAuth
 
+// Run ...
 // @title			PVZ API Documentation
 // @version		1.0
 // @description	This is a sample server for Swagger in Go.

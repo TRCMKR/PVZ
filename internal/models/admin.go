@@ -32,6 +32,7 @@ func hashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
+// NewAdmin ...
 func NewAdmin(id int, username string, password string) *Admin {
 	hashedPassword, _ := hashPassword(password)
 
@@ -43,6 +44,7 @@ func NewAdmin(id int, username string, password string) *Admin {
 	}
 }
 
+// CheckPassword ...
 func (admin *Admin) CheckPassword(password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(password)) == nil
 }

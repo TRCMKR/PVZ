@@ -16,11 +16,13 @@ type auditLoggerStorage interface {
 	CreateLog(context.Context, []models.Log) error
 }
 
+// Service ...
 type Service struct {
 	Storage auditLoggerStorage
 	jobs    chan models.Log
 }
 
+// NewService ...
 func NewService(ctx context.Context, logs auditLoggerStorage, workerCount int, batchSize int,
 	timeout time.Duration) (*Service, error) {
 	jobs := make(chan models.Log, batchSize*20*workerCount)

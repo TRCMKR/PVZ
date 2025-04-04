@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 
 	"github.com/Rhymond/go-money"
@@ -40,37 +42,39 @@ func (s *Service) checkPackaging(packagingType models.PackagingType, extraPackag
 	return nil
 }
 
-func (s *Service) AcceptOrder(ctx context.Context, orderID int, userID int, weight float64, price money.Money,
-	expiryDate time.Time, packagings []models.Packaging) error {
-	if expiryDate.Before(time.Now()) {
+func (s *Service) validateOrder(order models.Order) error {
+	if order.ExpiryDate.Before(time.Now()) {
 		return ErrOrderExpired
 	}
 
-	err := s.checkPackaging(packagings[0].GetType(), packagings[1].GetType())
-	if err != nil {
-		return err
-	}
-
-	var ok bool
-	if ok, err = s.Storage.Contains(ctx, orderID); ok {
-		return ErrOrderAlreadyExists
-	}
-	if err != nil {
-		return err
-	}
-
-	if weight < 0 {
+	if order.Weight < 0 {
 		return ErrWrongWeight
 	}
 
-	if ok, err = price.GreaterThan(money.New(0, money.RUB)); err != nil || !ok {
+	if ok, err := order.Price.GreaterThan(money.New(0, money.RUB)); err != nil || !ok {
 		return ErrWrongPrice
+	}
+
+	return nil
+}
+
+// AcceptOrder ...
+func (s *Service) AcceptOrder(ctx context.Context, orderID int, userID int, weight float64, price money.Money,
+	expiryDate time.Time, packagings []models.Packaging) error {
+	err := s.checkPackaging(packagings[0].GetType(), packagings[1].GetType())
+	if err != nil {
+		return err
 	}
 
 	currentTime := time.Now()
 
 	currentOrder := *models.NewOrder(orderID, userID, weight, price, models.StoredOrder,
 		currentTime, expiryDate, currentTime)
+
+	err = s.validateOrder(currentOrder)
+	if err != nil {
+		return err
+	}
 
 	for _, somePackaging := range packagings {
 		err = s.pack(&currentOrder, somePackaging)
@@ -79,10 +83,13 @@ func (s *Service) AcceptOrder(ctx context.Context, orderID int, userID int, weig
 		}
 	}
 
-	err = s.Storage.AddOrder(ctx, currentOrder)
-	if err != nil {
-		return err
-	}
+	return s.txManager.RunRepeatableRead(ctx, func(ctx context.Context, tx pgx.Tx) error {
+		if ok, err := s.Storage.Contains(ctx, tx, currentOrder.ID); ok {
+			return ErrOrderAlreadyExists
+		} else if err != nil {
+			return err
+		}
 
-	return nil
+		return s.Storage.AddOrder(ctx, tx, currentOrder)
+	})
 }

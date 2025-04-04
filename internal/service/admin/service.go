@@ -16,17 +16,26 @@ type adminStorage interface {
 	ContainsID(context.Context, int) (bool, error)
 }
 
+// Service ...
 type Service struct {
 	Storage adminStorage
 }
 
 var (
-	ErrUsernameUsed     = errors.New("username is already used")
-	ErrIDUsed           = errors.New("id is already used")
+	// ErrUsernameUsed ...
+	ErrUsernameUsed = errors.New("username is already used")
+
+	// ErrIDUsed ...
+	ErrIDUsed = errors.New("id is already used")
+
+	// ErrAdminDoesntExist ...
 	ErrAdminDoesntExist = errors.New("admin with such username doesn't exist")
-	ErrWrongPassword    = errors.New("wrong password")
+
+	// ErrWrongPassword ...
+	ErrWrongPassword = errors.New("wrong password")
 )
 
+// NewService ...
 func NewService(storage adminStorage) *Service {
 	return &Service{
 		Storage: storage,

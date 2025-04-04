@@ -4,6 +4,7 @@ import (
 	"context"
 )
 
+// DeleteAdmin ...
 func (s *Service) DeleteAdmin(ctx context.Context, password string, username string) error {
 	ok, err := s.ContainsUsername(ctx, username)
 	if err != nil {
@@ -22,10 +23,5 @@ func (s *Service) DeleteAdmin(ctx context.Context, password string, username str
 		return ErrWrongPassword
 	}
 
-	err = s.Storage.DeleteAdmin(ctx, username)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.Storage.DeleteAdmin(ctx, username)
 }

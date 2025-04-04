@@ -37,13 +37,13 @@ func TestHandler_UpdateOrders(t *testing.T) {
 		{
 			name:           "Invalid JSON",
 			requestBody:    `{"user_id": 1, "id": 123, "action": "return"`,
-			mockSetup:      func(mockOrderService *MockorderService) {},
+			mockSetup:      func(_ *MockorderService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "Missing fields",
 			requestBody:    `{"user_id": 1, "order_ids":0, "action": ""}`,
-			mockSetup:      func(mockOrderService *MockorderService) {},
+			mockSetup:      func(_ *MockorderService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{

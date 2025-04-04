@@ -16,20 +16,16 @@ func (s *Service) dbLogger(ctx context.Context, batches <-chan []models.Log) err
 	for batch := range batches {
 		select {
 		case <-ctx.Done():
-			timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			var cancel context.CancelFunc
+
+			ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-
-			err := s.Storage.CreateLog(timeoutCtx, batch)
-			if err != nil {
-				return errWritingLog
-			}
-
-			return nil
 		default:
-			err := s.Storage.CreateLog(ctx, batch)
-			if err != nil {
-				return errWritingLog
-			}
+		}
+
+		err := s.Storage.CreateLog(ctx, batch)
+		if err != nil {
+			return errWritingLog
 		}
 	}
 

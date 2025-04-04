@@ -35,7 +35,7 @@ func TestUpdateAdmin(t *testing.T) {
 			args: updareAdminRequest{
 				Password: "123123",
 			},
-			mockSetup:    func(service *MockadminService) {},
+			mockSetup:    func(_ *MockadminService) {},
 			expectedCode: http.StatusBadRequest,
 		},
 		{

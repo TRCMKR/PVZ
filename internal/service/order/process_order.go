@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
@@ -31,50 +33,33 @@ func isOrderEligible(order models.Order, userID int, action string) bool {
 	return order.Status == models.StoredOrder
 }
 
+// ProcessOrder ...
 func (s *Service) ProcessOrder(ctx context.Context, userID int, orderID int, action string) error {
-	if ok, err := s.Storage.Contains(ctx, orderID); err != nil || !ok {
-		return ErrOrderNotFound
-	}
+	return s.txManager.RunSerializable(ctx, func(ctx context.Context, tx pgx.Tx) error {
+		if ok, err := s.Storage.Contains(ctx, tx, orderID); err != nil || !ok {
+			return ErrOrderNotFound
+		}
 
-	someOrder, err := s.Storage.GetByID(ctx, orderID)
-	if err != nil {
-		return err
-	}
-	if !isOrderEligible(someOrder, userID, action) {
-		return ErrOrderNotEligible
-	}
+		someOrder, err := s.Storage.GetByID(ctx, tx, orderID)
+		if err != nil {
+			return err
+		}
 
-	switch action {
-	case giveOrder:
-		someOrder.Status = models.GivenOrder
-	case returnOrder:
-		someOrder.Status = models.ReturnedOrder
-	default:
-		return ErrUndefinedAction
-	}
+		if !isOrderEligible(someOrder, userID, action) {
+			return ErrOrderNotEligible
+		}
 
-	someOrder.LastChange = time.Now()
-	err = s.Storage.UpdateOrder(ctx, orderID, someOrder)
-	if err != nil {
-		return err
-	}
+		switch action {
+		case giveOrder:
+			someOrder.Status = models.GivenOrder
+		case returnOrder:
+			someOrder.Status = models.ReturnedOrder
+		default:
+			return ErrUndefinedAction
+		}
 
-	return nil
+		someOrder.LastChange = time.Now()
+
+		return s.Storage.UpdateOrder(ctx, tx, orderID, someOrder)
+	})
 }
-
-// вдруг бизнес захочет 🤓
-//func (s *Service) ProcessOrders(ctx context.Context, userID int, orderIDs []int, action string) (int, error) {
-//	ordersFailed := 0
-//
-//	for _, orderID := range orderIDs {
-//		err := s.processOrder(ctx, userID, orderID, action)
-//		if err != nil {
-//			if errors.Is(err, ErrUndefinedAction) {
-//				return 0, ErrUndefinedAction
-//			}
-//			ordersFailed++
-//		}
-//	}
-//
-//	return ordersFailed, nil
-//}

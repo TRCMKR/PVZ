@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// SelectQuery ...
 type SelectQuery struct {
 	from         string
 	wheres       []string
@@ -17,8 +18,10 @@ type SelectQuery struct {
 	args         []interface{}
 }
 
+// Param ...
 type Param func(*SelectQuery)
 
+// BuildSelectQuery ...
 func BuildSelectQuery(table string, params ...Param) (string, []interface{}) {
 	s := SelectQuery{
 		from:         table,
@@ -68,6 +71,7 @@ func BuildSelectQuery(table string, params ...Param) (string, []interface{}) {
 	return sb.String(), s.args
 }
 
+// Where ...
 func Where(conds ...Cond) Param {
 	return func(s *SelectQuery) {
 		sb := strings.Builder{}
@@ -86,24 +90,28 @@ func Where(conds ...Cond) Param {
 	}
 }
 
+// OrderBy ...
 func OrderBy(field string) Param {
 	return func(s *SelectQuery) {
 		s.orderBy = field
 	}
 }
 
+// Desc ...
 func Desc(flag bool) Param {
 	return func(s *SelectQuery) {
 		s.desc = flag
 	}
 }
 
+// Limit ...
 func Limit(limit int) Param {
 	return func(s *SelectQuery) {
 		s.limit = limit
 	}
 }
 
+// Offset ...
 func Offset(offset int) Param {
 	return func(s *SelectQuery) {
 		s.offset = offset

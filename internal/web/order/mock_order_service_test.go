@@ -82,45 +82,6 @@ func (c *MockorderServiceAcceptOrderCall) DoAndReturn(f func(context.Context, in
 	return c
 }
 
-// AcceptOrders mocks base method.
-func (m *MockorderService) AcceptOrders(arg0 context.Context, arg1 map[string]models.Order) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AcceptOrders", arg0, arg1)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AcceptOrders indicates an expected call of AcceptOrders.
-func (mr *MockorderServiceMockRecorder) AcceptOrders(arg0, arg1 any) *MockorderServiceAcceptOrdersCall {
-	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcceptOrders", reflect.TypeOf((*MockorderService)(nil).AcceptOrders), arg0, arg1)
-	return &MockorderServiceAcceptOrdersCall{Call: call}
-}
-
-// MockorderServiceAcceptOrdersCall wrap *gomock.Call
-type MockorderServiceAcceptOrdersCall struct {
-	*gomock.Call
-}
-
-// Return rewrite *gomock.Call.Return
-func (c *MockorderServiceAcceptOrdersCall) Return(arg0 int, arg1 error) *MockorderServiceAcceptOrdersCall {
-	c.Call = c.Call.Return(arg0, arg1)
-	return c
-}
-
-// Do rewrite *gomock.Call.Do
-func (c *MockorderServiceAcceptOrdersCall) Do(f func(context.Context, map[string]models.Order) (int, error)) *MockorderServiceAcceptOrdersCall {
-	c.Call = c.Call.Do(f)
-	return c
-}
-
-// DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockorderServiceAcceptOrdersCall) DoAndReturn(f func(context.Context, map[string]models.Order) (int, error)) *MockorderServiceAcceptOrdersCall {
-	c.Call = c.Call.DoAndReturn(f)
-	return c
-}
-
 // GetOrders mocks base method.
 func (m *MockorderService) GetOrders(arg0 context.Context, arg1 []query.Cond, arg2, arg3 int) ([]models.Order, error) {
 	m.ctrl.T.Helper()

@@ -4,31 +4,31 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
+// ReturnOrder ...
 func (s *Service) ReturnOrder(ctx context.Context, orderID int) error {
-	if ok, err := s.Storage.Contains(ctx, orderID); err != nil || !ok {
-		return ErrOrderNotFound
-	}
+	return s.txManager.RunSerializable(ctx, func(ctx context.Context, tx pgx.Tx) error {
+		if ok, err := s.Storage.Contains(ctx, tx, orderID); err != nil || !ok {
+			return ErrOrderNotFound
+		}
 
-	someOrder, err := s.Storage.GetByID(ctx, orderID)
-	if err != nil {
-		return err
-	}
+		someOrder, err := s.Storage.GetByID(ctx, tx, orderID)
+		if err != nil {
+			return err
+		}
 
-	if someOrder.Status == models.GivenOrder {
-		return ErrOrderIsGiven
-	}
+		if someOrder.Status == models.GivenOrder {
+			return ErrOrderIsGiven
+		}
 
-	if !someOrder.ExpiryDate.Before(time.Now()) {
-		return ErrOrderIsNotExpired
-	}
+		if !someOrder.ExpiryDate.Before(time.Now()) {
+			return ErrOrderIsNotExpired
+		}
 
-	err = s.Storage.RemoveOrder(ctx, orderID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+		return s.Storage.RemoveOrder(ctx, tx, orderID)
+	})
 }

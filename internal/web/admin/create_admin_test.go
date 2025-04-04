@@ -28,7 +28,7 @@ func TestHandler_CreateAdmin(t *testing.T) {
 				ID:       1,
 				Username: "admin",
 			},
-			mockSetup:    func(service *MockadminService) {},
+			mockSetup:    func(_ *MockadminService) {},
 			expectedCode: http.StatusBadRequest,
 		},
 		{

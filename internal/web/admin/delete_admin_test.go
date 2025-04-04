@@ -59,7 +59,7 @@ func TestHandler_DeleteAdmin(t *testing.T) {
 			args: adminDeleteRequest{
 				Password: "",
 			},
-			mockSetup:    func(adminService *MockadminService) {},
+			mockSetup:    func(_ *MockadminService) {},
 			expectedCode: http.StatusBadRequest,
 		},
 		{
