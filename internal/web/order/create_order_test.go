@@ -28,7 +28,7 @@ func TestHandler_CreateOrder(t *testing.T) {
 			args: createOrderRequest{
 				ID: 1,
 			},
-			mockSetup:    func(orderService *MockorderService) {},
+			mockSetup:    func(_ *MockorderService) {},
 			expectedCode: http.StatusBadRequest,
 		},
 		{
@@ -43,7 +43,7 @@ func TestHandler_CreateOrder(t *testing.T) {
 				Status:         0,
 				ExpiryDate:     time.Time{},
 			},
-			mockSetup:    func(orderService *MockorderService) {},
+			mockSetup:    func(_ *MockorderService) {},
 			expectedCode: http.StatusBadRequest,
 		},
 		{
@@ -58,7 +58,7 @@ func TestHandler_CreateOrder(t *testing.T) {
 				Status:         0,
 				ExpiryDate:     time.Time{},
 			},
-			mockSetup:    func(orderService *MockorderService) {},
+			mockSetup:    func(_ *MockorderService) {},
 			expectedCode: http.StatusBadRequest,
 		},
 		{

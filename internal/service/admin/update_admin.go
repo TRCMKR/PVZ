@@ -6,6 +6,7 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
+// UpdateAdmin ...
 func (s *Service) UpdateAdmin(ctx context.Context, username string, password string, admin models.Admin) error {
 	ok, err := s.ContainsUsername(ctx, username)
 	if err != nil {
@@ -15,7 +16,7 @@ func (s *Service) UpdateAdmin(ctx context.Context, username string, password str
 		return ErrAdminDoesntExist
 	}
 
-	someAdmin, err := s.Storage.GetAdminByUsername(ctx, username)
+	someAdmin, err := s.GetAdminByUsername(ctx, username)
 	if err != nil {
 		return err
 	}
@@ -23,10 +24,5 @@ func (s *Service) UpdateAdmin(ctx context.Context, username string, password str
 		return ErrWrongPassword
 	}
 
-	err = s.Storage.UpdateAdmin(ctx, someAdmin.ID, admin)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.UpdateAdmin(ctx, username, password, admin)
 }

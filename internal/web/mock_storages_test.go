@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	pgx "github.com/jackc/pgx/v4"
 	models "gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	query "gitlab.ozon.dev/alexplay1224/homework/internal/query"
 	gomock "go.uber.org/mock/gomock"
@@ -43,17 +44,17 @@ func (m *MockorderStorage) EXPECT() *MockorderStorageMockRecorder {
 }
 
 // AddOrder mocks base method.
-func (m *MockorderStorage) AddOrder(arg0 context.Context, arg1 models.Order) error {
+func (m *MockorderStorage) AddOrder(arg0 context.Context, arg1 pgx.Tx, arg2 models.Order) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddOrder", arg0, arg1)
+	ret := m.ctrl.Call(m, "AddOrder", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddOrder indicates an expected call of AddOrder.
-func (mr *MockorderStorageMockRecorder) AddOrder(arg0, arg1 any) *MockorderStorageAddOrderCall {
+func (mr *MockorderStorageMockRecorder) AddOrder(arg0, arg1, arg2 any) *MockorderStorageAddOrderCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddOrder", reflect.TypeOf((*MockorderStorage)(nil).AddOrder), arg0, arg1)
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddOrder", reflect.TypeOf((*MockorderStorage)(nil).AddOrder), arg0, arg1, arg2)
 	return &MockorderStorageAddOrderCall{Call: call}
 }
 
@@ -69,30 +70,30 @@ func (c *MockorderStorageAddOrderCall) Return(arg0 error) *MockorderStorageAddOr
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockorderStorageAddOrderCall) Do(f func(context.Context, models.Order) error) *MockorderStorageAddOrderCall {
+func (c *MockorderStorageAddOrderCall) Do(f func(context.Context, pgx.Tx, models.Order) error) *MockorderStorageAddOrderCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockorderStorageAddOrderCall) DoAndReturn(f func(context.Context, models.Order) error) *MockorderStorageAddOrderCall {
+func (c *MockorderStorageAddOrderCall) DoAndReturn(f func(context.Context, pgx.Tx, models.Order) error) *MockorderStorageAddOrderCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
 
 // Contains mocks base method.
-func (m *MockorderStorage) Contains(arg0 context.Context, arg1 int) (bool, error) {
+func (m *MockorderStorage) Contains(arg0 context.Context, arg1 pgx.Tx, arg2 int) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Contains", arg0, arg1)
+	ret := m.ctrl.Call(m, "Contains", arg0, arg1, arg2)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Contains indicates an expected call of Contains.
-func (mr *MockorderStorageMockRecorder) Contains(arg0, arg1 any) *MockorderStorageContainsCall {
+func (mr *MockorderStorageMockRecorder) Contains(arg0, arg1, arg2 any) *MockorderStorageContainsCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Contains", reflect.TypeOf((*MockorderStorage)(nil).Contains), arg0, arg1)
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Contains", reflect.TypeOf((*MockorderStorage)(nil).Contains), arg0, arg1, arg2)
 	return &MockorderStorageContainsCall{Call: call}
 }
 
@@ -108,30 +109,30 @@ func (c *MockorderStorageContainsCall) Return(arg0 bool, arg1 error) *MockorderS
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockorderStorageContainsCall) Do(f func(context.Context, int) (bool, error)) *MockorderStorageContainsCall {
+func (c *MockorderStorageContainsCall) Do(f func(context.Context, pgx.Tx, int) (bool, error)) *MockorderStorageContainsCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockorderStorageContainsCall) DoAndReturn(f func(context.Context, int) (bool, error)) *MockorderStorageContainsCall {
+func (c *MockorderStorageContainsCall) DoAndReturn(f func(context.Context, pgx.Tx, int) (bool, error)) *MockorderStorageContainsCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
 
 // GetByID mocks base method.
-func (m *MockorderStorage) GetByID(arg0 context.Context, arg1 int) (models.Order, error) {
+func (m *MockorderStorage) GetByID(arg0 context.Context, arg1 pgx.Tx, arg2 int) (models.Order, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByID", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetByID", arg0, arg1, arg2)
 	ret0, _ := ret[0].(models.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetByID indicates an expected call of GetByID.
-func (mr *MockorderStorageMockRecorder) GetByID(arg0, arg1 any) *MockorderStorageGetByIDCall {
+func (mr *MockorderStorageMockRecorder) GetByID(arg0, arg1, arg2 any) *MockorderStorageGetByIDCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockorderStorage)(nil).GetByID), arg0, arg1)
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockorderStorage)(nil).GetByID), arg0, arg1, arg2)
 	return &MockorderStorageGetByIDCall{Call: call}
 }
 
@@ -147,30 +148,30 @@ func (c *MockorderStorageGetByIDCall) Return(arg0 models.Order, arg1 error) *Moc
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockorderStorageGetByIDCall) Do(f func(context.Context, int) (models.Order, error)) *MockorderStorageGetByIDCall {
+func (c *MockorderStorageGetByIDCall) Do(f func(context.Context, pgx.Tx, int) (models.Order, error)) *MockorderStorageGetByIDCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockorderStorageGetByIDCall) DoAndReturn(f func(context.Context, int) (models.Order, error)) *MockorderStorageGetByIDCall {
+func (c *MockorderStorageGetByIDCall) DoAndReturn(f func(context.Context, pgx.Tx, int) (models.Order, error)) *MockorderStorageGetByIDCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
 
 // GetByUserID mocks base method.
-func (m *MockorderStorage) GetByUserID(arg0 context.Context, arg1, arg2 int) ([]models.Order, error) {
+func (m *MockorderStorage) GetByUserID(arg0 context.Context, arg1 pgx.Tx, arg2, arg3 int) ([]models.Order, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByUserID", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetByUserID", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]models.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetByUserID indicates an expected call of GetByUserID.
-func (mr *MockorderStorageMockRecorder) GetByUserID(arg0, arg1, arg2 any) *MockorderStorageGetByUserIDCall {
+func (mr *MockorderStorageMockRecorder) GetByUserID(arg0, arg1, arg2, arg3 any) *MockorderStorageGetByUserIDCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByUserID", reflect.TypeOf((*MockorderStorage)(nil).GetByUserID), arg0, arg1, arg2)
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByUserID", reflect.TypeOf((*MockorderStorage)(nil).GetByUserID), arg0, arg1, arg2, arg3)
 	return &MockorderStorageGetByUserIDCall{Call: call}
 }
 
@@ -186,30 +187,30 @@ func (c *MockorderStorageGetByUserIDCall) Return(arg0 []models.Order, arg1 error
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockorderStorageGetByUserIDCall) Do(f func(context.Context, int, int) ([]models.Order, error)) *MockorderStorageGetByUserIDCall {
+func (c *MockorderStorageGetByUserIDCall) Do(f func(context.Context, pgx.Tx, int, int) ([]models.Order, error)) *MockorderStorageGetByUserIDCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockorderStorageGetByUserIDCall) DoAndReturn(f func(context.Context, int, int) ([]models.Order, error)) *MockorderStorageGetByUserIDCall {
+func (c *MockorderStorageGetByUserIDCall) DoAndReturn(f func(context.Context, pgx.Tx, int, int) ([]models.Order, error)) *MockorderStorageGetByUserIDCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
 
 // GetOrders mocks base method.
-func (m *MockorderStorage) GetOrders(arg0 context.Context, arg1 []query.Cond, arg2, arg3 int) ([]models.Order, error) {
+func (m *MockorderStorage) GetOrders(arg0 context.Context, arg1 pgx.Tx, arg2 []query.Cond, arg3, arg4 int) ([]models.Order, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrders", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "GetOrders", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].([]models.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetOrders indicates an expected call of GetOrders.
-func (mr *MockorderStorageMockRecorder) GetOrders(arg0, arg1, arg2, arg3 any) *MockorderStorageGetOrdersCall {
+func (mr *MockorderStorageMockRecorder) GetOrders(arg0, arg1, arg2, arg3, arg4 any) *MockorderStorageGetOrdersCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrders", reflect.TypeOf((*MockorderStorage)(nil).GetOrders), arg0, arg1, arg2, arg3)
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrders", reflect.TypeOf((*MockorderStorage)(nil).GetOrders), arg0, arg1, arg2, arg3, arg4)
 	return &MockorderStorageGetOrdersCall{Call: call}
 }
 
@@ -225,30 +226,30 @@ func (c *MockorderStorageGetOrdersCall) Return(arg0 []models.Order, arg1 error) 
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockorderStorageGetOrdersCall) Do(f func(context.Context, []query.Cond, int, int) ([]models.Order, error)) *MockorderStorageGetOrdersCall {
+func (c *MockorderStorageGetOrdersCall) Do(f func(context.Context, pgx.Tx, []query.Cond, int, int) ([]models.Order, error)) *MockorderStorageGetOrdersCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockorderStorageGetOrdersCall) DoAndReturn(f func(context.Context, []query.Cond, int, int) ([]models.Order, error)) *MockorderStorageGetOrdersCall {
+func (c *MockorderStorageGetOrdersCall) DoAndReturn(f func(context.Context, pgx.Tx, []query.Cond, int, int) ([]models.Order, error)) *MockorderStorageGetOrdersCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
 
 // GetReturns mocks base method.
-func (m *MockorderStorage) GetReturns(arg0 context.Context) ([]models.Order, error) {
+func (m *MockorderStorage) GetReturns(arg0 context.Context, arg1 pgx.Tx) ([]models.Order, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetReturns", arg0)
+	ret := m.ctrl.Call(m, "GetReturns", arg0, arg1)
 	ret0, _ := ret[0].([]models.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetReturns indicates an expected call of GetReturns.
-func (mr *MockorderStorageMockRecorder) GetReturns(arg0 any) *MockorderStorageGetReturnsCall {
+func (mr *MockorderStorageMockRecorder) GetReturns(arg0, arg1 any) *MockorderStorageGetReturnsCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReturns", reflect.TypeOf((*MockorderStorage)(nil).GetReturns), arg0)
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReturns", reflect.TypeOf((*MockorderStorage)(nil).GetReturns), arg0, arg1)
 	return &MockorderStorageGetReturnsCall{Call: call}
 }
 
@@ -264,29 +265,29 @@ func (c *MockorderStorageGetReturnsCall) Return(arg0 []models.Order, arg1 error)
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockorderStorageGetReturnsCall) Do(f func(context.Context) ([]models.Order, error)) *MockorderStorageGetReturnsCall {
+func (c *MockorderStorageGetReturnsCall) Do(f func(context.Context, pgx.Tx) ([]models.Order, error)) *MockorderStorageGetReturnsCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockorderStorageGetReturnsCall) DoAndReturn(f func(context.Context) ([]models.Order, error)) *MockorderStorageGetReturnsCall {
+func (c *MockorderStorageGetReturnsCall) DoAndReturn(f func(context.Context, pgx.Tx) ([]models.Order, error)) *MockorderStorageGetReturnsCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
 
 // RemoveOrder mocks base method.
-func (m *MockorderStorage) RemoveOrder(arg0 context.Context, arg1 int) error {
+func (m *MockorderStorage) RemoveOrder(arg0 context.Context, arg1 pgx.Tx, arg2 int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveOrder", arg0, arg1)
+	ret := m.ctrl.Call(m, "RemoveOrder", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveOrder indicates an expected call of RemoveOrder.
-func (mr *MockorderStorageMockRecorder) RemoveOrder(arg0, arg1 any) *MockorderStorageRemoveOrderCall {
+func (mr *MockorderStorageMockRecorder) RemoveOrder(arg0, arg1, arg2 any) *MockorderStorageRemoveOrderCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveOrder", reflect.TypeOf((*MockorderStorage)(nil).RemoveOrder), arg0, arg1)
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveOrder", reflect.TypeOf((*MockorderStorage)(nil).RemoveOrder), arg0, arg1, arg2)
 	return &MockorderStorageRemoveOrderCall{Call: call}
 }
 
@@ -302,29 +303,29 @@ func (c *MockorderStorageRemoveOrderCall) Return(arg0 error) *MockorderStorageRe
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockorderStorageRemoveOrderCall) Do(f func(context.Context, int) error) *MockorderStorageRemoveOrderCall {
+func (c *MockorderStorageRemoveOrderCall) Do(f func(context.Context, pgx.Tx, int) error) *MockorderStorageRemoveOrderCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockorderStorageRemoveOrderCall) DoAndReturn(f func(context.Context, int) error) *MockorderStorageRemoveOrderCall {
+func (c *MockorderStorageRemoveOrderCall) DoAndReturn(f func(context.Context, pgx.Tx, int) error) *MockorderStorageRemoveOrderCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
 
 // UpdateOrder mocks base method.
-func (m *MockorderStorage) UpdateOrder(arg0 context.Context, arg1 int, arg2 models.Order) error {
+func (m *MockorderStorage) UpdateOrder(arg0 context.Context, arg1 pgx.Tx, arg2 int, arg3 models.Order) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOrder", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "UpdateOrder", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateOrder indicates an expected call of UpdateOrder.
-func (mr *MockorderStorageMockRecorder) UpdateOrder(arg0, arg1, arg2 any) *MockorderStorageUpdateOrderCall {
+func (mr *MockorderStorageMockRecorder) UpdateOrder(arg0, arg1, arg2, arg3 any) *MockorderStorageUpdateOrderCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOrder", reflect.TypeOf((*MockorderStorage)(nil).UpdateOrder), arg0, arg1, arg2)
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOrder", reflect.TypeOf((*MockorderStorage)(nil).UpdateOrder), arg0, arg1, arg2, arg3)
 	return &MockorderStorageUpdateOrderCall{Call: call}
 }
 
@@ -340,13 +341,13 @@ func (c *MockorderStorageUpdateOrderCall) Return(arg0 error) *MockorderStorageUp
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockorderStorageUpdateOrderCall) Do(f func(context.Context, int, models.Order) error) *MockorderStorageUpdateOrderCall {
+func (c *MockorderStorageUpdateOrderCall) Do(f func(context.Context, pgx.Tx, int, models.Order) error) *MockorderStorageUpdateOrderCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockorderStorageUpdateOrderCall) DoAndReturn(f func(context.Context, int, models.Order) error) *MockorderStorageUpdateOrderCall {
+func (c *MockorderStorageUpdateOrderCall) DoAndReturn(f func(context.Context, pgx.Tx, int, models.Order) error) *MockorderStorageUpdateOrderCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -602,6 +603,144 @@ func (c *MockadminStorageUpdateAdminCall) Do(f func(context.Context, int, models
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *MockadminStorageUpdateAdminCall) DoAndReturn(f func(context.Context, int, models.Admin) error) *MockadminStorageUpdateAdminCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// MocktxManager is a mock of txManager interface.
+type MocktxManager struct {
+	ctrl     *gomock.Controller
+	recorder *MocktxManagerMockRecorder
+	isgomock struct{}
+}
+
+// MocktxManagerMockRecorder is the mock recorder for MocktxManager.
+type MocktxManagerMockRecorder struct {
+	mock *MocktxManager
+}
+
+// NewMocktxManager creates a new mock instance.
+func NewMocktxManager(ctrl *gomock.Controller) *MocktxManager {
+	mock := &MocktxManager{ctrl: ctrl}
+	mock.recorder = &MocktxManagerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MocktxManager) EXPECT() *MocktxManagerMockRecorder {
+	return m.recorder
+}
+
+// RunReadCommitted mocks base method.
+func (m *MocktxManager) RunReadCommitted(arg0 context.Context, arg1 func(context.Context, pgx.Tx) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RunReadCommitted", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RunReadCommitted indicates an expected call of RunReadCommitted.
+func (mr *MocktxManagerMockRecorder) RunReadCommitted(arg0, arg1 any) *MocktxManagerRunReadCommittedCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunReadCommitted", reflect.TypeOf((*MocktxManager)(nil).RunReadCommitted), arg0, arg1)
+	return &MocktxManagerRunReadCommittedCall{Call: call}
+}
+
+// MocktxManagerRunReadCommittedCall wrap *gomock.Call
+type MocktxManagerRunReadCommittedCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MocktxManagerRunReadCommittedCall) Return(arg0 error) *MocktxManagerRunReadCommittedCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MocktxManagerRunReadCommittedCall) Do(f func(context.Context, func(context.Context, pgx.Tx) error) error) *MocktxManagerRunReadCommittedCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MocktxManagerRunReadCommittedCall) DoAndReturn(f func(context.Context, func(context.Context, pgx.Tx) error) error) *MocktxManagerRunReadCommittedCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// RunRepeatableRead mocks base method.
+func (m *MocktxManager) RunRepeatableRead(arg0 context.Context, arg1 func(context.Context, pgx.Tx) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RunRepeatableRead", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RunRepeatableRead indicates an expected call of RunRepeatableRead.
+func (mr *MocktxManagerMockRecorder) RunRepeatableRead(arg0, arg1 any) *MocktxManagerRunRepeatableReadCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunRepeatableRead", reflect.TypeOf((*MocktxManager)(nil).RunRepeatableRead), arg0, arg1)
+	return &MocktxManagerRunRepeatableReadCall{Call: call}
+}
+
+// MocktxManagerRunRepeatableReadCall wrap *gomock.Call
+type MocktxManagerRunRepeatableReadCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MocktxManagerRunRepeatableReadCall) Return(arg0 error) *MocktxManagerRunRepeatableReadCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MocktxManagerRunRepeatableReadCall) Do(f func(context.Context, func(context.Context, pgx.Tx) error) error) *MocktxManagerRunRepeatableReadCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MocktxManagerRunRepeatableReadCall) DoAndReturn(f func(context.Context, func(context.Context, pgx.Tx) error) error) *MocktxManagerRunRepeatableReadCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// RunSerializable mocks base method.
+func (m *MocktxManager) RunSerializable(arg0 context.Context, arg1 func(context.Context, pgx.Tx) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RunSerializable", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RunSerializable indicates an expected call of RunSerializable.
+func (mr *MocktxManagerMockRecorder) RunSerializable(arg0, arg1 any) *MocktxManagerRunSerializableCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunSerializable", reflect.TypeOf((*MocktxManager)(nil).RunSerializable), arg0, arg1)
+	return &MocktxManagerRunSerializableCall{Call: call}
+}
+
+// MocktxManagerRunSerializableCall wrap *gomock.Call
+type MocktxManagerRunSerializableCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MocktxManagerRunSerializableCall) Return(arg0 error) *MocktxManagerRunSerializableCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MocktxManagerRunSerializableCall) Do(f func(context.Context, func(context.Context, pgx.Tx) error) error) *MocktxManagerRunSerializableCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MocktxManagerRunSerializableCall) DoAndReturn(f func(context.Context, func(context.Context, pgx.Tx) error) error) *MocktxManagerRunSerializableCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

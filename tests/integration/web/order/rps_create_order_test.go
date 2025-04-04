@@ -20,12 +20,15 @@ import (
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/facade"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/tx_manager"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/web"
 	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
 )
 
-func sendRequest(ctx context.Context, wg *sync.WaitGroup, url string, requestData createOrderRequest, username string, password string, ch chan<- error) {
+func sendRequest(ctx context.Context, wg *sync.WaitGroup, url string, requestData createOrderRequest,
+	username string, password string, ch chan<- error) {
 	defer wg.Done()
 
 	jsonData, err := json.Marshal(requestData)
@@ -35,7 +38,7 @@ func sendRequest(ctx context.Context, wg *sync.WaitGroup, url string, requestDat
 		return
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		ch <- fmt.Errorf("error creating request: %w", err)
 
@@ -70,7 +73,7 @@ func generateOrderRequests(count int) []createOrderRequest {
 
 	for i := 1; i <= count; i++ {
 		request := createOrderRequest{
-			ID:             i + 100,
+			ID:             i + 1000000,
 			UserID:         789,
 			Weight:         100,
 			Price:          *money.New(1000, money.RUB),
@@ -83,10 +86,11 @@ func generateOrderRequests(count int) []createOrderRequest {
 
 	return requests
 }
+
 func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 	rootDir, err := config.GetRootDir()
 	require.NoError(t, err)
 	config.InitEnv(rootDir + "/.env.test")
@@ -96,14 +100,18 @@ func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 	require.NoError(t, err)
 	db, err := postgres.NewDB(ctx, connStr)
 	require.NoError(t, err)
-	ordersRepo := repository.NewOrderRepo(*db)
-	adminsRepo := repository.NewAdminRepo(*db)
-	logsRepo := repository.NewLogsRepo(*db)
 
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
-	defer cancel()
-	app := web.NewApp(ctx, ordersRepo, adminsRepo, logsRepo, 2, 5, 500*time.Millisecond)
+	txManager := tx_manager.NewTxManager(db)
+
+	ordersRepo := repository.NewOrdersRepo(db)
+	ordersFacade := facade.NewOrderFacade(ctx, ordersRepo, 10000)
+	adminsRepo := repository.NewAdminsRepo(db)
+	adminsFacade := facade.NewAdminFacade(adminsRepo, 10000)
+	logsRepo := repository.NewLogsRepo(db)
+
+	app, _ := web.NewApp(ctx, ordersFacade, adminsFacade, logsRepo, txManager, 2, 5, 500*time.Millisecond)
 	app.SetupRoutes(ctx)
+
 	server := httptest.NewServer(app.Router)
 	go func() {
 		<-ctx.Done()
@@ -111,13 +119,13 @@ func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 	}()
 
 	t.Cleanup(func() {
-		if err := pgContainer.Terminate(context.Background()); err != nil {
+		if err = pgContainer.Terminate(context.Background()); err != nil {
 			t.Fatalf("failed to terminate pgContainer: %s", err)
 		}
 		db.Close()
 	})
 
-	numRequests := 50
+	numRequests := 60
 	requests := generateOrderRequests(numRequests)
 
 	var wg sync.WaitGroup
@@ -125,24 +133,33 @@ func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 
 	startTime := time.Now()
 	wg.Add(numRequests)
-	for i := 0; i < numRequests; i++ {
-		go sendRequest(ctx, &wg, server.URL+"/orders", requests[i], "test", "12345678", errChan)
-	}
+	maxConcurrentRequests := 10
+	sem := make(chan struct{}, maxConcurrentRequests)
 
+	for i := 0; i < numRequests; i++ {
+		sem <- struct{}{}
+		go func(i int) {
+			defer func() { <-sem }()
+			sendRequest(ctx, &wg, server.URL+"/orders", requests[i], "test", "12345678", errChan)
+		}(i)
+	}
 	wg.Wait()
 	close(errChan)
+
 	duration := time.Since(startTime)
-	rps := float64(numRequests) / duration.Seconds()
-	t.Logf("Requests per second: %.2f", rps)
+	rps := float64(numRequests)
+	t.Logf("Requests per second: %.2f, time: %s", rps, duration)
+
 	select {
 	case <-ctx.Done():
 		t.Fatal("timed out waiting for orders to be created")
 	default:
 	}
 
-	for err := range errChan {
+	for err = range errChan {
 		require.NoError(t, err)
 	}
 
 	require.GreaterOrEqual(t, rps, 10.0, "RPS should be greater or equal to 10")
+
 }

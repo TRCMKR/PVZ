@@ -18,6 +18,7 @@ import (
 	order_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/tx_manager"
 	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
 )
@@ -34,7 +35,7 @@ func TestOrderHandler_GetOrders(t *testing.T) {
 			name: "Valid request with filters",
 			queryParams: map[string]string{
 				"user_id": "52",
-				"count":   "10",
+				"count":   "1",
 				"page":    "0",
 			},
 			expectedStatus: http.StatusOK,
@@ -77,8 +78,10 @@ func TestOrderHandler_GetOrders(t *testing.T) {
 	require.NoError(t, err)
 	db, err := postgres.NewDB(t.Context(), connStr)
 	require.NoError(t, err)
-	ordersRepo := repository.NewOrderRepo(*db)
-	orderService := order_Service.NewService(ordersRepo)
+
+	txManager := tx_manager.NewTxManager(db)
+	ordersRepo := repository.NewOrdersRepo(db)
+	orderService := order_Service.NewService(ordersRepo, txManager)
 
 	t.Cleanup(func() {
 		if err := pgContainer.Terminate(context.Background()); err != nil {

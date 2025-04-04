@@ -6,6 +6,7 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
+//nolint:gocognit
 func (s *Service) batcher(results <-chan models.Log, batchSize int, timeout time.Duration) <-chan []models.Log {
 	batches := make(chan []models.Log, 20)
 	ticker := time.NewTicker(timeout)

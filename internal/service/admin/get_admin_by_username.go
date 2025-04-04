@@ -6,7 +6,10 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
+// GetAdminByUsername ...
 func (s *Service) GetAdminByUsername(ctx context.Context, username string) (models.Admin, error) {
+	var admin models.Admin
+
 	ok, err := s.ContainsUsername(ctx, username)
 	if err != nil {
 		return models.Admin{}, err
@@ -15,5 +18,10 @@ func (s *Service) GetAdminByUsername(ctx context.Context, username string) (mode
 		return models.Admin{}, ErrAdminDoesntExist
 	}
 
-	return s.Storage.GetAdminByUsername(ctx, username)
+	admin, err = s.Storage.GetAdminByUsername(ctx, username)
+	if err != nil {
+		return models.Admin{}, err
+	}
+
+	return admin, nil
 }

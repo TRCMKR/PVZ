@@ -1,20 +1,36 @@
 package query
 
+// CondType ...
 type CondType uint
 
 const (
+	// Equals ...
 	Equals CondType = iota
+
+	// NotEquals ...
 	NotEquals
+
+	// GreaterEqualThan ...
 	GreaterEqualThan
+
+	// LessEqualThan ...
 	LessEqualThan
+
+	// LessThan ...
+	LessThan
+
+	// GreaterThan ...
+	GreaterThan
 )
 
+// Cond ...
 type Cond struct {
 	Operator CondType
 	Field    string
 	Value    interface{}
 }
 
+// Equal ...
 func Equal(field string, value interface{}) Cond {
 	return Cond{
 		Operator: Equals,
@@ -23,6 +39,7 @@ func Equal(field string, value interface{}) Cond {
 	}
 }
 
+// GreaterEqual ...
 func GreaterEqual(field string, value interface{}) Cond {
 	return Cond{
 		Operator: GreaterEqualThan,
@@ -31,6 +48,7 @@ func GreaterEqual(field string, value interface{}) Cond {
 	}
 }
 
+// LessEqual ...
 func LessEqual(field string, value interface{}) Cond {
 	return Cond{
 		Operator: LessEqualThan,
@@ -39,6 +57,7 @@ func LessEqual(field string, value interface{}) Cond {
 	}
 }
 
+// NotEqual ...
 func NotEqual(field string, value interface{}) Cond {
 	return Cond{
 		Operator: NotEquals,
@@ -55,7 +74,11 @@ func (c *Cond) String() string {
 		return "<>"
 	case GreaterEqualThan:
 		return ">="
-	default:
+	case GreaterThan:
+		return ">"
+	case LessEqualThan:
 		return "<="
+	default:
+		return "<"
 	}
 }

@@ -7,10 +7,12 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
+// Handler ...
 type Handler struct {
 	adminService adminService
 }
 
+// NewHandler ...
 func NewHandler(adminService adminService) *Handler {
 	return &Handler{
 		adminService: adminService,
@@ -18,6 +20,7 @@ func NewHandler(adminService adminService) *Handler {
 }
 
 const (
+	// AdminUsernameParam ...
 	AdminUsernameParam = "admin_username"
 )
 
@@ -31,6 +34,9 @@ type adminService interface {
 }
 
 var (
+	// ErrFieldsMissing ...
 	ErrFieldsMissing = errors.New("missing fields")
-	ErrNoUsername    = errors.New("username wasn't provided")
+
+	// ErrNoUsername ...
+	ErrNoUsername = errors.New("username wasn't provided")
 )

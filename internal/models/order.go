@@ -8,12 +8,20 @@ import (
 	"github.com/Rhymond/go-money"
 )
 
+// StatusType ...
 type StatusType uint
 
 const (
+	// StoredOrder ...
 	StoredOrder StatusType = iota + 1
+
+	// GivenOrder ...
 	GivenOrder
+
+	// ReturnedOrder ...
 	ReturnedOrder
+
+	// DeletedOrder ...
 	DeletedOrder
 )
 
@@ -75,6 +83,7 @@ const (
 	dateLayout = "2006.01.02 15:04:05"
 )
 
+// NewOrder ...
 func NewOrder(id int, userID int, weight float64, price money.Money, status StatusType,
 	arrivalDate time.Time, expiryDate time.Time, lastChange time.Time) *Order {
 	return &Order{
@@ -105,6 +114,7 @@ func (o *Order) String() string {
 	return sb.String()
 }
 
+// GetPackagingString ...
 func (o *Order) GetPackagingString() string {
 	var result string
 	if o.Packaging == NoPackaging {

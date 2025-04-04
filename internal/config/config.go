@@ -7,10 +7,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
+// InitEnv ...
 func InitEnv(envFile string) {
 	err := godotenv.Overload(envFile)
 	if err != nil {
@@ -18,14 +20,19 @@ func InitEnv(envFile string) {
 	}
 }
 
+// Config ...
 type Config struct {
-	host     string
-	port     string
-	username string
-	password string
-	dbname   string
+	host        string
+	port        string
+	username    string
+	password    string
+	dbname      string
+	WorkerCount int
+	BatchSize   int
+	Timeout     time.Duration
 }
 
+// NewConfig ...
 func NewConfig() *Config {
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
@@ -38,11 +45,14 @@ func NewConfig() *Config {
 	}
 
 	return &Config{
-		host:     host,
-		port:     port,
-		username: username,
-		password: password,
-		dbname:   dbname,
+		host:        host,
+		port:        port,
+		username:    username,
+		password:    password,
+		dbname:      dbname,
+		WorkerCount: 2,
+		BatchSize:   5,
+		Timeout:     2 * time.Second,
 	}
 }
 
@@ -51,26 +61,32 @@ func (c *Config) String() string {
 		c.host, c.port, c.username, c.password, c.dbname)
 }
 
+// Host ...
 func (c *Config) Host() string {
 	return c.host
 }
 
+// Port ...
 func (c *Config) Port() string {
 	return c.port
 }
 
+// Username ...
 func (c *Config) Username() string {
 	return c.username
 }
 
+// Password ...
 func (c *Config) Password() string {
 	return c.password
 }
 
+// DBName ...
 func (c *Config) DBName() string {
 	return c.dbname
 }
 
+// GetRootDir ...
 func GetRootDir() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -90,6 +106,7 @@ func GetRootDir() (string, error) {
 	}
 }
 
+// ReadFirstFileWord ...
 func ReadFirstFileWord(filename string) (string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
