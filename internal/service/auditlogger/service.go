@@ -10,21 +10,26 @@ import (
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
+	"gitlab.ozon.dev/alexplay1224/homework/internal/service/auditlogger/kafka"
 )
 
 type auditLoggerStorage interface {
+	GetAndMarkLogs(context.Context, int) ([]models.Log, error)
+	UpdateLog(context.Context, int, int, int) error
 	CreateLog(context.Context, []models.Log) error
 }
 
-// Service ...
+// Service is structure of audit log service
 type Service struct {
 	Storage auditLoggerStorage
 	jobs    chan models.Log
 }
 
-// NewService ...
-func NewService(ctx context.Context, logs auditLoggerStorage, workerCount int, batchSize int,
-	timeout time.Duration) (*Service, error) {
+// NewService creates instance of Service
+func NewService(ctx context.Context, cfg config.Config, logs auditLoggerStorage,
+	workerCount int, batchSize int, timeout time.Duration) (*Service, error) {
+	_ = kafka.NewPool(ctx, cfg, time.Second, logs, 1000)
+
 	jobs := make(chan models.Log, batchSize*20*workerCount)
 
 	g, gCtx := errgroup.WithContext(ctx)

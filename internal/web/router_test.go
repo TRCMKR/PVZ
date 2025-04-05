@@ -17,6 +17,7 @@ import (
 	"go.uber.org/mock/gomock"
 	"golang.org/x/crypto/bcrypt"
 
+	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
@@ -95,12 +96,12 @@ func TestApp_Run(t *testing.T) {
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
-				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).Return(nil).
+				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, f func(ctx context.Context, tx pgx.Tx) error) error {
 						return f(ctx, nil)
-					})
+					}).Return(nil)
 				mockOrderStorage.EXPECT().AddOrder(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-				mockOrderStorage.EXPECT().Contains(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil).Return(false, nil)
+				mockOrderStorage.EXPECT().Contains(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
 			},
 			expectedCode: http.StatusOK,
 		},
@@ -151,7 +152,7 @@ func TestApp_Run(t *testing.T) {
 			},
 			authorized: true,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
-				_ MockauditLoggerStorage, tx MocktxManager) {
+				logger MockauditLoggerStorage, tx MocktxManager) {
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
@@ -162,6 +163,7 @@ func TestApp_Run(t *testing.T) {
 					DoAndReturn(func(ctx context.Context, f func(ctx context.Context, tx pgx.Tx) error) error {
 						return f(ctx, nil)
 					})
+				logger.EXPECT().GetAndMarkLogs(gomock.Any(), gomock.Any()).Return(nil, nil)
 				mockOrderStorage.EXPECT().UpdateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				mockOrderStorage.EXPECT().Contains(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
 				mockOrderStorage.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Order{
@@ -219,7 +221,7 @@ func TestApp_Run(t *testing.T) {
 			mockOrderStorage := NewMockorderStorage(ctrl)
 			mockAdminStorage := NewMockadminStorage(ctrl)
 			mockLogStorage := NewMockauditLoggerStorage(ctrl)
-			app, _ := NewApp(context.Background(), mockOrderStorage, mockAdminStorage, mockLogStorage,
+			app, _ := NewApp(context.Background(), config.Config{}, mockOrderStorage, mockAdminStorage, mockLogStorage,
 				mockTxManager, 2, 5, 500*time.Second)
 			app.SetupRoutes(context.Background())
 
@@ -237,7 +239,7 @@ func TestApp_Run(t *testing.T) {
 				req.Header.Set("Authorization", authHeader)
 			}
 
-			if tt.name == "valid process orders" {
+			if tt.name == "valid post orders" {
 				fmt.Print(1)
 			}
 

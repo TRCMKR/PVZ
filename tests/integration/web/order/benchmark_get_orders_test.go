@@ -76,7 +76,7 @@ func BenchmarkOrderHandler_GetOrders_Cache(b *testing.B) {
 	adminsFacade := facade.NewAdminFacade(adminsRepo, 10000)
 	logsRepo := repository.NewLogsRepo(db)
 
-	app, _ := web.NewApp(ctx, ordersFacade, adminsFacade, logsRepo, txManager, 2, 5, 500*time.Millisecond)
+	app, _ := web.NewApp(ctx, config.Config{}, ordersFacade, adminsFacade, logsRepo, txManager, 2, 5, 500*time.Millisecond)
 	app.SetupRoutes(ctx)
 
 	server := httptest.NewServer(app.Router)
@@ -115,7 +115,7 @@ func BenchmarkOrderHandler_GetOrders_NoAdminCache(b *testing.B) {
 	adminsRepo := repository.NewAdminsRepo(db)
 	logsRepo := repository.NewLogsRepo(db)
 
-	app, _ := web.NewApp(ctx, ordersFacade, adminsRepo, logsRepo, txManager, 2, 5, 500*time.Millisecond)
+	app, _ := web.NewApp(ctx, config.Config{}, ordersFacade, adminsRepo, logsRepo, txManager, 2, 5, 500*time.Millisecond)
 	app.SetupRoutes(ctx)
 
 	server := httptest.NewServer(app.Router)
@@ -154,7 +154,7 @@ func BenchmarkOrderHandler_GetOrders_NoOrderCache(b *testing.B) {
 	adminsFacade := facade.NewAdminFacade(adminsRepo, 10000)
 	logsRepo := repository.NewLogsRepo(db)
 
-	app, _ := web.NewApp(ctx, ordersRepo, adminsFacade, logsRepo, txManager, 2, 5, 500*time.Millisecond)
+	app, _ := web.NewApp(ctx, config.Config{}, ordersRepo, adminsFacade, logsRepo, txManager, 2, 5, 500*time.Millisecond)
 	app.SetupRoutes(ctx)
 
 	server := httptest.NewServer(app.Router)
@@ -192,7 +192,7 @@ func BenchmarkOrderHandler_GetOrders_NoCache(b *testing.B) {
 	adminsRepo := repository.NewAdminsRepo(db)
 	logsRepo := repository.NewLogsRepo(db)
 
-	app, _ := web.NewApp(ctx, ordersRepo, adminsRepo, logsRepo, txManager, 2, 5, 500*time.Millisecond)
+	app, _ := web.NewApp(ctx, config.Config{}, ordersRepo, adminsRepo, logsRepo, txManager, 2, 5, 500*time.Millisecond)
 	app.SetupRoutes(ctx)
 
 	server := httptest.NewServer(app.Router)

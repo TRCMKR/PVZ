@@ -90,7 +90,7 @@ func generateOrderRequests(count int) []createOrderRequest {
 func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 	t.Parallel()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx := context.Background()
 	rootDir, err := config.GetRootDir()
 	require.NoError(t, err)
 	config.InitEnv(rootDir + "/.env.test")
@@ -109,7 +109,7 @@ func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 	adminsFacade := facade.NewAdminFacade(adminsRepo, 10000)
 	logsRepo := repository.NewLogsRepo(db)
 
-	app, _ := web.NewApp(ctx, ordersFacade, adminsFacade, logsRepo, txManager, 2, 5, 500*time.Millisecond)
+	app, _ := web.NewApp(ctx, cfg, ordersFacade, adminsFacade, logsRepo, txManager, 2, 5, 500*time.Millisecond)
 	app.SetupRoutes(ctx)
 
 	server := httptest.NewServer(app.Router)
@@ -125,17 +125,17 @@ func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 		db.Close()
 	})
 
-	numRequests := 60
+	numRequests := 70
 	requests := generateOrderRequests(numRequests)
 
 	var wg sync.WaitGroup
 	errChan := make(chan error, numRequests)
 
-	startTime := time.Now()
 	wg.Add(numRequests)
 	maxConcurrentRequests := 10
 	sem := make(chan struct{}, maxConcurrentRequests)
 
+	startTime := time.Now()
 	for i := 0; i < numRequests; i++ {
 		sem <- struct{}{}
 		go func(i int) {
@@ -147,7 +147,7 @@ func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 	close(errChan)
 
 	duration := time.Since(startTime)
-	rps := float64(numRequests)
+	rps := float64(numRequests) / duration.Seconds()
 	t.Logf("Requests per second: %.2f, time: %s", rps, duration)
 
 	select {

@@ -18,7 +18,7 @@ import (
 
 func main() {
 	config.InitEnv(".env")
-	cfg := config.NewConfig()
+	cfg := *config.NewConfig()
 
 	ctx := context.Background()
 	db, err := postgres.NewDB(ctx, cfg.String())
@@ -39,7 +39,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	app, err := web.NewApp(ctx, ordersFacade, adminsFacade, logsRepo, tx, cfg.WorkerCount, cfg.BatchSize, cfg.Timeout)
+	app, err := web.NewApp(ctx, cfg, ordersFacade, adminsFacade, logsRepo, tx, cfg.WorkerCount, cfg.BatchSize, cfg.Timeout)
 	if err != nil {
 		log.Panic(err)
 	}
