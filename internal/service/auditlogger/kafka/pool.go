@@ -17,17 +17,14 @@ type logsStorage interface {
 	UpdateLog(context.Context, int, int, int) error
 }
 
-// Pool that works with Kafka
-type Pool struct {
-	storage logsStorage
-	jobs    chan models.Log
-	done    chan models.Log
-	failed  chan models.Log
-}
+// Start starts pool of Kafka related workers
+func Start(ctx context.Context, cfg config.Config, interval time.Duration,
+	storage logsStorage, bufferSize int) {
 
-// NewPool create instance of Pool that works with Kafka
-func NewPool(ctx context.Context, cfg config.Config, interval time.Duration,
-	storage logsStorage, bufferSize int) *Pool {
+	if cfg.IsEmpty() {
+		return
+	}
+
 	jobs := make(chan models.Log, bufferSize)
 	done := make(chan models.Log, bufferSize)
 	failed := make(chan models.Log, bufferSize)
@@ -58,13 +55,6 @@ func NewPool(ctx context.Context, cfg config.Config, interval time.Duration,
 			log.Fatalf("Error occurred during kafka pool execution: %v", err)
 		}
 	}()
-
-	return &Pool{
-		storage: storage,
-		jobs:    jobs,
-		done:    done,
-		failed:  failed,
-	}
 }
 
 func initConsumer(ctx context.Context, cfg config.Config) (sarama.PartitionConsumer, error) {

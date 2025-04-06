@@ -109,7 +109,7 @@ func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 	adminsFacade := facade.NewAdminFacade(adminsRepo, 10000)
 	logsRepo := repository.NewLogsRepo(db)
 
-	app, _ := web.NewApp(ctx, cfg, ordersFacade, adminsFacade, logsRepo, txManager, 2, 5, 500*time.Millisecond)
+	app, _ := web.NewApp(ctx, config.Config{}, ordersFacade, adminsFacade, logsRepo, txManager, 2, 5, 500*time.Millisecond)
 	app.SetupRoutes(ctx)
 
 	server := httptest.NewServer(app.Router)

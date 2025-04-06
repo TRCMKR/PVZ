@@ -29,6 +29,7 @@ type Config struct {
 	dbname        string
 	kafka_port    string
 	kafka_ui_port string
+	app_env       string
 	WorkerCount   int
 	BatchSize     int
 	Timeout       time.Duration
@@ -43,9 +44,10 @@ func NewConfig() *Config {
 	dbname := os.Getenv("DB_NAME")
 	kafka_port := os.Getenv("KAFKA_PORT")
 	kafka_ui_port := os.Getenv("KAFKA_UI_PORT")
+	app_env := os.Getenv("APP_ENV")
 
 	if host == "" || port == "" || username == "" || password == "" || dbname == "" ||
-		kafka_port == "" || kafka_ui_port == "" {
+		kafka_port == "" || kafka_ui_port == "" || app_env == "" {
 		log.Fatal("Database configuration missing: one or more required fields are empty.")
 	}
 
@@ -57,6 +59,7 @@ func NewConfig() *Config {
 		dbname:        dbname,
 		kafka_port:    kafka_port,
 		kafka_ui_port: kafka_ui_port,
+		app_env:       app_env,
 		WorkerCount:   2,
 		BatchSize:     5,
 		Timeout:       2 * time.Second,
@@ -101,6 +104,16 @@ func (c *Config) KafkaPort() string {
 // KafkaUIPort returns kafka ui port
 func (c *Config) KafkaUIPort() string {
 	return c.kafka_ui_port
+}
+
+// AppEnv returns env in which app is run
+func (c *Config) AppEnv() string {
+	return c.app_env
+}
+
+// IsEmpty checks if config is empty
+func (c *Config) IsEmpty() bool {
+	return c.host == ""
 }
 
 // GetRootDir returns root directory of a project

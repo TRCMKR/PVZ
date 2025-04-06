@@ -28,7 +28,7 @@ type Service struct {
 // NewService creates instance of Service
 func NewService(ctx context.Context, cfg config.Config, logs auditLoggerStorage,
 	workerCount int, batchSize int, timeout time.Duration) (*Service, error) {
-	_ = kafka.NewPool(ctx, cfg, time.Second, logs, 1000)
+	kafka.Start(ctx, cfg, timeout/2, logs, 1000)
 
 	jobs := make(chan models.Log, batchSize*20*workerCount)
 

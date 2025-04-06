@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -163,7 +162,6 @@ func TestApp_Run(t *testing.T) {
 					DoAndReturn(func(ctx context.Context, f func(ctx context.Context, tx pgx.Tx) error) error {
 						return f(ctx, nil)
 					})
-				logger.EXPECT().GetAndMarkLogs(gomock.Any(), gomock.Any()).Return(nil, nil)
 				mockOrderStorage.EXPECT().UpdateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				mockOrderStorage.EXPECT().Contains(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
 				mockOrderStorage.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Order{
@@ -207,10 +205,7 @@ func TestApp_Run(t *testing.T) {
 	}
 
 	ctrl := gomock.NewController(t)
-
-	t.Cleanup(func() {
-		ctrl.Finish()
-	})
+	defer ctrl.Finish()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -231,6 +226,7 @@ func TestApp_Run(t *testing.T) {
 			req, err := http.NewRequestWithContext(context.Background(), tt.args.method, tt.args.path,
 				bytes.NewReader(tt.args.body))
 			require.NoError(t, err)
+
 			if tt.authorized {
 				username := "user"
 				password := "password"
@@ -239,13 +235,8 @@ func TestApp_Run(t *testing.T) {
 				req.Header.Set("Authorization", authHeader)
 			}
 
-			if tt.name == "valid post orders" {
-				fmt.Print(1)
-			}
-
 			res := httptest.NewRecorder()
 			app.Router.ServeHTTP(res, req)
-
 			require.Equal(t, tt.expectedCode, res.Code)
 		})
 	}
