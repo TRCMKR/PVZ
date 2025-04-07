@@ -77,7 +77,8 @@ func (r *LogsRepo) CreateJob(ctx context.Context, logBatch []models.Log) error {
 								                 updated_at)
 								VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 								`,
-			log.OrderID, log.AdminID, log.Message, log.Date, log.URL, log.Method, log.Status, log.JobStatus, log.AttemptsLeft, log.UpdatedAt)
+			log.OrderID, log.AdminID, log.Message, log.Date, log.URL, log.Method, log.Status,
+			log.JobStatus, log.AttemptsLeft, log.UpdatedAt)
 	}
 
 	br := r.db.SendBatch(ctx, queryBatch)

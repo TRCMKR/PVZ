@@ -65,6 +65,7 @@ func InitPostgresContainer(ctx context.Context, cfg config.Config) (string, *pos
 	return connStr, pgContainer, nil
 }
 
+// InitKafkaContainer is used to create testcontainers Kafka with specified config
 func InitKafkaContainer(ctx context.Context, cfg config.Config) (testcontainers.Container, testcontainers.Container) {
 	network, err := network.New(ctx)
 	if err != nil {

@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
@@ -20,7 +19,7 @@ func dbReader(ctx context.Context, interval time.Duration, storage logsStorage,
 		case <-ticker.C:
 			logs, err := storage.GetAndMarkLogs(ctx, batchSize)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			for _, log := range logs {

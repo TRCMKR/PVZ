@@ -151,7 +151,7 @@ func TestApp_Run(t *testing.T) {
 			},
 			authorized: true,
 			mockSetup: func(mockOrderStorage MockorderStorage, mockAdminStorage MockadminStorage,
-				logger MockauditLoggerStorage, tx MocktxManager) {
+				_ MockauditLoggerStorage, tx MocktxManager) {
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().GetAdminByUsername(gomock.Any(), gomock.Any()).
@@ -204,12 +204,14 @@ func TestApp_Run(t *testing.T) {
 		},
 	}
 
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+			t.Cleanup(func() {
+				ctrl.Finish()
+			})
 
 			mockTxManager := NewMocktxManager(ctrl)
 
@@ -217,7 +219,7 @@ func TestApp_Run(t *testing.T) {
 			mockAdminStorage := NewMockadminStorage(ctrl)
 			mockLogStorage := NewMockauditLoggerStorage(ctrl)
 			app, _ := NewApp(context.Background(), config.Config{}, mockOrderStorage, mockAdminStorage, mockLogStorage,
-				mockTxManager, 2, 5, 500*time.Second)
+				mockTxManager, 2, 5, 500*time.Millisecond)
 			app.SetupRoutes(context.Background())
 
 			tt.mockSetup(*mockOrderStorage, *mockAdminStorage, *mockLogStorage, *mockTxManager)

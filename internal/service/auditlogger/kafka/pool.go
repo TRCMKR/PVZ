@@ -20,7 +20,6 @@ type logsStorage interface {
 // Start starts pool of Kafka related workers
 func Start(ctx context.Context, cfg config.Config, interval time.Duration,
 	storage logsStorage, bufferSize int) {
-
 	if cfg.IsEmpty() {
 		return
 	}
