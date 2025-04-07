@@ -7,12 +7,12 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
-// Handler ...
+// Handler is a struct for handling admin related call
 type Handler struct {
 	adminService adminService
 }
 
-// NewHandler ...
+// NewHandler creates an instance of admin Handler
 func NewHandler(adminService adminService) *Handler {
 	return &Handler{
 		adminService: adminService,
@@ -20,7 +20,7 @@ func NewHandler(adminService adminService) *Handler {
 }
 
 const (
-	// AdminUsernameParam ...
+	// AdminUsernameParam is a query param for admin username
 	AdminUsernameParam = "admin_username"
 )
 
@@ -34,9 +34,9 @@ type adminService interface {
 }
 
 var (
-	// ErrFieldsMissing ...
+	// ErrFieldsMissing happens when some fields are missing
 	ErrFieldsMissing = errors.New("missing fields")
 
-	// ErrNoUsername ...
+	// ErrNoUsername happens when username wasn't provided
 	ErrNoUsername = errors.New("username wasn't provided")
 )

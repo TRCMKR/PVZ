@@ -33,7 +33,7 @@ func isOrderEligible(order models.Order, userID int, action string) bool {
 	return order.Status == models.StoredOrder
 }
 
-// ProcessOrder ...
+// ProcessOrder gives/returns order
 func (s *Service) ProcessOrder(ctx context.Context, userID int, orderID int, action string) error {
 	return s.txManager.RunSerializable(ctx, func(ctx context.Context, tx pgx.Tx) error {
 		if ok, err := s.Storage.Contains(ctx, tx, orderID); err != nil || !ok {

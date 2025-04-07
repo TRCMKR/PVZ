@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// SelectQuery ...
+// SelectQuery is a struct for select query
 type SelectQuery struct {
 	from         string
 	wheres       []string
@@ -18,10 +18,10 @@ type SelectQuery struct {
 	args         []interface{}
 }
 
-// Param ...
+// Param is a type for SelectQuery words in SQL
 type Param func(*SelectQuery)
 
-// BuildSelectQuery ...
+// BuildSelectQuery builds SelectQuery for table
 func BuildSelectQuery(table string, params ...Param) (string, []interface{}) {
 	s := SelectQuery{
 		from:         table,
@@ -71,7 +71,7 @@ func BuildSelectQuery(table string, params ...Param) (string, []interface{}) {
 	return sb.String(), s.args
 }
 
-// Where ...
+// Where is used to create where clauses in SQL
 func Where(conds ...Cond) Param {
 	return func(s *SelectQuery) {
 		sb := strings.Builder{}
@@ -90,28 +90,28 @@ func Where(conds ...Cond) Param {
 	}
 }
 
-// OrderBy ...
+// OrderBy is used to create order by clauses in SQL
 func OrderBy(field string) Param {
 	return func(s *SelectQuery) {
 		s.orderBy = field
 	}
 }
 
-// Desc ...
+// Desc is used to add desc in sql
 func Desc(flag bool) Param {
 	return func(s *SelectQuery) {
 		s.desc = flag
 	}
 }
 
-// Limit ...
+// Limit is used to add limit in sql
 func Limit(limit int) Param {
 	return func(s *SelectQuery) {
 		s.limit = limit
 	}
 }
 
-// Offset ...
+// Offset is used to add offset in sql
 func Offset(offset int) Param {
 	return func(s *SelectQuery) {
 		s.offset = offset

@@ -28,7 +28,7 @@ var (
 	errWrongPassword   = errors.New("wrong password")
 )
 
-// FieldLogger ...
+// FieldLogger logs fields of passed request body
 func FieldLogger(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodDelete {
@@ -47,7 +47,7 @@ func FieldLogger(handler http.Handler) http.Handler {
 	})
 }
 
-// AuthMiddleware ...
+// AuthMiddleware is a structure for auth middleware
 type AuthMiddleware struct {
 	adminService admin.Service
 }
@@ -66,7 +66,7 @@ func (a *AuthMiddleware) parseHeader(request *http.Request) (string, error) {
 	return parts[1], nil
 }
 
-// BasicAuthChecker ...
+// BasicAuthChecker is a function that checks request for basic auth
 func (a *AuthMiddleware) BasicAuthChecker(ctx context.Context, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		credsStr, err := a.parseHeader(r)
@@ -109,7 +109,7 @@ func (a *AuthMiddleware) BasicAuthChecker(ctx context.Context, handler http.Hand
 	})
 }
 
-// AuditLoggerMiddleware ...
+// AuditLoggerMiddleware is a structure for audit logger middleware
 type AuditLoggerMiddleware struct {
 	adminService       admin.Service
 	auditLoggerService auditlogger.Service
@@ -136,7 +136,7 @@ type requestBody struct {
 	ID int `json:"id"`
 }
 
-// AuditLogger ...
+// AuditLogger is a function that logs all requests and responses
 func (a *AuditLoggerMiddleware) AuditLogger(ctx context.Context, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request requestBody

@@ -20,7 +20,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
-// InitPostgresContainer ...
+// InitPostgresContainer creates an instance of postgres container with applied migrations
 func InitPostgresContainer(ctx context.Context, cfg config.Config) (string, *postgres.PostgresContainer, error) {
 	emptyLogger := log.New(io.Discard, "", 0)
 

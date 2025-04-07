@@ -1,36 +1,36 @@
 package query
 
-// CondType ...
+// CondType is a type for conditionals
 type CondType uint
 
 const (
-	// Equals ...
+	// Equals is =
 	Equals CondType = iota
 
-	// NotEquals ...
+	// NotEquals is !=
 	NotEquals
 
-	// GreaterEqualThan ...
+	// GreaterEqualThan is >=
 	GreaterEqualThan
 
-	// LessEqualThan ...
+	// LessEqualThan is <=
 	LessEqualThan
 
-	// LessThan ...
+	// LessThan is <
 	LessThan
 
-	// GreaterThan ...
+	// GreaterThan is >
 	GreaterThan
 )
 
-// Cond ...
+// Cond is a structure for conditional
 type Cond struct {
 	Operator CondType
 	Field    string
 	Value    interface{}
 }
 
-// Equal ...
+// Equal creates conditional for Equals
 func Equal(field string, value interface{}) Cond {
 	return Cond{
 		Operator: Equals,
@@ -39,7 +39,7 @@ func Equal(field string, value interface{}) Cond {
 	}
 }
 
-// GreaterEqual ...
+// GreaterEqual creates conditional for GreaterEqualThan
 func GreaterEqual(field string, value interface{}) Cond {
 	return Cond{
 		Operator: GreaterEqualThan,
@@ -48,7 +48,7 @@ func GreaterEqual(field string, value interface{}) Cond {
 	}
 }
 
-// LessEqual ...
+// LessEqual creates conditional for LessEqualThan
 func LessEqual(field string, value interface{}) Cond {
 	return Cond{
 		Operator: LessEqualThan,
@@ -57,7 +57,7 @@ func LessEqual(field string, value interface{}) Cond {
 	}
 }
 
-// NotEqual ...
+// NotEqual creates conditional for NotEquals
 func NotEqual(field string, value interface{}) Cond {
 	return Cond{
 		Operator: NotEquals,

@@ -6,7 +6,7 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
-// GetAdminByUsername ...
+// GetAdminByUsername gets admin by username
 func (s *Service) GetAdminByUsername(ctx context.Context, username string) (models.Admin, error) {
 	var admin models.Admin
 
