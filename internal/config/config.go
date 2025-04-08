@@ -12,57 +12,66 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var (
+	errNoConfigFile = errors.New("no config file found")
+)
+
 // InitEnv inits env file from path
-func InitEnv(envFile string) {
+func InitEnv(envFile string) error {
 	err := godotenv.Overload(envFile)
 	if err != nil {
-		log.Fatalf("Error loading %s file", envFile)
+		return errNoConfigFile
 	}
+
+	return nil
 }
 
 // Config is a structure that contains all configuration parameters
 type Config struct {
-	host          string
-	port          string
-	username      string
-	password      string
-	dbname        string
-	kafka_port    string
-	kafka_ui_port string
-	app_env       string
-	WorkerCount   int
-	BatchSize     int
-	Timeout       time.Duration
+	host        string
+	port        string
+	username    string
+	password    string
+	dbname      string
+	kafkaHost   string
+	kafkaPort   string
+	kafkaUIPort string
+	appEnv      string
+	WorkerCount int
+	BatchSize   int
+	Timeout     time.Duration
 }
 
 // NewConfig creates instance of Config
-func NewConfig() *Config {
+func NewConfig() Config {
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
 	username := os.Getenv("DB_USERNAME")
 	password := os.Getenv("DB_PASSWORD")
 	dbname := os.Getenv("DB_NAME")
-	kafka_port := os.Getenv("KAFKA_PORT")
-	kafka_ui_port := os.Getenv("KAFKA_UI_PORT")
-	app_env := os.Getenv("APP_ENV")
+	kafkaHost := os.Getenv("KAFKA_HOST")
+	kafkaPort := os.Getenv("KAFKA_PORT")
+	kafkaUIPort := os.Getenv("KAFKA_UI_PORT")
+	appEnv := os.Getenv("APP_ENV")
 
 	if host == "" || port == "" || username == "" || password == "" || dbname == "" ||
-		kafka_port == "" || kafka_ui_port == "" || app_env == "" {
+		kafkaHost == "" || kafkaPort == "" || kafkaUIPort == "" || appEnv == "" {
 		log.Fatal("Database configuration missing: one or more required fields are empty.")
 	}
 
-	return &Config{
-		host:          host,
-		port:          port,
-		username:      username,
-		password:      password,
-		dbname:        dbname,
-		kafka_port:    kafka_port,
-		kafka_ui_port: kafka_ui_port,
-		app_env:       app_env,
-		WorkerCount:   2,
-		BatchSize:     5,
-		Timeout:       2 * time.Second,
+	return Config{
+		host:        host,
+		port:        port,
+		username:    username,
+		password:    password,
+		dbname:      dbname,
+		kafkaHost:   kafkaHost,
+		kafkaPort:   kafkaPort,
+		kafkaUIPort: kafkaUIPort,
+		appEnv:      appEnv,
+		WorkerCount: 2,
+		BatchSize:   5,
+		Timeout:     2 * time.Second,
 	}
 }
 
@@ -91,24 +100,29 @@ func (c *Config) Password() string {
 	return c.password
 }
 
-// DBName returnds db name
+// DBName returns db name
 func (c *Config) DBName() string {
 	return c.dbname
 }
 
+// KafkaHost returns kafka port
+func (c *Config) KafkaHost() string {
+	return c.kafkaHost
+}
+
 // KafkaPort returns kafka port
 func (c *Config) KafkaPort() string {
-	return c.kafka_port
+	return c.kafkaPort
 }
 
 // KafkaUIPort returns kafka ui port
 func (c *Config) KafkaUIPort() string {
-	return c.kafka_ui_port
+	return c.kafkaUIPort
 }
 
 // AppEnv returns env in which app is run
 func (c *Config) AppEnv() string {
-	return c.app_env
+	return c.appEnv
 }
 
 // IsEmpty checks if config is empty

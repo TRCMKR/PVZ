@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
 	"time"
@@ -66,27 +67,10 @@ func InitPostgresContainer(ctx context.Context, cfg config.Config) (string, *pos
 }
 
 // InitKafkaContainer is used to create testcontainers Kafka with specified config
-func InitKafkaContainer(ctx context.Context, cfg config.Config) (testcontainers.Container, testcontainers.Container) {
+func InitKafkaContainer(ctx context.Context, cfg config.Config) (testcontainers.Container, error) {
 	network, err := network.New(ctx)
 	if err != nil {
 		log.Fatalf("could not create network: %v", err)
-	}
-
-	zookeeper, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "confluentinc/cp-zookeeper",
-			ExposedPorts: []string{"2181/tcp"},
-			Env: map[string]string{
-				"ZOOKEEPER_CLIENT_PORT": "2181",
-			},
-			Networks:       []string{network.Name},
-			NetworkAliases: map[string][]string{network.Name: {"zookeeper"}},
-			WaitingFor:     wait.ForListeningPort("2181/tcp"),
-		},
-		Started: true,
-	})
-	if err != nil {
-		log.Fatalf("could not start zookeeper: %v", err)
 	}
 
 	kafka, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -94,12 +78,19 @@ func InitKafkaContainer(ctx context.Context, cfg config.Config) (testcontainers.
 			Image:        "confluentinc/cp-kafka",
 			ExposedPorts: []string{cfg.KafkaPort() + "/tcp"},
 			Env: map[string]string{
-				"KAFKA_BROKER_ID":                        "1",
-				"KAFKA_ZOOKEEPER_CONNECT":                "zookeeper:2181",
-				"KAFKA_ADVERTISED_LISTENERS":             "INTERNAL://kafka:29092,EXTERNAL://localhost:" + cfg.KafkaPort(),
-				"KAFKA_LISTENERS":                        "INTERNAL://kafka:29092,EXTERNAL://:" + cfg.KafkaPort(),
-				"KAFKA_LISTENER_SECURITY_PROTOCOL_MAP":   "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT",
+				"KAFKA_BROKER_ID":                "1",
+				"KAFKA_NODE_ID":                  "1",
+				"CLUSTER_ID":                     "local_cluster1",
+				"KAFKA_KRAFT_MODE":               "true",
+				"KAFKA_PROCESS_ROLES":            "controller,broker",
+				"KAFKA_CONTROLLER_QUORUM_VOTERS": "1@kafka:9093",
+				"KAFKA_ADVERTISED_LISTENERS": fmt.Sprintf("INTERNAL://kafka:29092,EXTERNAL://%s:%s",
+					cfg.KafkaHost(), cfg.KafkaPort()),
+				"KAFKA_LISTENERS": fmt.Sprintf("INTERNAL://kafka:29092,EXTERNAL://:%s,CONTROLLER://:9093",
+					cfg.KafkaPort()),
+				"KAFKA_LISTENER_SECURITY_PROTOCOL_MAP":   "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT",
 				"KAFKA_INTER_BROKER_LISTENER_NAME":       "INTERNAL",
+				"KAFKA_CONTROLLER_LISTENER_NAMES":        "CONTROLLER",
 				"KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR": "1",
 			},
 			Networks:       []string{network.Name},
@@ -119,8 +110,8 @@ func InitKafkaContainer(ctx context.Context, cfg config.Config) (testcontainers.
 		Started: true,
 	})
 	if err != nil {
-		log.Fatalf("could not start kafka: %v", err)
+		return nil, err
 	}
 
-	return kafka, zookeeper
+	return kafka, nil
 }

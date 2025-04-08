@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
@@ -15,13 +14,13 @@ var (
 	errClosedChannel = errors.New("channel closed")
 )
 
-func consumer(ctx context.Context, cfg config.Config, done chan<- models.Log) error {
+func logger(ctx context.Context, cfg config.Config, done chan<- models.Log) error {
 	partConsumer, err := initConsumer(ctx, cfg)
 	if err != nil {
 		return err
 	}
 
-	log.Print("Starting partition consumer")
+	log.Print("Starting partition logger")
 	for {
 		select {
 		case <-ctx.Done():
@@ -39,7 +38,7 @@ func consumer(ctx context.Context, cfg config.Config, done chan<- models.Log) er
 
 			done <- receivedLog
 
-			fmt.Println(receivedLog.String())
+			log.Print(receivedLog.String())
 		}
 	}
 }

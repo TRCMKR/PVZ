@@ -12,14 +12,18 @@ import (
 	"github.com/IBM/sarama"
 )
 
-func producer(ctx context.Context, cfg config.Config, jobs <-chan models.Log, failed chan<- models.Log) error {
-	producer, err := sarama.NewSyncProducer([]string{"localhost:" + cfg.KafkaPort()}, nil)
+func jobSender(ctx context.Context, cfg config.Config, jobs <-chan models.Log, failed chan<- models.Log) error {
+	kafkaConfig := sarama.NewConfig()
+	kafkaConfig.Producer.Return.Successes = true
+	kafkaConfig.Producer.Return.Errors = true
+
+	producer, err := sarama.NewSyncProducer([]string{cfg.KafkaHost() + ":" + cfg.KafkaPort()}, kafkaConfig)
 	if err != nil {
 		return err
 	}
 	defer producer.Close()
 
-	log.Print("Starting producer")
+	log.Print("Starting jobSender")
 	for job := range jobs {
 		select {
 		case <-ctx.Done():

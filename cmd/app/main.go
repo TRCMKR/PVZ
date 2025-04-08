@@ -17,8 +17,12 @@ import (
 )
 
 func main() {
-	config.InitEnv(".env")
-	cfg := *config.NewConfig()
+	err := config.InitEnv(".env")
+	if err != nil {
+		log.Panic(err)
+	}
+
+	cfg := config.NewConfig()
 
 	ctx := context.Background()
 	db, err := postgres.NewDB(ctx, cfg.String())

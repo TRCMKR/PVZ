@@ -47,7 +47,7 @@ func TestOrderHandler_DeleteOrder(t *testing.T) {
 	rootDir, err := config.GetRootDir()
 	require.NoError(t, err)
 	config.InitEnv(rootDir + "/.env.test")
-	cfg := *config.NewConfig()
+	cfg := config.NewConfig()
 
 	connStr, pgContainer, err := integration.InitPostgresContainer(t.Context(), cfg)
 	require.NoError(t, err)

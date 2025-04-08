@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -12,6 +13,10 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
+const (
+	batchCount = 10
+)
+
 type logsStorage interface {
 	GetAndMarkLogs(context.Context, int) ([]models.Log, error)
 	UpdateLog(context.Context, int, int, int) error
@@ -19,14 +24,14 @@ type logsStorage interface {
 
 // Start starts pool of Kafka related workers
 func Start(ctx context.Context, cfg config.Config, interval time.Duration,
-	storage logsStorage, bufferSize int) {
+	storage logsStorage, batchSize int) {
 	if cfg.IsEmpty() {
 		return
 	}
 
-	jobs := make(chan models.Log, bufferSize)
-	done := make(chan models.Log, bufferSize)
-	failed := make(chan models.Log, bufferSize)
+	jobs := make(chan models.Log, batchSize*batchCount)
+	done := make(chan models.Log, batchSize*batchCount)
+	failed := make(chan models.Log, batchSize*batchCount)
 
 	g, gCtx := errgroup.WithContext(ctx)
 	go func() {
@@ -37,16 +42,17 @@ func Start(ctx context.Context, cfg config.Config, interval time.Duration,
 	}()
 
 	g.Go(func() error {
-		return dbReader(gCtx, interval, storage, 10, jobs)
+		return dbReader(gCtx, interval, storage, batchSize, jobs)
 	})
+
 	g.Go(func() error {
-		return producer(gCtx, cfg, jobs, failed)
+		return jobSender(gCtx, cfg, jobs, failed)
 	})
+
+	go updater(gCtx, storage, done, failed)
+
 	g.Go(func() error {
-		return updater(gCtx, storage, done, failed)
-	})
-	g.Go(func() error {
-		return consumer(gCtx, cfg, done)
+		return logger(gCtx, cfg, done)
 	})
 
 	go func() {
@@ -57,7 +63,8 @@ func Start(ctx context.Context, cfg config.Config, interval time.Duration,
 }
 
 func initConsumer(ctx context.Context, cfg config.Config) (sarama.PartitionConsumer, error) {
-	consumer, err := sarama.NewConsumer([]string{"localhost:" + cfg.KafkaPort()}, nil)
+	consumer, err := sarama.NewConsumer([]string{fmt.Sprintf("%s:%s", cfg.KafkaHost(), cfg.KafkaPort())},
+		sarama.NewConfig())
 	if err != nil {
 		return nil, err
 	}

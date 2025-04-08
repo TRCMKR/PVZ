@@ -26,7 +26,7 @@ func setup() (string, string) {
 
 	rootDir, _ := config.GetRootDir()
 	config.InitEnv(rootDir + "/.env.test")
-	cfg := *config.NewConfig()
+	cfg := config.NewConfig()
 
 	connStr, _, _ := integration.InitPostgresContainer(ctx, cfg)
 	url := "/orders"

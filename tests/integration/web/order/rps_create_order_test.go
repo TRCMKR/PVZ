@@ -94,7 +94,7 @@ func TestOrderHandlerRps_CreateOrder(t *testing.T) {
 	rootDir, err := config.GetRootDir()
 	require.NoError(t, err)
 	config.InitEnv(rootDir + "/.env.test")
-	cfg := *config.NewConfig()
+	cfg := config.NewConfig()
 
 	connStr, pgContainer, err := integration.InitPostgresContainer(ctx, cfg)
 	require.NoError(t, err)

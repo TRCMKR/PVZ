@@ -2,41 +2,42 @@ package kafka
 
 import (
 	"context"
+	"log"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
 //nolint:gocognit
-func updater(ctx context.Context, storage logsStorage, done <-chan models.Log, failed <-chan models.Log) error {
-	var receivedJob models.Log
+func updater(ctx context.Context, storage logsStorage, done <-chan models.Log, failed <-chan models.Log) {
 	for {
+		var ok bool
+		var job models.Log
+
 		select {
 		case <-ctx.Done():
-			return nil
-		case job, ok := <-done:
+			return
+		case job, ok = <-done:
 			if !ok {
 				continue
 			}
 
 			job.Status = models.DoneStatus
-			receivedJob = job
-		case job, ok := <-failed:
+		case job, ok = <-failed:
 			if !ok {
 				continue
 			}
 
-			job.Status = models.NoAttemptsLeftStatus
-			if job.AttemptsLeft != 0 {
-				job.AttemptsLeft--
+			job.AttemptsLeft--
+			if job.AttemptsLeft == 0 {
+				job.Status = models.NoAttemptsLeftStatus
+			} else {
 				job.Status = models.FailedStatus
 			}
-
-			receivedJob = job
 		}
 
-		err := storage.UpdateLog(ctx, receivedJob.ID, receivedJob.Status, receivedJob.AttemptsLeft)
+		err := storage.UpdateLog(ctx, job.ID, job.Status, job.AttemptsLeft)
 		if err != nil {
-			return err
+			log.Printf("error updating jog: %v, jogId: %d", err, job.ID)
 		}
 	}
 }

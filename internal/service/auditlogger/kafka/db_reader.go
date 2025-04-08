@@ -25,8 +25,6 @@ func dbReader(ctx context.Context, interval time.Duration, storage logsStorage,
 			for _, log := range logs {
 				jobs <- log
 			}
-
-			ticker.Reset(interval)
 		}
 	}
 }

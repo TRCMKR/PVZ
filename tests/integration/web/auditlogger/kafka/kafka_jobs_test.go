@@ -264,15 +264,18 @@ func TestKafka_Jobs(t *testing.T) {
 	ctx := context.Background()
 	rootDir, err := config.GetRootDir()
 	require.NoError(t, err)
-	config.InitEnv(rootDir + "/.env.test")
-	cfg := *config.NewConfig()
+	err = config.InitEnv(rootDir + "/.env.test")
+	require.NoError(t, err)
+
+	cfg := config.NewConfig()
 
 	connStr, _, err := integration.InitPostgresContainer(t.Context(), cfg)
 	require.NoError(t, err)
 	db, err := postgres.NewDB(t.Context(), connStr)
 	require.NoError(t, err)
 
-	_, _ = integration.InitKafkaContainer(t.Context(), cfg)
+	_, err = integration.InitKafkaContainer(t.Context(), cfg)
+	require.NoError(t, err)
 
 	logsRepo := repository.NewLogsRepo(db)
 	_, err = auditlogger.NewService(ctx, cfg, logsRepo, 1, 1, 1*time.Second)
