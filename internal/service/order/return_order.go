@@ -9,7 +9,7 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
-// ReturnOrder ...
+// ReturnOrder returns order by id
 func (s *Service) ReturnOrder(ctx context.Context, orderID int) error {
 	return s.txManager.RunSerializable(ctx, func(ctx context.Context, tx pgx.Tx) error {
 		if ok, err := s.Storage.Contains(ctx, tx, orderID); err != nil || !ok {

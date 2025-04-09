@@ -16,37 +16,37 @@ const (
 )
 
 var (
-	// ErrOrderAlreadyExists ...
+	// ErrOrderAlreadyExists happens when such order exists
 	ErrOrderAlreadyExists = errors.New("such order exists")
 
-	// ErrOrderExpired ...
+	// ErrOrderExpired happens when order expired
 	ErrOrderExpired = errors.New("expired order")
 
-	// ErrOrderIsNotExpired ...
+	// ErrOrderIsNotExpired happens when order is not yet expired
 	ErrOrderIsNotExpired = errors.New("order is not expired")
 
-	// ErrOrderNotFound ...
+	// ErrOrderNotFound happens when such order is not found
 	ErrOrderNotFound = errors.New("order not found")
 
-	// ErrOrderIsGiven ...
+	// ErrOrderIsGiven happens when order is given
 	ErrOrderIsGiven = errors.New("order is given")
 
-	// ErrWrongWeight ...
+	// ErrWrongWeight happens when order weight doesn't satisfy
 	ErrWrongWeight = errors.New("wrong weight")
 
-	// ErrWrongPrice ...
+	// ErrWrongPrice happens when order has incorrect price
 	ErrWrongPrice = errors.New("wrong price")
 
-	// ErrOrderNotEligible ...
+	// ErrOrderNotEligible happens when order is not eligible
 	ErrOrderNotEligible = errors.New("order not eligible")
 
-	// ErrUndefinedAction ...
+	// ErrUndefinedAction happens when undefined action is passed
 	ErrUndefinedAction = errors.New("undefined action")
 
-	// ErrNotEnoughWeight ...
+	// ErrNotEnoughWeight happens when order doesn't have enough weight
 	ErrNotEnoughWeight = errors.New("not enough weight")
 
-	// ErrWrongPackaging ...
+	// ErrWrongPackaging happens when packaging is wrong
 	ErrWrongPackaging = errors.New("wrong packaging")
 )
 
@@ -67,13 +67,13 @@ type txManager interface {
 	RunReadCommitted(context.Context, func(context.Context, pgx.Tx) error) error
 }
 
-// Service ...
+// Service is a structure for order service
 type Service struct {
 	Storage   orderStorage
 	txManager txManager
 }
 
-// NewService ...
+// NewService creates instance of an order Service
 func NewService(storage orderStorage, txManager txManager) *Service {
 	return &Service{
 		Storage:   storage,

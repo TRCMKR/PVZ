@@ -12,44 +12,63 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// InitEnv ...
-func InitEnv(envFile string) {
+var (
+	errNoConfigFile = errors.New("no config file found")
+)
+
+// InitEnv inits env file from path
+func InitEnv(envFile string) error {
 	err := godotenv.Overload(envFile)
 	if err != nil {
-		log.Fatalf("Error loading %s file", envFile)
+		return errNoConfigFile
 	}
+
+	return nil
 }
 
-// Config ...
+// Config is a structure that contains all configuration parameters
 type Config struct {
 	host        string
 	port        string
 	username    string
 	password    string
 	dbname      string
+	kafkaHost   string
+	kafkaPort   string
+	kafkaUIPort string
+	appEnv      string
 	WorkerCount int
 	BatchSize   int
 	Timeout     time.Duration
 }
 
-// NewConfig ...
-func NewConfig() *Config {
+// NewConfig creates instance of Config
+func NewConfig() Config {
 	host := os.Getenv("DB_HOST")
 	port := os.Getenv("DB_PORT")
 	username := os.Getenv("DB_USERNAME")
 	password := os.Getenv("DB_PASSWORD")
 	dbname := os.Getenv("DB_NAME")
+	kafkaHost := os.Getenv("KAFKA_HOST")
+	kafkaPort := os.Getenv("KAFKA_PORT")
+	kafkaUIPort := os.Getenv("KAFKA_UI_PORT")
+	appEnv := os.Getenv("APP_ENV")
 
-	if host == "" || port == "" || username == "" || password == "" || dbname == "" {
+	if host == "" || port == "" || username == "" || password == "" || dbname == "" ||
+		kafkaHost == "" || kafkaPort == "" || kafkaUIPort == "" || appEnv == "" {
 		log.Fatal("Database configuration missing: one or more required fields are empty.")
 	}
 
-	return &Config{
+	return Config{
 		host:        host,
 		port:        port,
 		username:    username,
 		password:    password,
 		dbname:      dbname,
+		kafkaHost:   kafkaHost,
+		kafkaPort:   kafkaPort,
+		kafkaUIPort: kafkaUIPort,
+		appEnv:      appEnv,
 		WorkerCount: 2,
 		BatchSize:   5,
 		Timeout:     2 * time.Second,
@@ -61,32 +80,57 @@ func (c *Config) String() string {
 		c.host, c.port, c.username, c.password, c.dbname)
 }
 
-// Host ...
+// Host returns host
 func (c *Config) Host() string {
 	return c.host
 }
 
-// Port ...
+// Port returns port
 func (c *Config) Port() string {
 	return c.port
 }
 
-// Username ...
+// Username returns username
 func (c *Config) Username() string {
 	return c.username
 }
 
-// Password ...
+// Password returns password
 func (c *Config) Password() string {
 	return c.password
 }
 
-// DBName ...
+// DBName returns db name
 func (c *Config) DBName() string {
 	return c.dbname
 }
 
-// GetRootDir ...
+// KafkaHost returns kafka port
+func (c *Config) KafkaHost() string {
+	return c.kafkaHost
+}
+
+// KafkaPort returns kafka port
+func (c *Config) KafkaPort() string {
+	return c.kafkaPort
+}
+
+// KafkaUIPort returns kafka ui port
+func (c *Config) KafkaUIPort() string {
+	return c.kafkaUIPort
+}
+
+// AppEnv returns env in which app is run
+func (c *Config) AppEnv() string {
+	return c.appEnv
+}
+
+// IsEmpty checks if config is empty
+func (c *Config) IsEmpty() bool {
+	return c.host == ""
+}
+
+// GetRootDir returns root directory of a project
 func GetRootDir() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -106,7 +150,7 @@ func GetRootDir() (string, error) {
 	}
 }
 
-// ReadFirstFileWord ...
+// ReadFirstFileWord reads first word from a file
 func ReadFirstFileWord(filename string) (string, error) {
 	file, err := os.Open(filename)
 	if err != nil {

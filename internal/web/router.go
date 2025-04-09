@@ -11,8 +11,8 @@ import (
 	"github.com/jackc/pgx/v4"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 
-	// docs ...
-	_ "gitlab.ozon.dev/alexplay1224/homework/docs"
+	_ "gitlab.ozon.dev/alexplay1224/homework/docs" // docs needed for swagger
+	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
 	admin_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
@@ -49,10 +49,12 @@ type txManager interface {
 }
 
 type auditLoggerStorage interface {
+	GetAndMarkLogs(context.Context, int) ([]models.Log, error)
+	UpdateLog(context.Context, int, int, int) error
 	CreateLog(context.Context, []models.Log) error
 }
 
-// App ...
+// App is a structure for an app
 type App struct {
 	orderService       order_Service.Service
 	adminService       admin_Service.Service
@@ -60,10 +62,10 @@ type App struct {
 	Router             *mux.Router
 }
 
-// NewApp ...
-func NewApp(ctx context.Context, orders orderStorage, admins adminStorage, logs auditLoggerStorage, txManager txManager,
-	workerCount int, batchSize int, timeout time.Duration) (*App, error) {
-	logger, err := audit_Logger_Storage.NewService(ctx, logs, workerCount, batchSize, timeout)
+// NewApp creates an instance of an App
+func NewApp(ctx context.Context, cfg config.Config, orders orderStorage, admins adminStorage,
+	logs auditLoggerStorage, txManager txManager, workerCount int, batchSize int, timeout time.Duration) (*App, error) {
+	logger, err := audit_Logger_Storage.NewService(ctx, cfg, logs, workerCount, batchSize, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +78,7 @@ func NewApp(ctx context.Context, orders orderStorage, admins adminStorage, logs 
 	}, nil
 }
 
-// SetupRoutes ...
+// SetupRoutes setups all the routing
 func (a *App) SetupRoutes(ctx context.Context) {
 	impl := server{
 		orders: *order_Handler.NewHandler(&a.orderService),
@@ -141,7 +143,7 @@ type server struct {
 
 // @securityDefinitions.basic BasicAuth
 
-// Run ...
+// Run runs the app
 // @title			PVZ API Documentation
 // @version		1.0
 // @description	This is a sample server for Swagger in Go.

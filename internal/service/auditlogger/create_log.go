@@ -7,14 +7,14 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
-// CreateLog ...
-func (s *Service) CreateLog(ctx context.Context, order models.Log) {
+// CreateLog creates log
+func (s *Service) CreateLog(ctx context.Context, log models.Log) {
 	select {
 	case <-ctx.Done():
 		fmt.Print("context canceled, writing log canceled")
 
 		return
 	default:
-		s.jobs <- order
+		s.jobs <- log
 	}
 }

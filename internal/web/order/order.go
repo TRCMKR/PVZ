@@ -11,12 +11,12 @@ import (
 	"github.com/Rhymond/go-money"
 )
 
-// Handler ...
+// Handler is a structure for order handling
 type Handler struct {
 	OrderService orderService
 }
 
-// NewHandler ...
+// NewHandler creates an instance of order Handler
 func NewHandler(orderService orderService) *Handler {
 	return &Handler{
 		OrderService: orderService,
@@ -24,55 +24,55 @@ func NewHandler(orderService orderService) *Handler {
 }
 
 const (
-	// OrderIDParam ...
+	// OrderIDParam is a param for order id
 	OrderIDParam = "id"
 
-	// UserIDParam ...
+	// UserIDParam is a param for user id
 	UserIDParam = "user_id"
 
-	// WeightParam ...
+	// WeightParam is a param for weight
 	WeightParam = "weight"
 
-	// PriceParam ...
+	// PriceParam is a param for price
 	PriceParam = "price"
 
-	// StatusParam ...
+	// StatusParam is a param for status
 	StatusParam = "status"
 
-	// ArrivalDateParam ...
+	// ArrivalDateParam is a param for arrival date
 	ArrivalDateParam = "arrival_date"
 
-	// ArrivalDateFromParam ...
+	// ArrivalDateFromParam is a param for arrival date from
 	ArrivalDateFromParam = "arrival_date_from"
 
-	// ArrivalDateToParam ...
+	// ArrivalDateToParam is a param for arrival date to
 	ArrivalDateToParam = "arrival_date_to"
 
-	// ExpiryDateParam ...
+	// ExpiryDateParam is a param for expiry date
 	ExpiryDateParam = "expiry_date"
 
-	// ExpiryDateFromParam ...
+	// ExpiryDateFromParam is a param for expiry date from
 	ExpiryDateFromParam = "expiry_date_from"
 
-	// ExpiryDateToParam ...
+	// ExpiryDateToParam is a param for expiry date to
 	ExpiryDateToParam = "expiry_date_to"
 
-	// WeightFromParam ...
+	// WeightFromParam is a param for weight from
 	WeightFromParam = "weight_from"
 
-	// WeightToParam ...
+	// WeightToParam is a param for weight to
 	WeightToParam = "weight_to"
 
-	// PriceFromParam ...
+	// PriceFromParam is a param for price from
 	PriceFromParam = "price_from"
 
-	// PriceToParam ...
+	// PriceToParam is a param for price to
 	PriceToParam = "price_to"
 
-	// CountParam ...
+	// CountParam is a param for count
 	CountParam = "count"
 
-	// PageParam ...
+	// PageParam is a param for page
 	PageParam = "page"
 )
 
@@ -95,15 +95,15 @@ var (
 	errWrongJSONFormat   = errors.New("wrong json format")
 )
 
-// InputType ...
+// InputType is a type for all inputs
 type InputType uint
 
 const (
-	// NumberType ...
+	// NumberType is for number inputs
 	NumberType InputType = iota
-	// WordType ...
+	// WordType is for word inputs
 	WordType
-	// DateType ...
+	// DateType is for date inputs
 	DateType
 )
 

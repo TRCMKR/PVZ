@@ -11,12 +11,12 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
 )
 
-// OrdersRepo ...
+// OrdersRepo is a structure for orders repo
 type OrdersRepo struct {
 	db database
 }
 
-// NewOrdersRepo ...
+// NewOrdersRepo creates an instance of orders repo
 func NewOrdersRepo(db database) *OrdersRepo {
 	return &OrdersRepo{
 		db: db,
@@ -70,7 +70,7 @@ var (
 	errFindingOrder      = errors.New("failed to find order")
 )
 
-// AddOrder ...
+// AddOrder adds order
 func (r *OrdersRepo) AddOrder(ctx context.Context, tx pgx.Tx, order models.Order) error {
 	tmp := convertToRepo(&order)
 
@@ -103,7 +103,7 @@ func (r *OrdersRepo) AddOrder(ctx context.Context, tx pgx.Tx, order models.Order
 	return nil
 }
 
-// RemoveOrder ...
+// RemoveOrder deletes order
 func (r *OrdersRepo) RemoveOrder(ctx context.Context, tx pgx.Tx, id int) error {
 	someOrder, err := r.GetByID(ctx, tx, id)
 	if err != nil {
@@ -134,7 +134,7 @@ func (r *OrdersRepo) RemoveOrder(ctx context.Context, tx pgx.Tx, id int) error {
 	return nil
 }
 
-// UpdateOrder ...
+// UpdateOrder updates order
 func (r *OrdersRepo) UpdateOrder(ctx context.Context, tx pgx.Tx, id int, order models.Order) error {
 	exec := r.db.Exec
 	if tx != nil {
@@ -165,7 +165,7 @@ func (r *OrdersRepo) UpdateOrder(ctx context.Context, tx pgx.Tx, id int, order m
 	return nil
 }
 
-// GetByID ...
+// GetByID gets order by id
 func (r *OrdersRepo) GetByID(ctx context.Context, tx pgx.Tx, id int) (models.Order, error) {
 	execQueryRow := r.db.ExecQueryRow
 	if tx != nil {
@@ -198,7 +198,7 @@ func (r *OrdersRepo) GetByID(ctx context.Context, tx pgx.Tx, id int) (models.Ord
 	return *convertToModel(&someOrder), nil
 }
 
-// GetByUserID ...
+// GetByUserID gets orders by user id
 func (r *OrdersRepo) GetByUserID(ctx context.Context, tx pgx.Tx, id int, count int) ([]models.Order, error) {
 	selectFunc := r.db.Select
 	if tx != nil {
@@ -242,7 +242,7 @@ func (r *OrdersRepo) GetByUserID(ctx context.Context, tx pgx.Tx, id int, count i
 	return orders, nil
 }
 
-// GetReturns ...
+// GetReturns gets all returned orders
 func (r *OrdersRepo) GetReturns(ctx context.Context, tx pgx.Tx) ([]models.Order, error) {
 	selectFunc := r.db.Select
 	if tx != nil {
@@ -272,7 +272,7 @@ func (r *OrdersRepo) GetReturns(ctx context.Context, tx pgx.Tx) ([]models.Order,
 	return orders, nil
 }
 
-// GetOrders ...
+// GetOrders gets all orders that satisfy conditions
 func (r *OrdersRepo) GetOrders(ctx context.Context, tx pgx.Tx, params []query.Cond,
 	count int, page int) ([]models.Order, error) {
 	var tmp []order
@@ -314,7 +314,7 @@ func (r *OrdersRepo) GetOrders(ctx context.Context, tx pgx.Tx, params []query.Co
 	return orders, nil
 }
 
-// OffsetGetOrders ...
+// OffsetGetOrders gets orders that satisfy conditions with offset
 func (r *OrdersRepo) OffsetGetOrders(ctx context.Context, tx pgx.Tx, params []query.Cond,
 	count int, page int, offset int) ([]models.Order, error) {
 	params = append(params, query.Cond{
@@ -354,7 +354,7 @@ func (r *OrdersRepo) OffsetGetOrders(ctx context.Context, tx pgx.Tx, params []qu
 	return orders, nil
 }
 
-// Contains ...
+// Contains checks if order is present
 func (r *OrdersRepo) Contains(ctx context.Context, tx pgx.Tx, id int) (bool, error) {
 	execQueryRow := r.db.ExecQueryRow
 	if tx != nil {

@@ -17,7 +17,11 @@ import (
 )
 
 func main() {
-	config.InitEnv(".env")
+	err := config.InitEnv(".env")
+	if err != nil {
+		log.Panic(err)
+	}
+
 	cfg := config.NewConfig()
 
 	ctx := context.Background()
@@ -39,7 +43,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	app, err := web.NewApp(ctx, ordersFacade, adminsFacade, logsRepo, tx, cfg.WorkerCount, cfg.BatchSize, cfg.Timeout)
+	app, err := web.NewApp(ctx, cfg, ordersFacade, adminsFacade, logsRepo, tx, cfg.WorkerCount, cfg.BatchSize, cfg.Timeout)
 	if err != nil {
 		log.Panic(err)
 	}

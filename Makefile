@@ -101,6 +101,16 @@ migration-status:
 swag-init:
 	swag init -g "./internal/web/router.go" --parseInternal --pd --parseDepth 3
 
+.PHONY: compose-up
+## runs docker compose up
+compose-up:
+	docker compose up -d
+
+.PHONY: compose-down
+## runs docker compose down
+compose-down:
+	docker compose down
+
 .PHONY: mock-gen
 ## generates mocks
 mock-gen:

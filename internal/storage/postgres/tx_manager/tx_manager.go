@@ -7,7 +7,6 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
-// Database ...
 type database interface {
 	Select(context.Context, interface{}, string, ...interface{}) error
 	Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error)
@@ -16,19 +15,19 @@ type database interface {
 	BeginTx(context.Context, pgx.TxOptions) (pgx.Tx, error)
 }
 
-// TxManager ...
+// TxManager is a structure for transaction manager
 type TxManager struct {
 	db database
 }
 
-// NewTxManager ...
+// NewTxManager creates an instance of TxManager
 func NewTxManager(db database) *TxManager {
 	return &TxManager{
 		db: db,
 	}
 }
 
-// RunSerializable ...
+// RunSerializable runs queries in transaction with serializable isolation level
 func (m *TxManager) RunSerializable(ctx context.Context, fn func(context.Context, pgx.Tx) error) error {
 	opts := pgx.TxOptions{
 		IsoLevel:   pgx.Serializable,
@@ -38,7 +37,7 @@ func (m *TxManager) RunSerializable(ctx context.Context, fn func(context.Context
 	return m.beginFunc(ctx, opts, fn)
 }
 
-// RunRepeatableRead ...
+// RunRepeatableRead runs queries in transaction with repeatable read isolation level
 func (m *TxManager) RunRepeatableRead(ctx context.Context, fn func(context.Context, pgx.Tx) error) error {
 	opts := pgx.TxOptions{
 		IsoLevel:   pgx.RepeatableRead,
@@ -48,7 +47,7 @@ func (m *TxManager) RunRepeatableRead(ctx context.Context, fn func(context.Conte
 	return m.beginFunc(ctx, opts, fn)
 }
 
-// RunReadCommitted ...
+// RunReadCommitted runs queries in transaction with read committed isolation level
 func (m *TxManager) RunReadCommitted(ctx context.Context, fn func(context.Context, pgx.Tx) error) error {
 	opts := pgx.TxOptions{
 		IsoLevel:   pgx.ReadCommitted,
