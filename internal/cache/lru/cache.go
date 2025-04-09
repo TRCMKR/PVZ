@@ -14,7 +14,7 @@ type cacheItem[K cacheKey, T any] struct {
 	value T
 }
 
-// Cache ...
+// Cache is a structure for LRU cache
 type Cache[K cacheKey, T any] struct {
 	capacity int
 	cache    map[K]*list.Element
@@ -22,7 +22,7 @@ type Cache[K cacheKey, T any] struct {
 	mu       sync.Mutex
 }
 
-// NewCache ...
+// NewCache creates an instance of LRU cache
 func NewCache[K cacheKey, T any](capacity int) *Cache[K, T] {
 	return &Cache[K, T]{
 		capacity: capacity,
@@ -31,7 +31,7 @@ func NewCache[K cacheKey, T any](capacity int) *Cache[K, T] {
 	}
 }
 
-// Put ...
+// Put puts item into cache
 func (c *Cache[K, T]) Put(key K, value T) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -50,7 +50,7 @@ func (c *Cache[K, T]) Put(key K, value T) {
 	}
 }
 
-// Get ...
+// Get gets item from the cache
 func (c *Cache[K, T]) Get(key K) (T, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -66,7 +66,7 @@ func (c *Cache[K, T]) Get(key K) (T, bool) {
 	return item.Value.(*cacheItem[K, T]).value, true
 }
 
-// Remove ...
+// Remove removes item from the cache
 func (c *Cache[K, T]) Remove(key K) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -89,7 +89,7 @@ func (c *Cache[K, T]) removeOldest() {
 	}
 }
 
-// GetAll ...
+// GetAll gets all elements from cache
 func (c *Cache[K, T]) GetAll() []T {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -103,7 +103,7 @@ func (c *Cache[K, T]) GetAll() []T {
 	return items
 }
 
-// GetAllBy ...
+// GetAllBy gets all elements by some predicate
 func (c *Cache[K, T]) GetAllBy(op func(T) (bool, error)) ([]T, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

@@ -8,20 +8,20 @@ import (
 	"github.com/Rhymond/go-money"
 )
 
-// StatusType ...
+// StatusType is a type for orders in db
 type StatusType uint
 
 const (
-	// StoredOrder ...
+	// StoredOrder is a status for stored orders
 	StoredOrder StatusType = iota + 1
 
-	// GivenOrder ...
+	// GivenOrder is a status for given orders
 	GivenOrder
 
-	// ReturnedOrder ...
+	// ReturnedOrder is a status for returned orders
 	ReturnedOrder
 
-	// DeletedOrder ...
+	// DeletedOrder is a status for deleted orders
 	DeletedOrder
 )
 
@@ -83,7 +83,7 @@ const (
 	dateLayout = "2006.01.02 15:04:05"
 )
 
-// NewOrder ...
+// NewOrder creates an instance of Order
 func NewOrder(id int, userID int, weight float64, price money.Money, status StatusType,
 	arrivalDate time.Time, expiryDate time.Time, lastChange time.Time) *Order {
 	return &Order{
@@ -114,7 +114,7 @@ func (o *Order) String() string {
 	return sb.String()
 }
 
-// GetPackagingString ...
+// GetPackagingString makes string from packagings used for this Order
 func (o *Order) GetPackagingString() string {
 	var result string
 	if o.Packaging == NoPackaging {

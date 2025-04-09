@@ -32,7 +32,7 @@ func hashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-// NewAdmin ...
+// NewAdmin creates an instance of Admin
 func NewAdmin(id int, username string, password string) *Admin {
 	hashedPassword, _ := hashPassword(password)
 
@@ -44,7 +44,7 @@ func NewAdmin(id int, username string, password string) *Admin {
 	}
 }
 
-// CheckPassword ...
+// CheckPassword checks if passwords are the same
 func (admin *Admin) CheckPassword(password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(password)) == nil
 }

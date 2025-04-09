@@ -7,20 +7,20 @@ import (
 	"github.com/bytedance/sonic"
 )
 
-// PackagingType ...
+// PackagingType is a type for different packagings
 type PackagingType uint
 
 const (
-	// NoPackaging ...
+	// NoPackaging is for specifying that no packagings were used
 	NoPackaging PackagingType = iota
 
-	// BagPackaging ...
+	// BagPackaging is for bag packaging
 	BagPackaging
 
-	// BoxPackaging ...
+	// BoxPackaging is for box packaging
 	BoxPackaging
 
-	// WrapPackaging ...
+	// WrapPackaging is for wrap packaging
 	WrapPackaging
 )
 
@@ -36,20 +36,20 @@ const (
 )
 
 const (
-	// NoPackagingName ...
+	// NoPackagingName is name for no packaging
 	NoPackagingName = "none"
 
-	// BagName ...
+	// BagName is name for bag packaging
 	BagName = "bag"
 
-	// BoxName ...
+	// BoxName is name for box packaging
 	BoxName = "box"
 
-	// WrapName ...
+	// WrapName is name for wrap packaging
 	WrapName = "wrap"
 )
 
-// Packaging ...
+// Packaging is an interface that all packagings must implement
 type Packaging interface {
 	String() string
 	GetType() PackagingType
@@ -58,7 +58,7 @@ type Packaging interface {
 	GetCheckWeight() bool
 }
 
-// GetPackaging ...
+// GetPackaging is a factory for making packagings
 func GetPackaging(packaging string) Packaging {
 	switch packaging {
 	case BagName:
@@ -74,52 +74,51 @@ func GetPackaging(packaging string) Packaging {
 	}
 }
 
-// BasePackaging ...
+// BasePackaging is a struct for basic packaging
 type BasePackaging struct {
-	// Type ...
+	// Type is a type of this packaging
 	Type PackagingType
 
-	// Cost ...
+	// Cost is a cost of this packaging
 	Cost money.Money
 
-	// MinWeight ...
+	// MinWeight is a minimum weight required for this packaging
 	MinWeight float64
 
-	// CheckWeight ...
+	// CheckWeight is a flag whether to check weight or not
 	CheckWeight bool
 }
 
-// String ...
 func (b *BasePackaging) String() string {
 	return GetPackagingName(b.Type)
 }
 
-// GetType ...
+// GetType gets Type of the Packaging
 func (b *BasePackaging) GetType() PackagingType {
 	return b.Type
 }
 
-// GetCost ...
+// GetCost gets Cost of the Packaging
 func (b *BasePackaging) GetCost() *money.Money {
 	return &b.Cost
 }
 
-// GetMinWeight ...
+// GetMinWeight gets MinWeight of the Packaging
 func (b *BasePackaging) GetMinWeight() float64 {
 	return b.MinWeight
 }
 
-// GetCheckWeight ...
+// GetCheckWeight gets CheckWeight of the Packaging
 func (b *BasePackaging) GetCheckWeight() bool {
 	return b.CheckWeight
 }
 
-// MarshalJSON ...
+// MarshalJSON is used to marshall packaging to json
 func (b *BasePackaging) MarshalJSON() ([]byte, error) {
 	return sonic.Marshal(b.String())
 }
 
-// UnmarshalJSON ...
+// UnmarshalJSON is used to unmarshall packaging to json
 func (b *BasePackaging) UnmarshalJSON(data []byte) error {
 	var name string
 	if err := sonic.Unmarshal(data, &name); err != nil {
@@ -141,7 +140,7 @@ func (b *BasePackaging) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// GetPackagingName ...
+// GetPackagingName gets Packaging name from PackagingType
 func GetPackagingName(packaging PackagingType) string {
 	switch packaging {
 	case BagPackaging:
@@ -157,7 +156,7 @@ func GetPackagingName(packaging PackagingType) string {
 	}
 }
 
-// Bag ...
+// Bag is a struct of bag packaging
 type Bag struct {
 	BasePackaging
 }
@@ -173,12 +172,11 @@ func newBag() Packaging {
 	}
 }
 
-// Box ...
+// Box is a struct of box packaging
 type Box struct {
 	BasePackaging
 }
 
-// newBox ...
 func newBox() Packaging {
 	return &Box{
 		BasePackaging{
@@ -190,7 +188,7 @@ func newBox() Packaging {
 	}
 }
 
-// Wrap ...
+// Wrap is a struct of wrap packaging
 type Wrap struct {
 	BasePackaging
 }
@@ -206,7 +204,7 @@ func newWrap() Packaging {
 	}
 }
 
-// None ...
+// None is a struct of no packaging
 type None struct {
 	BasePackaging
 }

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,6 +16,7 @@ import (
 	"go.uber.org/mock/gomock"
 	"golang.org/x/crypto/bcrypt"
 
+	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
@@ -95,12 +95,12 @@ func TestApp_Run(t *testing.T) {
 					Return(models.Admin{ID: 0, Username: "user", Password: string(password)}, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
 				mockAdminStorage.EXPECT().ContainsUsername(gomock.Any(), gomock.Any()).Return(true, nil)
-				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).Return(nil).
+				tx.EXPECT().RunRepeatableRead(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, f func(ctx context.Context, tx pgx.Tx) error) error {
 						return f(ctx, nil)
-					})
+					}).Return(nil)
 				mockOrderStorage.EXPECT().AddOrder(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-				mockOrderStorage.EXPECT().Contains(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil).Return(false, nil)
+				mockOrderStorage.EXPECT().Contains(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
 			},
 			expectedCode: http.StatusOK,
 		},
@@ -204,23 +204,22 @@ func TestApp_Run(t *testing.T) {
 		},
 	}
 
-	ctrl := gomock.NewController(t)
-
-	t.Cleanup(func() {
-		ctrl.Finish()
-	})
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+			t.Cleanup(func() {
+				ctrl.Finish()
+			})
 
 			mockTxManager := NewMocktxManager(ctrl)
 
 			mockOrderStorage := NewMockorderStorage(ctrl)
 			mockAdminStorage := NewMockadminStorage(ctrl)
 			mockLogStorage := NewMockauditLoggerStorage(ctrl)
-			app, _ := NewApp(context.Background(), mockOrderStorage, mockAdminStorage, mockLogStorage,
-				mockTxManager, 2, 5, 500*time.Second)
+			app, _ := NewApp(context.Background(), config.Config{}, mockOrderStorage, mockAdminStorage, mockLogStorage,
+				mockTxManager, 2, 5, 500*time.Millisecond)
 			app.SetupRoutes(context.Background())
 
 			tt.mockSetup(*mockOrderStorage, *mockAdminStorage, *mockLogStorage, *mockTxManager)
@@ -229,6 +228,7 @@ func TestApp_Run(t *testing.T) {
 			req, err := http.NewRequestWithContext(context.Background(), tt.args.method, tt.args.path,
 				bytes.NewReader(tt.args.body))
 			require.NoError(t, err)
+
 			if tt.authorized {
 				username := "user"
 				password := "password"
@@ -237,13 +237,8 @@ func TestApp_Run(t *testing.T) {
 				req.Header.Set("Authorization", authHeader)
 			}
 
-			if tt.name == "valid process orders" {
-				fmt.Print(1)
-			}
-
 			res := httptest.NewRecorder()
 			app.Router.ServeHTTP(res, req)
-
 			require.Equal(t, tt.expectedCode, res.Code)
 		})
 	}

@@ -131,7 +131,7 @@ func (h *Handler) validateDateParam(param string) (string, error) {
 	return date.Format(time.RFC3339), nil
 }
 
-// GetFilters ...
+// GetFilters is a function to get types for input params
 func GetFilters() map[string]InputType {
 	return map[string]InputType{
 		OrderIDParam:         NumberType,

@@ -23,7 +23,7 @@ type createAdminRequest struct {
 	Password string `json:"password"` // Password is the admin's password
 }
 
-// CreateAdmin ...
+// CreateAdmin creates admin
 // @Summary Create admin
 // @Description Creates a new admin user
 // @Tags admins

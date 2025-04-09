@@ -31,14 +31,14 @@ var (
 	errUnsupportedValueType = errors.New("unsupported value type")
 )
 
-// OrderFacade ...
+// OrderFacade is a structure for order facade
 type OrderFacade struct {
 	cache              *lru.Cache[int, models.Order]
 	historyOrdersCache *lru.Cache[int, models.Order]
 	orderStorage       orderStorage
 }
 
-// NewOrderFacade ...
+// NewOrderFacade creates instance for order facade
 func NewOrderFacade(ctx context.Context, orderStorage orderStorage, capacity int) *OrderFacade {
 	historyOrdersCache := lru.NewCache[int, models.Order](capacity)
 
@@ -55,7 +55,7 @@ func NewOrderFacade(ctx context.Context, orderStorage orderStorage, capacity int
 	}
 }
 
-// AddOrder ...
+// AddOrder adds order
 func (f *OrderFacade) AddOrder(ctx context.Context, tx pgx.Tx, order models.Order) error {
 	err := f.orderStorage.AddOrder(ctx, tx, order)
 	if err != nil {
@@ -68,7 +68,7 @@ func (f *OrderFacade) AddOrder(ctx context.Context, tx pgx.Tx, order models.Orde
 	return nil
 }
 
-// RemoveOrder ...
+// RemoveOrder removes order
 func (f *OrderFacade) RemoveOrder(ctx context.Context, tx pgx.Tx, id int) error {
 	err := f.orderStorage.RemoveOrder(ctx, tx, id)
 	if err != nil {
@@ -81,7 +81,7 @@ func (f *OrderFacade) RemoveOrder(ctx context.Context, tx pgx.Tx, id int) error 
 	return nil
 }
 
-// UpdateOrder ...
+// UpdateOrder updates order
 func (f *OrderFacade) UpdateOrder(ctx context.Context, tx pgx.Tx, id int, order models.Order) error {
 	err := f.orderStorage.UpdateOrder(ctx, tx, id, order)
 	if err != nil {
@@ -94,7 +94,7 @@ func (f *OrderFacade) UpdateOrder(ctx context.Context, tx pgx.Tx, id int, order 
 	return nil
 }
 
-// GetByID ...
+// GetByID gets order by id
 func (f *OrderFacade) GetByID(ctx context.Context, tx pgx.Tx, id int) (models.Order, error) {
 	if order, ok := f.cache.Get(id); ok {
 		return order, nil
@@ -110,12 +110,12 @@ func (f *OrderFacade) GetByID(ctx context.Context, tx pgx.Tx, id int) (models.Or
 	return order, nil
 }
 
-// GetByUserID ...
+// GetByUserID gets orders by user id
 func (f *OrderFacade) GetByUserID(ctx context.Context, tx pgx.Tx, id int, userID int) ([]models.Order, error) {
 	return f.orderStorage.GetByUserID(ctx, tx, id, userID)
 }
 
-// GetReturns ...
+// GetReturns gets all returned orders
 func (f *OrderFacade) GetReturns(ctx context.Context, tx pgx.Tx) ([]models.Order, error) {
 	return f.orderStorage.GetReturns(ctx, tx)
 }
@@ -250,7 +250,7 @@ func (f *OrderFacade) checkIfOrderMatches(order models.Order, params []query.Con
 	return true, nil
 }
 
-// GetOrders ...
+// GetOrders gets orders by conditions
 func (f *OrderFacade) GetOrders(ctx context.Context, tx pgx.Tx, params []query.Cond,
 	count int, page int) ([]models.Order, error) {
 	recentOrders, err := f.historyOrdersCache.GetAllBy(func(order models.Order) (bool, error) {
@@ -306,7 +306,7 @@ func (f *OrderFacade) GetOrders(ctx context.Context, tx pgx.Tx, params []query.C
 	return result, nil
 }
 
-// Contains ...
+// Contains checks if order is present
 func (f *OrderFacade) Contains(ctx context.Context, tx pgx.Tx, id int) (bool, error) {
 	if _, ok := f.cache.Get(id); ok {
 		return true, nil
