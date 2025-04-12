@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"go.uber.org/zap"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
@@ -19,6 +21,7 @@ type adminStorage interface {
 // Service is a struct for admin service
 type Service struct {
 	Storage adminStorage
+	logger  *zap.Logger
 }
 
 var (
@@ -36,8 +39,9 @@ var (
 )
 
 // NewService creates instance of admin Service
-func NewService(storage adminStorage) *Service {
+func NewService(logger *zap.Logger, storage adminStorage) *Service {
 	return &Service{
 		Storage: storage,
+		logger:  logger,
 	}
 }

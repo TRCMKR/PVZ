@@ -34,6 +34,7 @@ func logger(ctx context.Context, cfg config.Config, done chan<- models.Log) erro
 			err = json.Unmarshal(msg.Value, &receivedLog)
 			if err != nil {
 				log.Print("Error unmarshalling log:", err)
+
 				continue
 			}
 

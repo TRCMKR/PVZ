@@ -3,9 +3,10 @@ package repository
 import (
 	"context"
 	"errors"
-	"log"
 
 	"github.com/jackc/pgx/v4"
+	"github.com/opentracing/opentracing-go"
+	"go.uber.org/zap"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
@@ -13,13 +14,15 @@ import (
 
 // OrdersRepo is a structure for orders repo
 type OrdersRepo struct {
-	db database
+	db     database
+	logger *zap.Logger
 }
 
 // NewOrdersRepo creates an instance of orders repo
-func NewOrdersRepo(db database) *OrdersRepo {
+func NewOrdersRepo(logger *zap.Logger, db database) *OrdersRepo {
 	return &OrdersRepo{
-		db: db,
+		db:     db,
+		logger: logger,
 	}
 }
 
@@ -72,6 +75,9 @@ var (
 
 // AddOrder adds order
 func (r *OrdersRepo) AddOrder(ctx context.Context, tx pgx.Tx, order models.Order) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repo.AddOrder")
+	defer span.Finish()
+
 	tmp := convertToRepo(&order)
 
 	exec := r.db.Exec
@@ -95,7 +101,17 @@ func (r *OrdersRepo) AddOrder(ctx context.Context, tx pgx.Tx, order models.Order
 		tmp.ID, tmp.UserID, tmp.Weight, tmp.Price, tmp.Packaging, tmp.ExtraPackaging,
 		tmp.Status, tmp.ArrivalDate.Time, tmp.ExpiryDate.Time, tmp.LastChange.Time)
 	if err != nil {
-		log.Printf("Failed to insert order %v: %v", tmp.ID, err)
+		r.logger.Error("failed to add order",
+			zap.Int("order_id", tmp.ID),
+			zap.Int("user_id", tmp.UserID),
+			zap.Float64("weight", tmp.Weight),
+			zap.Int64("price", tmp.Price),
+			zap.Int("packaging", int(tmp.Packaging)),
+			zap.Int("extra_packaging", int(tmp.ExtraPackaging)),
+			zap.Int("status", int(tmp.Status)),
+			zap.Error(err),
+		)
+		span.SetTag("error", errAddOrderFailed)
 
 		return errAddOrderFailed
 	}
@@ -105,12 +121,21 @@ func (r *OrdersRepo) AddOrder(ctx context.Context, tx pgx.Tx, order models.Order
 
 // RemoveOrder deletes order
 func (r *OrdersRepo) RemoveOrder(ctx context.Context, tx pgx.Tx, id int) error {
-	someOrder, err := r.GetByID(ctx, tx, id)
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repo.RemoveOrder")
+	defer span.Finish()
+
+	ok, err := r.Contains(ctx, tx, id)
 	if err != nil {
+		span.SetTag("error", err)
+
 		return err
 	}
+	if !ok {
+		r.logger.Error("order not found",
+			zap.Int("id", id),
+		)
+		span.SetTag("error", errNoSuchOrder)
 
-	if someOrder.Status == models.DeletedOrder {
 		return errNoSuchOrder
 	}
 
@@ -126,7 +151,11 @@ func (r *OrdersRepo) RemoveOrder(ctx context.Context, tx pgx.Tx, id int) error {
 						AND status <> $3;
 						`, 4, id, models.DeletedOrder)
 	if err != nil {
-		log.Printf("Failed to remove order %v: %v", id, errRemoveOrderFailed)
+		r.logger.Error("failed to remove order",
+			zap.Int("id", id),
+			zap.Error(err),
+		)
+		span.SetTag("error", errRemoveOrderFailed)
 
 		return errRemoveOrderFailed
 	}
@@ -136,6 +165,9 @@ func (r *OrdersRepo) RemoveOrder(ctx context.Context, tx pgx.Tx, id int) error {
 
 // UpdateOrder updates order
 func (r *OrdersRepo) UpdateOrder(ctx context.Context, tx pgx.Tx, id int, order models.Order) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repo.UpdateOrder")
+	defer span.Finish()
+
 	exec := r.db.Exec
 	if tx != nil {
 		exec = tx.Exec
@@ -157,9 +189,19 @@ func (r *OrdersRepo) UpdateOrder(ctx context.Context, tx pgx.Tx, id int, order m
 		order.UserID, order.Weight, order.Price.Amount(), order.Packaging, order.ExtraPackaging,
 		order.Status, order.ArrivalDate, order.ExpiryDate, order.LastChange, id)
 	if err != nil {
-		log.Printf("Failed to update order %v: %v", id, errUpdateOrderFailed)
+		r.logger.Error("failed to update order",
+			zap.Int("order_id", order.ID),
+			zap.Int("user_id", order.UserID),
+			zap.Float64("weight", order.Weight),
+			zap.Int64("price", order.Price.Amount()),
+			zap.Int("packaging", int(order.Packaging)),
+			zap.Int("extra_packaging", int(order.ExtraPackaging)),
+			zap.Int("status", int(order.Status)),
+			zap.Error(err),
+		)
+		span.SetTag("error", errUpdateOrderFailed)
 
-		return err
+		return errUpdateOrderFailed
 	}
 
 	return nil
@@ -167,6 +209,9 @@ func (r *OrdersRepo) UpdateOrder(ctx context.Context, tx pgx.Tx, id int, order m
 
 // GetByID gets order by id
 func (r *OrdersRepo) GetByID(ctx context.Context, tx pgx.Tx, id int) (models.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repo.GetByID")
+	defer span.Finish()
+
 	execQueryRow := r.db.ExecQueryRow
 	if tx != nil {
 		execQueryRow = tx.QueryRow
@@ -190,7 +235,11 @@ func (r *OrdersRepo) GetByID(ctx context.Context, tx pgx.Tx, id int) (models.Ord
 		&someOrder.ExpiryDate,
 		&someOrder.LastChange)
 	if err != nil {
-		log.Printf("Failed to get order %v: %v", id, errGetOrderByID)
+		r.logger.Error("failed to get order",
+			zap.Int("id", id),
+			zap.Error(err),
+		)
+		span.SetTag("error", errGetOrderByID)
 
 		return models.Order{}, errGetOrderByID
 	}
@@ -200,6 +249,9 @@ func (r *OrdersRepo) GetByID(ctx context.Context, tx pgx.Tx, id int) (models.Ord
 
 // GetByUserID gets orders by user id
 func (r *OrdersRepo) GetByUserID(ctx context.Context, tx pgx.Tx, id int, count int) ([]models.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repo.GetByUserID")
+	defer span.Finish()
+
 	selectFunc := r.db.Select
 	if tx != nil {
 		selectFunc = func(ctx context.Context, dest interface{}, selectQuery string, args ...interface{}) error {
@@ -229,7 +281,12 @@ func (r *OrdersRepo) GetByUserID(ctx context.Context, tx pgx.Tx, id int, count i
 	}
 
 	if err != nil {
-		log.Printf("Failed to get order by user %v: %v", id, errGetOrderByUserID)
+		r.logger.Error("failed to get orders by user id",
+			zap.Int("user_id", id),
+			zap.Int("count", count),
+			zap.Error(err),
+		)
+		span.SetTag("error", errGetOrderByUserID)
 
 		return nil, errGetOrderByUserID
 	}
@@ -244,6 +301,9 @@ func (r *OrdersRepo) GetByUserID(ctx context.Context, tx pgx.Tx, id int, count i
 
 // GetReturns gets all returned orders
 func (r *OrdersRepo) GetReturns(ctx context.Context, tx pgx.Tx) ([]models.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repo.GetReturns")
+	defer span.Finish()
+
 	selectFunc := r.db.Select
 	if tx != nil {
 		selectFunc = func(ctx context.Context, dest interface{}, selectQuery string, args ...interface{}) error {
@@ -259,7 +319,10 @@ func (r *OrdersRepo) GetReturns(ctx context.Context, tx pgx.Tx) ([]models.Order,
 								ORDER BY last_change DESC
 								`)
 	if err != nil {
-		log.Printf("Failed to get order by user id: %v", errGetReturnsFailed)
+		r.logger.Error("failed to get returned orders",
+			zap.Error(err),
+		)
+		span.SetTag("error", errGetReturnsFailed)
 
 		return nil, errGetReturnsFailed
 	}
@@ -275,7 +338,8 @@ func (r *OrdersRepo) GetReturns(ctx context.Context, tx pgx.Tx) ([]models.Order,
 // GetOrders gets all orders that satisfy conditions
 func (r *OrdersRepo) GetOrders(ctx context.Context, tx pgx.Tx, params []query.Cond,
 	count int, page int) ([]models.Order, error) {
-	var tmp []order
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repo.GetOrders")
+	defer span.Finish()
 
 	params = append(params, query.Cond{
 		Operator: query.NotEquals,
@@ -298,10 +362,16 @@ func (r *OrdersRepo) GetOrders(ctx context.Context, tx pgx.Tx, params []query.Co
 		}
 	}
 
+	var tmp []order
 	err := selectFunc(ctx, &tmp, selectQuery, args...)
 
 	if err != nil {
-		log.Printf("Failed to get orders %v: %v", tmp, errGetOrdersFailed)
+		r.logger.Error("failed to get orders",
+			zap.String("query", selectQuery),
+			zap.Any("params", args),
+			zap.Error(err),
+		)
+		span.SetTag("error", errGetOrdersFailed)
 
 		return nil, errGetOrdersFailed
 	}
@@ -317,6 +387,9 @@ func (r *OrdersRepo) GetOrders(ctx context.Context, tx pgx.Tx, params []query.Co
 // OffsetGetOrders gets orders that satisfy conditions with offset
 func (r *OrdersRepo) OffsetGetOrders(ctx context.Context, tx pgx.Tx, params []query.Cond,
 	count int, page int, offset int) ([]models.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repo.OffsetGetOrders")
+	defer span.Finish()
+
 	params = append(params, query.Cond{
 		Operator: query.NotEquals,
 		Field:    "status",
@@ -341,7 +414,12 @@ func (r *OrdersRepo) OffsetGetOrders(ctx context.Context, tx pgx.Tx, params []qu
 	var tmp []order
 	err := selectFunc(ctx, &tmp, selectQuery, args...)
 	if err != nil {
-		log.Printf("Failed to get orders %v: %v", tmp, errGetOrdersFailed)
+		r.logger.Error("failed to get orders",
+			zap.String("query", selectQuery),
+			zap.Any("params", args),
+			zap.Error(err),
+		)
+		span.SetTag("error", errGetOrdersFailed)
 
 		return nil, errGetOrdersFailed
 	}
@@ -356,6 +434,9 @@ func (r *OrdersRepo) OffsetGetOrders(ctx context.Context, tx pgx.Tx, params []qu
 
 // Contains checks if order is present
 func (r *OrdersRepo) Contains(ctx context.Context, tx pgx.Tx, id int) (bool, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repo.Contains")
+	defer span.Finish()
+
 	execQueryRow := r.db.ExecQueryRow
 	if tx != nil {
 		execQueryRow = tx.QueryRow
@@ -364,7 +445,11 @@ func (r *OrdersRepo) Contains(ctx context.Context, tx pgx.Tx, id int) (bool, err
 	var exists bool
 	err := execQueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM orders WHERE id = $1)`, id).Scan(&exists)
 	if err != nil {
-		log.Printf("Failed to find order %v: %v", id, errFindingOrder)
+		r.logger.Error("failed to find order",
+			zap.Int("id", id),
+			zap.Error(err),
+		)
+		span.SetTag("error", errFindingOrder)
 
 		return false, errFindingOrder
 	}

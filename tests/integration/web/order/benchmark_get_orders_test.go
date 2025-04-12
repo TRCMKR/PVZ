@@ -11,27 +11,32 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/facade"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/tx_manager"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/web"
+	web "gitlab.ozon.dev/alexplay1224/homework/internal/web/http"
 	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
 )
 
-func setup() (string, string) {
+func setup() (string, string, error) {
 	ctx := context.Background()
 
 	rootDir, _ := config.GetRootDir()
-	config.InitEnv(rootDir + "/.env.test")
+	err := config.InitEnv(rootDir + "/.env.test")
+	if err != nil {
+		return "", "", err
+	}
 	cfg := config.NewConfig()
 
 	connStr, _, _ := integration.InitPostgresContainer(ctx, cfg)
 	url := "/orders"
 
-	return connStr, url
+	return connStr, url, nil
 }
 
 func sendGetOrdersRequest(ctx context.Context, wg *sync.WaitGroup, url string, username string, password string) {
@@ -66,17 +71,25 @@ func sendGetOrdersRequest(ctx context.Context, wg *sync.WaitGroup, url string, u
 
 func BenchmarkOrderHandler_GetOrders_Cache(b *testing.B) {
 	ctx := context.Background()
-	connStr, url := setup()
+	connStr, url, err := setup()
+	require.NoError(b, err)
+
 	db, _ := postgres.NewDB(ctx, connStr)
 
 	txManager := tx_manager.NewTxManager(db)
-	ordersRepo := repository.NewOrdersRepo(db)
+
+	logger := zap.NewNop()
+
+	ordersRepo := repository.NewOrdersRepo(logger, db)
 	ordersFacade := facade.NewOrderFacade(ctx, ordersRepo, 10000)
-	adminsRepo := repository.NewAdminsRepo(db)
+
+	adminsRepo := repository.NewAdminsRepo(logger, db)
 	adminsFacade := facade.NewAdminFacade(adminsRepo, 10000)
+
 	logsRepo := repository.NewLogsRepo(db)
 
-	app, _ := web.NewApp(ctx, config.Config{}, ordersFacade, adminsFacade, logsRepo, txManager, 2, 5, 500*time.Millisecond)
+	app, _ := web.NewApp(ctx, config.Config{}, logger, ordersFacade, adminsFacade, logsRepo, txManager,
+		2, 5, 500*time.Millisecond)
 	app.SetupRoutes(ctx)
 
 	server := httptest.NewServer(app.Router)
@@ -106,16 +119,24 @@ func BenchmarkOrderHandler_GetOrders_Cache(b *testing.B) {
 
 func BenchmarkOrderHandler_GetOrders_NoAdminCache(b *testing.B) {
 	ctx := context.Background()
-	connStr, url := setup()
+	connStr, url, err := setup()
+	require.NoError(b, err)
+
 	db, _ := postgres.NewDB(ctx, connStr)
 
 	txManager := tx_manager.NewTxManager(db)
-	ordersRepo := repository.NewOrdersRepo(db)
+
+	logger := zap.NewNop()
+
+	ordersRepo := repository.NewOrdersRepo(logger, db)
 	ordersFacade := facade.NewOrderFacade(ctx, ordersRepo, 10000)
-	adminsRepo := repository.NewAdminsRepo(db)
+
+	adminsRepo := repository.NewAdminsRepo(logger, db)
+
 	logsRepo := repository.NewLogsRepo(db)
 
-	app, _ := web.NewApp(ctx, config.Config{}, ordersFacade, adminsRepo, logsRepo, txManager, 2, 5, 500*time.Millisecond)
+	app, _ := web.NewApp(ctx, config.Config{}, logger, ordersFacade, adminsRepo, logsRepo, txManager,
+		2, 5, 500*time.Millisecond)
 	app.SetupRoutes(ctx)
 
 	server := httptest.NewServer(app.Router)
@@ -145,16 +166,24 @@ func BenchmarkOrderHandler_GetOrders_NoAdminCache(b *testing.B) {
 
 func BenchmarkOrderHandler_GetOrders_NoOrderCache(b *testing.B) {
 	ctx := context.Background()
-	connStr, url := setup()
+	connStr, url, err := setup()
+	require.NoError(b, err)
+
 	db, _ := postgres.NewDB(ctx, connStr)
 
+	logger := zap.NewNop()
+
 	txManager := tx_manager.NewTxManager(db)
-	ordersRepo := repository.NewOrdersRepo(db)
-	adminsRepo := repository.NewAdminsRepo(db)
+
+	ordersRepo := repository.NewOrdersRepo(logger, db)
+	adminsRepo := repository.NewAdminsRepo(logger, db)
+
 	adminsFacade := facade.NewAdminFacade(adminsRepo, 10000)
+
 	logsRepo := repository.NewLogsRepo(db)
 
-	app, _ := web.NewApp(ctx, config.Config{}, ordersRepo, adminsFacade, logsRepo, txManager, 2, 5, 500*time.Millisecond)
+	app, _ := web.NewApp(ctx, config.Config{}, logger, ordersRepo, adminsFacade, logsRepo, txManager,
+		2, 5, 500*time.Millisecond)
 	app.SetupRoutes(ctx)
 
 	server := httptest.NewServer(app.Router)
@@ -184,15 +213,23 @@ func BenchmarkOrderHandler_GetOrders_NoOrderCache(b *testing.B) {
 
 func BenchmarkOrderHandler_GetOrders_NoCache(b *testing.B) {
 	ctx := context.Background()
-	connStr, url := setup()
+	connStr, url, err := setup()
+	require.NoError(b, err)
+
 	db, _ := postgres.NewDB(ctx, connStr)
 
 	txManager := tx_manager.NewTxManager(db)
-	ordersRepo := repository.NewOrdersRepo(db)
-	adminsRepo := repository.NewAdminsRepo(db)
+
+	logger := zap.NewNop()
+
+	ordersRepo := repository.NewOrdersRepo(logger, db)
+
+	adminsRepo := repository.NewAdminsRepo(logger, db)
+
 	logsRepo := repository.NewLogsRepo(db)
 
-	app, _ := web.NewApp(ctx, config.Config{}, ordersRepo, adminsRepo, logsRepo, txManager, 2, 5, 500*time.Millisecond)
+	app, _ := web.NewApp(ctx, config.Config{}, logger, ordersRepo, adminsRepo, logsRepo, txManager,
+		2, 5, 500*time.Millisecond)
 	app.SetupRoutes(ctx)
 
 	server := httptest.NewServer(app.Router)

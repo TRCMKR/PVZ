@@ -4,12 +4,15 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/opentracing/opentracing-go"
+	"github.com/uber/jaeger-client-go/config"
 )
 
 var (
@@ -37,6 +40,7 @@ type Config struct {
 	kafkaPort   string
 	kafkaUIPort string
 	appEnv      string
+	grpcPort    string
 	WorkerCount int
 	BatchSize   int
 	Timeout     time.Duration
@@ -52,10 +56,11 @@ func NewConfig() Config {
 	kafkaHost := os.Getenv("KAFKA_HOST")
 	kafkaPort := os.Getenv("KAFKA_PORT")
 	kafkaUIPort := os.Getenv("KAFKA_UI_PORT")
+	grpcPort := os.Getenv("GRPC_PORT")
 	appEnv := os.Getenv("APP_ENV")
 
 	if host == "" || port == "" || username == "" || password == "" || dbname == "" ||
-		kafkaHost == "" || kafkaPort == "" || kafkaUIPort == "" || appEnv == "" {
+		kafkaHost == "" || kafkaPort == "" || kafkaUIPort == "" || appEnv == "" || grpcPort == "" {
 		log.Fatal("Database configuration missing: one or more required fields are empty.")
 	}
 
@@ -68,6 +73,7 @@ func NewConfig() Config {
 		kafkaHost:   kafkaHost,
 		kafkaPort:   kafkaPort,
 		kafkaUIPort: kafkaUIPort,
+		grpcPort:    grpcPort,
 		appEnv:      appEnv,
 		WorkerCount: 2,
 		BatchSize:   5,
@@ -125,6 +131,11 @@ func (c *Config) AppEnv() string {
 	return c.appEnv
 }
 
+// GRPCPort returns grpc port
+func (c *Config) GRPCPort() string {
+	return c.grpcPort
+}
+
 // IsEmpty checks if config is empty
 func (c *Config) IsEmpty() bool {
 	return c.host == ""
@@ -175,4 +186,27 @@ func ReadFirstFileWord(filename string) (string, error) {
 	}
 
 	return firstWord, nil
+}
+
+func InitTracer(serviceName string) (opentracing.Tracer, io.Closer, error) {
+	tracerCfg := config.Configuration{
+		ServiceName: serviceName,
+		Sampler: &config.SamplerConfig{
+			Type:  "const",
+			Param: 1,
+		},
+		Reporter: &config.ReporterConfig{
+			LogSpans:           true,
+			LocalAgentHostPort: "localhost:6831",
+		},
+	}
+
+	tracer, closer, err := tracerCfg.NewTracer()
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not initialize jaeger tracer: %w", err)
+	}
+
+	opentracing.SetGlobalTracer(tracer)
+
+	return tracer, closer, nil
 }

@@ -2,6 +2,8 @@ package admin
 
 import (
 	"context"
+
+	"go.uber.org/zap"
 )
 
 // DeleteAdmin deletes admin
@@ -11,6 +13,10 @@ func (s *Service) DeleteAdmin(ctx context.Context, password string, username str
 		return err
 	}
 	if !ok {
+		s.logger.Error(ErrAdminDoesntExist.Error(),
+			zap.String("username", username),
+		)
+
 		return ErrAdminDoesntExist
 	}
 
@@ -20,6 +26,11 @@ func (s *Service) DeleteAdmin(ctx context.Context, password string, username str
 	}
 
 	if !admin.CheckPassword(password) {
+		s.logger.Error(ErrWrongPassword.Error(),
+			zap.String("username", username),
+			zap.Error(ErrWrongPassword),
+		)
+
 		return ErrWrongPassword
 	}
 

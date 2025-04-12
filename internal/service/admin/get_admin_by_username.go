@@ -3,6 +3,8 @@ package admin
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
@@ -15,6 +17,11 @@ func (s *Service) GetAdminByUsername(ctx context.Context, username string) (mode
 		return models.Admin{}, err
 	}
 	if !ok {
+		s.logger.Error(ErrAdminDoesntExist.Error(),
+			zap.String("username", username),
+			zap.Error(ErrAdminDoesntExist),
+		)
+
 		return models.Admin{}, ErrAdminDoesntExist
 	}
 

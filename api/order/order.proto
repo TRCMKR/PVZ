@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package order.proto;
+
+option go_package = "order/proto";
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  rpc UpdateOrder(UpdateOrderRequest) returns (UpdateOrderResponse);
+  rpc DeleteOrder(DeleteOrderRequest) returns (DeleteOrderResponse);
+  rpc GetOrders(GetOrdersRequest) returns (GetOrdersResponse);
+}
+
+message order {
+  int32 id = 1;
+  int32 user_id = 2;
+  double weight = 3;
+  int64 price = 4;
+  int32 packaging = 5;
+  int32 extra_packaging = 6;
+  int32 status = 7;
+  google.protobuf.Timestamp arrival_date = 8;
+  google.protobuf.Timestamp expiry_date = 9;
+  google.protobuf.Timestamp last_change = 10;
+}
+
+message CreateOrderRequest {
+  int32 id = 1;
+  int32 user_id = 2;
+  double weight = 3;
+  int64 price = 4;
+  google.protobuf.Timestamp expiry_date = 5;
+  int32 packaging = 6;
+  int32 extra_packaging = 7;
+}
+
+message CreateOrderResponse {
+  string output = 1;
+}
+
+message UpdateOrderRequest {
+  int32 id = 1;
+  int32 user_id = 2;
+  string action = 3;
+}
+
+message UpdateOrderResponse {
+  string output = 1;
+}
+
+message DeleteOrderRequest {
+  int32 id = 1;
+}
+
+message DeleteOrderResponse {
+  string output = 1;
+}
+
+message GetOrdersRequest {
+  optional int32 id = 1;
+  optional int32 user_id = 2;
+
+  optional double weight = 3;
+  optional double weight_to = 4;
+  optional double weight_from = 5;
+
+  optional int64 price = 6;
+  optional int64 price_to = 7;
+  optional int64 price_from = 8;
+
+  optional int32 status = 9;
+
+  optional google.protobuf.Timestamp arrival_date = 10;
+  optional google.protobuf.Timestamp arrival_date_to = 11;
+  optional google.protobuf.Timestamp arrival_date_from = 12;
+
+  optional google.protobuf.Timestamp expiry_date = 13;
+  optional google.protobuf.Timestamp expiry_date_to = 14;
+  optional google.protobuf.Timestamp expiry_date_from = 15;
+
+  optional int32 count = 16;
+  optional int32 page = 17;
+}
+
+message GetOrdersResponse {
+  repeated order orders = 2;
+}

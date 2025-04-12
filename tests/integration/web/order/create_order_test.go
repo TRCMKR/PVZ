@@ -16,12 +16,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/http/order"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	order_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/tx_manager"
-	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
 )
 

@@ -136,6 +136,15 @@ test-cover:
 run-unit-tests:
 	go test -count=1 ./...
 
+.PHONY: proto-gen
+## compiles proto files
+proto-gen:
+	mkdir -p pkg/api/admin
+	mkdir -p pkg/api/order
+	protoc --go_out=pkg/api --go-grpc_out=pkg/api api/order/order.proto
+	protoc --go_out=pkg/api --go-grpc_out=pkg/api api/admin/admin.proto
+
+
 .PHONY: help
 ## prints help about all targets
 help:

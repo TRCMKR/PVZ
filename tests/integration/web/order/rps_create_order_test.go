@@ -23,7 +23,7 @@ import (
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/facade"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/repository"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/storage/postgres/tx_manager"
-	"gitlab.ozon.dev/alexplay1224/homework/internal/web"
+	web "gitlab.ozon.dev/alexplay1224/homework/internal/web/http"
 	"gitlab.ozon.dev/alexplay1224/homework/tests/integration"
 )
 
