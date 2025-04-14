@@ -1,4 +1,4 @@
-package web
+package http
 
 import (
 	"context"
@@ -9,17 +9,19 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4"
-	httpSwagger "github.com/swaggo/http-swagger/v2"
+	http_swagger "github.com/swaggo/http-swagger/v2"
+	"go.uber.org/zap"
+
+	admin_handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/http/admin"
+	order_handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/http/order"
 
 	_ "gitlab.ozon.dev/alexplay1224/homework/docs" // docs needed for swagger
 	"gitlab.ozon.dev/alexplay1224/homework/internal/config"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
-	admin_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
-	audit_Logger_Storage "gitlab.ozon.dev/alexplay1224/homework/internal/service/auditlogger"
-	order_Service "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
-	admin_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/admin"
-	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
+	admin_service "gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
+	audit_logger_storage "gitlab.ozon.dev/alexplay1224/homework/internal/service/auditlogger"
+	order_service "gitlab.ozon.dev/alexplay1224/homework/internal/service/order"
 )
 
 type orderStorage interface {
@@ -56,24 +58,24 @@ type auditLoggerStorage interface {
 
 // App is a structure for an app
 type App struct {
-	orderService       order_Service.Service
-	adminService       admin_Service.Service
-	auditLoggerService audit_Logger_Storage.Service
+	orderService       order_service.Service
+	adminService       admin_service.Service
+	auditLoggerService audit_logger_storage.Service
 	Router             *mux.Router
 }
 
 // NewApp creates an instance of an App
-func NewApp(ctx context.Context, cfg config.Config, orders orderStorage, admins adminStorage,
+func NewApp(ctx context.Context, cfg config.Config, logger *zap.Logger, orders orderStorage, admins adminStorage,
 	logs auditLoggerStorage, txManager txManager, workerCount int, batchSize int, timeout time.Duration) (*App, error) {
-	logger, err := audit_Logger_Storage.NewService(ctx, cfg, logs, workerCount, batchSize, timeout)
+	kafkaLogger, err := audit_logger_storage.NewService(ctx, cfg, logs, workerCount, batchSize, timeout)
 	if err != nil {
 		return nil, err
 	}
 
 	return &App{
-		orderService:       *order_Service.NewService(orders, txManager),
-		adminService:       *admin_Service.NewService(admins),
-		auditLoggerService: *logger,
+		orderService:       *order_service.NewService(logger, orders, txManager),
+		adminService:       *admin_service.NewService(logger, admins),
+		auditLoggerService: *kafkaLogger,
 		Router:             mux.NewRouter(),
 	}, nil
 }
@@ -81,8 +83,8 @@ func NewApp(ctx context.Context, cfg config.Config, orders orderStorage, admins 
 // SetupRoutes setups all the routing
 func (a *App) SetupRoutes(ctx context.Context) {
 	impl := server{
-		orders: *order_Handler.NewHandler(&a.orderService),
-		admins: *admin_Handler.NewHandler(&a.adminService),
+		orders: *order_handler.NewHandler(&a.orderService),
+		admins: *admin_handler.NewHandler(&a.adminService),
 	}
 	logger := AuditLoggerMiddleware{
 		adminService:       a.adminService,
@@ -105,7 +107,7 @@ func (a *App) SetupRoutes(ctx context.Context) {
 			a.wrapHandler(ctx, impl.orders.GetOrders)).ServeHTTP).
 		Methods(http.MethodGet)
 
-	a.Router.HandleFunc(fmt.Sprintf("/orders/{%s:[0-9]+}", order_Handler.OrderIDParam),
+	a.Router.HandleFunc(fmt.Sprintf("/orders/{%s:[0-9]+}", order_handler.OrderIDParam),
 		authMiddleware.BasicAuthChecker(ctx,
 			logger.AuditLogger(ctx,
 				a.wrapHandler(ctx, impl.orders.DeleteOrder))).ServeHTTP).
@@ -121,11 +123,11 @@ func (a *App) SetupRoutes(ctx context.Context) {
 		Methods(http.MethodPost)
 
 	a.Router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}",
-		admin_Handler.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.UpdateAdmin)).
+		admin_handler.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.UpdateAdmin)).
 		Methods(http.MethodPost)
 
 	a.Router.HandleFunc(fmt.Sprintf("/admins/{%s:[a-zA-Z0-9]+}",
-		admin_Handler.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.DeleteAdmin)).
+		admin_handler.AdminUsernameParam), a.wrapHandler(ctx, impl.admins.DeleteAdmin)).
 		Methods(http.MethodDelete)
 }
 
@@ -137,8 +139,8 @@ func (a *App) wrapHandler(ctx context.Context, handler func(context.Context, htt
 }
 
 type server struct {
-	orders order_Handler.Handler
-	admins admin_Handler.Handler
+	orders order_handler.Handler
+	admins admin_handler.Handler
 }
 
 // @securityDefinitions.basic BasicAuth
@@ -153,7 +155,7 @@ func (a *App) Run(ctx context.Context) error {
 	a.SetupRoutes(ctx)
 
 	// Путь для отображения Swagger UI
-	a.Router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+	a.Router.PathPrefix("/swagger/").Handler(http_swagger.WrapHandler)
 	if err := http.ListenAndServe("localhost:9000", a.Router); err != nil {
 		log.Fatal(err)
 	}

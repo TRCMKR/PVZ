@@ -7,7 +7,7 @@
 //
 
 // Package web is a generated GoMock package.
-package web
+package http
 
 import (
 	context "context"

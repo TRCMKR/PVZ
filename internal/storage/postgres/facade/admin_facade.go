@@ -3,6 +3,8 @@ package facade
 import (
 	"context"
 
+	"github.com/opentracing/opentracing-go"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/cache/lru"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
@@ -32,8 +34,13 @@ func NewAdminFacade(adminStorage adminStorage, capacity int) *AdminFacade {
 
 // CreateAdmin creates admin
 func (f *AdminFacade) CreateAdmin(ctx context.Context, admin models.Admin) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "adminFacade.CreateAdmin")
+	defer span.Finish()
+
 	err := f.adminStorage.CreateAdmin(ctx, admin)
 	if err != nil {
+		span.SetTag("error", err)
+
 		return err
 	}
 
@@ -44,7 +51,12 @@ func (f *AdminFacade) CreateAdmin(ctx context.Context, admin models.Admin) error
 
 // GetAdminByUsername gets admin by username
 func (f *AdminFacade) GetAdminByUsername(ctx context.Context, username string) (models.Admin, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "adminFacade.GetAdminByUsername")
+	defer span.Finish()
+
 	if admin, ok := f.cache.Get(username); ok {
+		span.SetTag("cache", true)
+
 		return admin, nil
 	}
 
@@ -60,8 +72,13 @@ func (f *AdminFacade) GetAdminByUsername(ctx context.Context, username string) (
 
 // UpdateAdmin updates admin by id
 func (f *AdminFacade) UpdateAdmin(ctx context.Context, id int, admin models.Admin) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "adminFacade.UpdateAdmin")
+	defer span.Finish()
+
 	err := f.adminStorage.UpdateAdmin(ctx, id, admin)
 	if err != nil {
+		span.SetTag("error", err)
+
 		return err
 	}
 
@@ -72,8 +89,13 @@ func (f *AdminFacade) UpdateAdmin(ctx context.Context, id int, admin models.Admi
 
 // DeleteAdmin deletes admin
 func (f *AdminFacade) DeleteAdmin(ctx context.Context, username string) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "adminFacade.DeleteAdmin")
+	defer span.Finish()
+
 	err := f.adminStorage.DeleteAdmin(ctx, username)
 	if err != nil {
+		span.SetTag("error", err)
+
 		return err
 	}
 
@@ -84,12 +106,19 @@ func (f *AdminFacade) DeleteAdmin(ctx context.Context, username string) error {
 
 // ContainsUsername checks if admin by username is present
 func (f *AdminFacade) ContainsUsername(ctx context.Context, username string) (bool, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "adminFacade.ContainsUsername")
+	defer span.Finish()
+
 	if _, ok := f.cache.Get(username); ok {
+		span.SetTag("cache", true)
+
 		return true, nil
 	}
 
 	ok, err := f.adminStorage.ContainsUsername(ctx, username)
 	if err != nil || !ok {
+		span.SetTag("error", err)
+
 		return false, err
 	}
 
@@ -102,5 +131,8 @@ func (f *AdminFacade) ContainsUsername(ctx context.Context, username string) (bo
 
 // ContainsID checks if admin by id is present
 func (f *AdminFacade) ContainsID(ctx context.Context, id int) (bool, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "adminFacade.ContainsID")
+	defer span.Finish()
+
 	return f.adminStorage.ContainsID(ctx, id)
 }

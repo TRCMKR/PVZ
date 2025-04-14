@@ -1,4 +1,4 @@
-package web
+package http
 
 import (
 	"bytes"
@@ -14,10 +14,11 @@ import (
 
 	"github.com/gorilla/mux"
 
+	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/http/order"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/service/admin"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/service/auditlogger"
-	order_Handler "gitlab.ozon.dev/alexplay1224/homework/internal/web/order"
 )
 
 var (

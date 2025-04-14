@@ -1,4 +1,4 @@
-package web
+package http
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/Rhymond/go-money"
 	"github.com/jackc/pgx/v4"
+	"go.uber.org/zap"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -215,10 +216,12 @@ func TestApp_Run(t *testing.T) {
 
 			mockTxManager := NewMocktxManager(ctrl)
 
+			logger := zap.NewNop()
+
 			mockOrderStorage := NewMockorderStorage(ctrl)
 			mockAdminStorage := NewMockadminStorage(ctrl)
 			mockLogStorage := NewMockauditLoggerStorage(ctrl)
-			app, _ := NewApp(context.Background(), config.Config{}, mockOrderStorage, mockAdminStorage, mockLogStorage,
+			app, _ := NewApp(context.Background(), config.Config{}, logger, mockOrderStorage, mockAdminStorage, mockLogStorage,
 				mockTxManager, 2, 5, 500*time.Millisecond)
 			app.SetupRoutes(context.Background())
 
