@@ -17,10 +17,6 @@ var (
 		Name: "grpc_errors_total",
 		Help: "Total number of gRPC errors",
 	})
-	responseTimeSummary = prometheus.NewSummary(prometheus.SummaryOpts{
-		Name: "grpc_response_time_seconds",
-		Help: "Summary of gRPC response times",
-	})
 	requestDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Name:    "request_duration_seconds",
 		Help:    "Request duration in seconds",
@@ -55,11 +51,6 @@ var (
 		[]string{"method"},
 	)
 )
-
-// SetResponseTimeSummary updates response time metric
-func SetResponseTimeSummary(responseTime float64) {
-	responseTimeSummary.Observe(responseTime)
-}
 
 // SetRequestCounter updates request count metric
 func SetRequestCounter() {
@@ -110,7 +101,6 @@ func init() {
 	prometheus.MustRegister(
 		requestCounter,
 		errorCounter,
-		responseTimeSummary,
 		requestDuration,
 		ordersReturned,
 		orderTotalPrice,
