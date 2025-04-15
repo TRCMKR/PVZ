@@ -3,6 +3,8 @@ package admin
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 )
 
@@ -13,6 +15,11 @@ func (s *Service) UpdateAdmin(ctx context.Context, username string, password str
 		return err
 	}
 	if !ok {
+		s.logger.Error(ErrAdminDoesntExist.Error(),
+			zap.String("username", username),
+			zap.Error(ErrAdminDoesntExist),
+		)
+
 		return ErrAdminDoesntExist
 	}
 
@@ -21,6 +28,11 @@ func (s *Service) UpdateAdmin(ctx context.Context, username string, password str
 		return err
 	}
 	if !someAdmin.CheckPassword(password) {
+		s.logger.Error(ErrWrongPassword.Error(),
+			zap.String("username", username),
+			zap.Error(ErrWrongPassword),
+		)
+
 		return ErrWrongPassword
 	}
 

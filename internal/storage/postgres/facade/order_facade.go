@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4"
+	"github.com/opentracing/opentracing-go"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/cache/lru"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
@@ -57,8 +58,13 @@ func NewOrderFacade(ctx context.Context, orderStorage orderStorage, capacity int
 
 // AddOrder adds order
 func (f *OrderFacade) AddOrder(ctx context.Context, tx pgx.Tx, order models.Order) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "orderFacade.AddOrder")
+	defer span.Finish()
+
 	err := f.orderStorage.AddOrder(ctx, tx, order)
 	if err != nil {
+		span.SetTag("error", err)
+
 		return err
 	}
 
@@ -70,8 +76,13 @@ func (f *OrderFacade) AddOrder(ctx context.Context, tx pgx.Tx, order models.Orde
 
 // RemoveOrder removes order
 func (f *OrderFacade) RemoveOrder(ctx context.Context, tx pgx.Tx, id int) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "orderFacade.RemoveOrder")
+	defer span.Finish()
+
 	err := f.orderStorage.RemoveOrder(ctx, tx, id)
 	if err != nil {
+		span.SetTag("error", err)
+
 		return err
 	}
 
@@ -83,8 +94,13 @@ func (f *OrderFacade) RemoveOrder(ctx context.Context, tx pgx.Tx, id int) error 
 
 // UpdateOrder updates order
 func (f *OrderFacade) UpdateOrder(ctx context.Context, tx pgx.Tx, id int, order models.Order) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "orderFacade.UpdateOrder")
+	defer span.Finish()
+
 	err := f.orderStorage.UpdateOrder(ctx, tx, id, order)
 	if err != nil {
+		span.SetTag("error", err)
+
 		return err
 	}
 
@@ -96,12 +112,19 @@ func (f *OrderFacade) UpdateOrder(ctx context.Context, tx pgx.Tx, id int, order 
 
 // GetByID gets order by id
 func (f *OrderFacade) GetByID(ctx context.Context, tx pgx.Tx, id int) (models.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "orderFacade.GetByID")
+	defer span.Finish()
+
 	if order, ok := f.cache.Get(id); ok {
+		span.SetTag("cache", true)
+
 		return order, nil
 	}
 
 	order, err := f.orderStorage.GetByID(ctx, tx, id)
 	if err != nil {
+		span.SetTag("error", err)
+
 		return models.Order{}, err
 	}
 
@@ -112,11 +135,17 @@ func (f *OrderFacade) GetByID(ctx context.Context, tx pgx.Tx, id int) (models.Or
 
 // GetByUserID gets orders by user id
 func (f *OrderFacade) GetByUserID(ctx context.Context, tx pgx.Tx, id int, userID int) ([]models.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "orderFacade.GetByUserID")
+	defer span.Finish()
+
 	return f.orderStorage.GetByUserID(ctx, tx, id, userID)
 }
 
 // GetReturns gets all returned orders
 func (f *OrderFacade) GetReturns(ctx context.Context, tx pgx.Tx) ([]models.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "orderFacade.GetReturns")
+	defer span.Finish()
+
 	return f.orderStorage.GetReturns(ctx, tx)
 }
 
@@ -253,40 +282,52 @@ func (f *OrderFacade) checkIfOrderMatches(order models.Order, params []query.Con
 // GetOrders gets orders by conditions
 func (f *OrderFacade) GetOrders(ctx context.Context, tx pgx.Tx, params []query.Cond,
 	count int, page int) ([]models.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "orderFacade.GetOrders")
+	defer span.Finish()
+
 	recentOrders, err := f.historyOrdersCache.GetAllBy(func(order models.Order) (bool, error) {
 		return f.checkIfOrderMatches(order, params)
 	})
 	if err != nil {
+		span.SetTag("error", err)
+
 		return nil, err
 	}
+
 	sort.Slice(recentOrders, func(i, j int) bool {
 		return recentOrders[i].LastChange.After(recentOrders[j].LastChange)
-	})
-
-	params = append(params, query.Cond{
-		Operator: query.LessThan,
-		Field:    "last_change",
-		Value:    recentOrders[len(recentOrders)-1].LastChange,
 	})
 
 	result := make([]models.Order, 0, count)
 	if count == 0 {
 		dbOrders, err := f.orderStorage.GetOrders(ctx, tx, params, count, 0)
 		if err != nil {
+			span.SetTag("error", err)
+
 			return nil, err
 		}
 
 		recentOrders = append(recentOrders, dbOrders...)
 
+		span.SetTag("cache", true)
+
 		return recentOrders, nil
 	}
 
-	recentOrders = recentOrders[page*count : min(count*(page+1), len(recentOrders))]
+	recentOrders = recentOrders[min(page*count, len(recentOrders)):min(count*(page+1), len(recentOrders))]
 
 	switch {
 	case len(recentOrders) < count && len(recentOrders) != 0:
+		params = append(params, query.Cond{
+			Operator: query.LessThan,
+			Field:    "last_change",
+			Value:    recentOrders[len(recentOrders)-1].LastChange,
+		})
+
 		dbOrders, err := f.orderStorage.GetOrders(ctx, tx, params, count-len(result), 0)
 		if err != nil {
+			span.SetTag("error", err)
+
 			return nil, err
 		}
 		recentOrders = append(recentOrders, dbOrders...)
@@ -295,12 +336,15 @@ func (f *OrderFacade) GetOrders(ctx context.Context, tx pgx.Tx, params []query.C
 		dbPage := (len(result) + count - 1) / count
 		dbOrders, err := f.orderStorage.OffsetGetOrders(ctx, tx, params, count, dbPage, abs(len(result)-count*page))
 		if err != nil {
+			span.SetTag("error", err)
+
 			return nil, err
 		}
 		recentOrders = append(recentOrders, dbOrders...)
 
 	default:
 		result = recentOrders
+		span.SetTag("cache", true)
 	}
 
 	return result, nil
@@ -308,15 +352,24 @@ func (f *OrderFacade) GetOrders(ctx context.Context, tx pgx.Tx, params []query.C
 
 // Contains checks if order is present
 func (f *OrderFacade) Contains(ctx context.Context, tx pgx.Tx, id int) (bool, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "orderFacade.Contains")
+	defer span.Finish()
+
 	if _, ok := f.cache.Get(id); ok {
+		span.SetTag("cache", true)
+
 		return true, nil
 	}
 	if _, ok := f.historyOrdersCache.Get(id); ok {
+		span.SetTag("cache", true)
+
 		return true, nil
 	}
 
 	ok, err := f.orderStorage.Contains(ctx, tx, id)
 	if err != nil {
+		span.SetTag("error", err)
+
 		return false, err
 	}
 	if !ok {

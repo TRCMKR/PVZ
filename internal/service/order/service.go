@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v4"
+	"go.uber.org/zap"
 
 	"gitlab.ozon.dev/alexplay1224/homework/internal/models"
 	"gitlab.ozon.dev/alexplay1224/homework/internal/query"
@@ -71,12 +72,14 @@ type txManager interface {
 type Service struct {
 	Storage   orderStorage
 	txManager txManager
+	logger    *zap.Logger
 }
 
 // NewService creates instance of an order Service
-func NewService(storage orderStorage, txManager txManager) *Service {
+func NewService(logger *zap.Logger, storage orderStorage, txManager txManager) *Service {
 	return &Service{
 		Storage:   storage,
 		txManager: txManager,
+		logger:    logger,
 	}
 }

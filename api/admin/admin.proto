@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package admin.proto;
+
+option go_package = "admin/proto";
+
+service AdminService {
+  rpc CreateAdmin(CreateAdminRequest) returns (CreateAdminResponse);
+  rpc UpdateAdmin(UpdateAdminRequest) returns (UpdateAdminResponse);
+  rpc DeleteAdmin(DeleteAdminRequest) returns (DeleteAdminResponse);
+}
+
+message CreateAdminRequest {
+  int32 id = 1;
+  string username = 2;
+  string password = 3;
+}
+
+message CreateAdminResponse {
+  string output = 1;
+}
+
+message UpdateAdminRequest {
+  string username = 1;
+  string password = 2;
+  string new_password = 3;
+}
+
+message UpdateAdminResponse {
+  string output = 1;
+}
+
+message DeleteAdminRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message DeleteAdminResponse {
+  string output = 1;
+}
